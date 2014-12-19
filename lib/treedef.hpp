@@ -7,10 +7,10 @@
 namespace treedef {
 
     template<typename U, typename V> class TreeNode;
-    typedef std::shared_ptr<TreeNode<U, V> > NodePtr;
+    typedef std::shared_ptr<TreeNode<U, V> > NodePtr; //U, V unknown types
     typedef std::list<TreeNode<U, V> > NodeList;
     template<std::string GenID, typename T, typename R> NodeList* Generate(NodePtr<T, R>);
-    template <std::string ComID, typename T, typename R> void Combine(NodePtr<T,R>);
+    template <std::string ComID, typename T, typename R> void Combine(NodePtr<T,R>, NodePtr<T,R>);
     template class<typename T, typename R> BaseTree;
 
     class TreeException : public std::runtime_error{

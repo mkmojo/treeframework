@@ -1,5 +1,5 @@
 //User implementation
-template <typename T, typename R> NodeList* Generate<"UserGenerate">(NodePtr<T,R> u){ 
+template <typename T, typename R> NodeList* Generate<"UserGenerate">(NodePtr<T,R> u){
     auto pChild = u->left;
     auto tmplist = new std::list<NodePtr>();
         
@@ -9,7 +9,7 @@ template <typename T, typename R> NodeList* Generate<"UserGenerate">(NodePtr<T,R
     return tmplist;
 };
 
-template <typename T> void Combine<"UserCombine">(NodePtr<T,R> u){
+template <typename T, typename R> void Combine<"UserCombine">(NodePtr<T,R> u){
     if(u->genset == nullptr) 
         throw UnknownGenSetException; //exception: generate not specified
 

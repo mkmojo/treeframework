@@ -75,6 +75,10 @@ template<typename T, typename R> BaseTree::BaseTree(std::ifstream file_in){
 }
         
 
+//> figure out the direction of tree compute based on generate
+//> how is the tree collapse called inbetween combines: let user define or framework should be smart enough to do that 
+//> have a counter in each node = initial degree. decrease the counter per combine. once zero, traverse up the tree, collapse edges that has parent of counter = 1.
+//> array implementation of the tree. marking are collapsing points of upward
 //> Call Generate and Combine on the tree
 template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::string ComID, std::string GenID = "null"){
     if(GenID == "null"){
@@ -83,9 +87,11 @@ template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::s
     }else{
         for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++)
             *it->getGenSet(Generate<GenID, T, R>(*it)); //have all gensets of nodes figured out
-        TreeNodeList.sort();
-        for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++)
-            Combine<ComID, T, R>(*it);
+        TreeNodeList.sort(); //< sort needs to be overloaded
+        for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++){
+            //...
+            Combine<ComID, T, R>(*it); //< this is wrong. combine should be separate
+        }
     }
 }
 
