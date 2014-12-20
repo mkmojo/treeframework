@@ -9,10 +9,17 @@ template <typename T, typename R> NodeList* Generate<"UserGenerate">(NodePtr<T,R
     return tmplist;
 };
 
-template <typename T, typename R> void Combine<"UserCombine">(NodePtr<T,R> u){
-    if(u->genset == nullptr) 
-        throw UnknownGenSetException; //exception: generate not specified
 
-    //user code here
-    //get nodes from genset of u, combine their values and store back to u->pCom
+template <typename T, typename R> void Combine<"UserCombine1">(R* u, T* v){
+
+};
+
+
+template <typename T, typename R> void Combine<"UserCombine2">(R* u, T* v){
+
+};
+
+
+template <typename T, typename R> void Evolve<"UserEvolve1">(R* u, T* v){
+
 };

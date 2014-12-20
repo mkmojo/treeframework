@@ -13,6 +13,10 @@ template <typename T, typename R> NodeList* Generate<"UpwardAggregate">(NodePtr<
     //implement specialized upward aggregate generate set
 }
 
-template <typename T, typename R> void Combine<"UpwardAggregate">(NodePtr<T,R> u){
+template <typename T, typename R> void Combine<"UpwardAggregate">(R* u, T* v){
     //implement specialized upward aggregate combine
+}
+
+template <typename T, typename R> void Evolve<"UpwardAggregate">(R* u, T* v){
+    //implement specialized upward aggregate evolve
 }

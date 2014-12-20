@@ -15,8 +15,7 @@ int main(){
     OctTree<Input_Data_Type, Combined_Data_Type> data_tree(initial_data_cube);
     
     while(loop_condition()){
-        data_tree.tree_compute("UserCombine1", "UserGenerate");
-        data_tree.tree_compute("UserCombine2");
-        data_tree.tree_evolve("UserEvolve");
+        data_tree.tree_compute(true, "UserCombine1", "UserEvolve1", "UserGenerate");
+        data_tree.tree_compute(true, "UserCombine2", "UserEvolve1");
     }
 }
