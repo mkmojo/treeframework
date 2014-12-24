@@ -143,6 +143,21 @@ template<typename T, typename R> void BaseTree::Insert(T* data_in){
 }
 
 
+/** @brief This function collapses the basetree from node u up. T: input data type, R: combined type
+ *  @param u node considered
+ *  @return void
+ */
+template<typename T, typename R> void Collapse(NodePtr<T,R> u){
+    if(u->dGen != 0) return;
+    auto it = u;
+    while(it->parent != nullptr && it->parent->dGen <= 1){
+        *(it->parent->pCom) = *(it->pCom); //< store the combined value into its parent
+        Remove(it);
+        it = it->parent;
+    }
+}
+
+
 /** @brief This function do one pass of tree computation involving three steps: generate, combine and evolve. T: input data type, R: combined type
  *  @param strict if the computation has dependency on the newly combined values
  *  @param ComID type of combine
@@ -167,9 +182,9 @@ template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::s
             for(auto itt = (*it)->pGen.begin(); itt != (*it)->pGen.end(); itt++){
                 TreeCombine<ComID, T, R>(*it, *itt); //< call tree combine with dependency
                 //< note: necessary markings need to be done during combine
-                if(!(*it->dGen)){ //< it becomes leaf
+                if(!(*it->dGen)){ //< all generates are considered for it
                     if(strict) Evolve<EvoID, T, R>(*it); //< update pVar with the combined value for positive dependency case
-                    tree_collapse(*it); //< collapse from *it till a node with dGen > 1
+                    Collapse(*it); //< collapse from *it till a node with dGen > 1
                 }
             }
         }
