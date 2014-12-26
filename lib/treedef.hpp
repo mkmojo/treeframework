@@ -20,15 +20,15 @@
 namespace treedef {
 
     //> type declarations and short hands
-    template<typename U, typename V> class TreeNode;
-    template<typename U, typename V> using NodePtr = std::shared_ptr<TreeNode<U, V> >; //< this typedef only works for 0x
-    template<typename U, typename V> using NodeList = std::list<std::shared_ptr<TreeNode<U, V> > >; //< this typedef only works for 0x
-    template<typename U, typename V> using NodeSet = std::set<std::shared_ptr<TreeNode<U, V> > >; //< this typedef only works for 0x
-    template<std::string GenID, typename T, typename R> NodeList* Generate(NodePtr<T, R>);
+    template <typename U, typename V> class TreeNode;
+    template <typename U, typename V> using NodePtr = std::shared_ptr<TreeNode<U, V> >; //< this typedef only works for 0x
+    template <typename U, typename V> using NodeList = std::list<std::shared_ptr<TreeNode<U, V> > >; //< this typedef only works for 0x
+    template <typename U, typename V> using NodeSet = std::set<std::shared_ptr<TreeNode<U, V> > >; //< this typedef only works for 0x
+    template <std::string GenID, typename T, typename R> NodeList* Generate(NodePtr<T, R>);
     template <std::string ComID, typename T, typename R> void Combine(R*, T*);
     template <std::string EvoID, typename T, typename R> void Evolve(R*, T*);
     template <std::string ComID, typename T, typename R> void TreeCombine(NodePtr<T,R>, NodePtr<T,R>);
-    template class<typename T, typename R> BaseTree;
+    template <typename T, typename R> class BaseTree;
 
     /** @brief This class stores customized error message
      *  can be derived further to include more detailed error
@@ -64,7 +64,7 @@ namespace treedef {
      *  @param T input data type
      *  @param R combined data type
      */
-    template class<typename T, typename R> BaseTree {
+    template <typename T, typename R> class BaseTree {
     protected:
         NodePtr<T, R> Root; //< pointer to the root
         NodePtr<T, R> getCommonAncestor(NodePtr<T,R> u, NodePtr<T,R> v); //< get common ancestors of nodes u and v
