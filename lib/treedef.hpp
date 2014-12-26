@@ -2,7 +2,7 @@
  *
  *  @brief This header file contains base classes and default template definitions to use the tree framework
  *
- *  @author Shule Li <shuleli@berkeley.edu> Qiyuan Qiu <> Saminda Wijeratne <>
+ *  @author Shule Li <shuleli@berkeley.edu> Qiyuan Qiu <qiuqiyuan@gmail.com> Saminda Wijeratne <>
  *
  *  @date 12-20-14
  *  

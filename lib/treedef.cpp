@@ -2,7 +2,7 @@
  *
  *  @brief This file contains implementations of base classes and default templates of the tree framework
  *
- *  @author Shule Li <shuleli@berkeley.edu> Qiyuan Qiu <> Saminda Wijeratne <>
+ *  @author Shule Li <shuleli@berkeley.edu> Qiyuan Qiu <qiuqiyuan@gmail.com> Saminda Wijeratne <>
  *
  *  @date 12-20-14
  *  
