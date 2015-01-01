@@ -20,8 +20,8 @@ using namespace treedef;
 
 template<typename U, typename V> TreeNode::TreeNode(U* pVar_in):dGen(0),dOwn(0){
     pVar = pVar_in; //< copy to shared pointer
-    pGen = new NodeSet<U, V>; //< initialize generate set
-    pOwn = new NodeSet<U, V>; //< initialize owner set
+    pGen = new NodeSet; //< initialize generate set
+    pOwn = new NodeSet; //< initialize owner set
 }
 
 
@@ -37,7 +37,7 @@ template<typename U, typename V> TreeNode::~TreeNode(){
  *  @param list_in pointer to the input list
  *  @return void
  */
-template<typename U, typename V> void TreeNode::getGenSet(NodeList<U,V>* list_in){
+template<typename U, typename V> void TreeNode::getGenSet(NodeList* list_in){
     if(list_in->empty()) return;
     for(auto it = list_in.begin(); it != list_in.end(); it++){
         pGen->insert(*it); //< insert list nodes into the generate set
@@ -55,15 +55,14 @@ template<typename U, typename V> void TreeNode::getGenSet(NodeList<U,V>* list_in
  *  @param u pointer to the node being worked on
  *  @return NodeList
  */
-template <std::string GenID, typename T, typename R> NodeList<T,R>* Generate(NodePtr<T, R> u) {
+template <std::string GenID, typename T, typename R> NodeList* Generate(int u) {
     //> default generate function for tree:
-    auto pChild = u->left;
-    auto tmplist = new NodeList<T, R>;
+    NodeList tmplist = new NodeList; //< NodeList is std::list<int>
 
-    //> push all children into the list
-    do{
-        tmplist->push_back(pChild);
-    } while(pChild.sibling != nullptr)
+    //> push all children indices into the list
+    for(auto it = LocalArr[u].Children.begin(); it != LocalArr[u].Children.end(); it++) //< while child exist
+        tmplist->push_back(*it); 
+
     return tmplist;
 };
    
@@ -95,10 +94,10 @@ template<std::string EvoID, typename T, typename R> void Evolve(R* u, T* v) {
  *  @param v pointer to the data structure storing the input value
  *  @return void 
  */
-template<std::string ComID, typename T, typename R> void TreeCombine(NodePtr<T,R> u, NodePtr<T,R> v){
-        Combine<ComID, T, R>(u->pCom, v->pVar);
-        u->dGen--; //< decrease the gen counter and the own counter
-        v->dOwn--; //< a tree node with dOwn = 0 is considered to be removed from the residual tree
+template<std::string ComID, typename T, typename R> void TreeCombine(int u, int v){
+        Combine<ComID, T, R>(LocalArr[u].pCom, LocalArr[v].pVar);
+        LocalArr[u].dGen--; //< decrease the gen counter and the own counter
+        LocalArr[v].dOwn--; //< a tree node with dOwn = 0 is considered to be removed from the residual tree
 }
 
 
@@ -158,6 +157,27 @@ template<typename T, typename R> void Collapse(NodePtr<T,R> u){
 }
 
 
+//> send tree node info indexed by u to the neighbors
+template<typename T, typename R> void BaseTree:tree_send(int u){
+    #ifdef(MPI)
+    for(int i = 0; i < sendrequest.size(); i++){
+        int proc = indexmap[-sendrequest[i]].first; 
+        MPI_ISEND(&LocalArr[u], proc, MPI_COMM_TREE); //< send local array element u
+    }
+    #endif
+}
+
+template<typename T, typename R> void BaseTree::tree_recv(){
+    #ifdef(MPI)
+    auto it = ghostmap.begin();
+    for(int i = 0; i < recvrequest.size(); i++){
+        int proc = indexmap[-recvrequest[i]].first; 
+        MPI_IRECV(ghost[i], proc, MPI_COMM_TREE); //< receive nodes from neighbors and store in ghost
+        ghostmap.insert(it, std::pair<int,int>(recvrequest[i],i); //< insert the global index for reverse lookup
+    }
+    #endif
+}
+
 /** @brief This function do one pass of tree computation involving three steps: generate, combine and evolve. T: input data type, R: combined type
  *  @param strict if the computation has dependency on the newly combined values
  *  @param ComID type of combine
@@ -171,23 +191,53 @@ template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::s
         if(some node has node.genset -> nullptr) 
             throw UnknownGenerateSetException;
     }else{
-        for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++){
-            (*it)->pGen->clear(); //< clear the generate and owner sets for all nodes before inserting
-            (*it)->pOwn->clear();
+        for(int it = 0; it < LocalArr.size(); it++){
+            LocalArr[it].pGen->clear(); //< clear the generate and owner sets for all nodes before inserting
+            LocalArr[it].pOwn->clear();
         }
-        for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++)
-            (*it)->getGenSet(Generate<GenID, T, R>(*it)); //have all gensets of nodes figured out
-        if(strict) TreeNodeList.sort(); //< sort needs to be overloaded: this sorting needs to reflect how the tree nodes are removed from the residual tree
-        for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++){
-            for(auto itt = (*it)->pGen.begin(); itt != (*it)->pGen.end(); itt++){
-                TreeCombine<ComID, T, R>(*it, *itt); //< call tree combine with dependency
+        for(int it = 0; it < LocalArr.size(); it++){
+            LocalArr[it].getGenSet(Generate<GenID, T, R>(it)); //have all gensets of nodes figured out. Note that here gen set can contain negative indices pointing to other processors
+        if(strict) LocalArr.sort(); //< sort needs to be overloaded: this sorting needs to reflect how the tree nodes are removed from the residual tree
+        //< note that after sorting, the indices may change. this requires all indices stores in each node to be adjusted
+        //> first round combine: get all local combines done
+        for(int it = 0; it < LocalArr.size(); it++){
+            for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); itt++){
+                if(*itt > 0) TreeCombine<ComID, T, R>(it, *itt); //< call tree combine with dependency when the required nodes are local
                 //< note: necessary markings need to be done during combine
-                if(!(*it->dGen)){ //< all generates are considered for it
-                    if(strict) Evolve<EvoID, T, R>(*it); //< update pVar with the combined value for positive dependency case
-                    Collapse(*it); //< collapse from *it till a node with dGen > 1
+                if(!(LocalArr[it].dGen)){ //< all generates are considered for it
+                    internal[it] = true;
+                    if(strict) Evolve<EvoID, T, R>(it); //< update pVar with the combined value for positive dependency case
+                    Collapse(it); //< collapse from *it till a node with dGen > 1
+                }
+            }
+            if(internal[it]){
+                for(auto itt = LocalArr[it].pOwn->begin(); itt != LocalArr[it].pOwn->end(); itt++)
+                    if(*itt <= 0) sendrequest.pushback(-(*itt));
+                tree_send(it); //< send finished nodes to neighbors
+            }else{
+                //> request can be reused if communication is persistant
+                for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); itt++)
+                    if(*itt <= 0) recvrequest.pushback(-(*itt));
+                //>allocate vector of nodes called ghost that stores all ghost node copies
+                auto ghost = new std::vector<NodePtr<T,R> >; //< should store actual nodes not pointers
+            }
+        }
+
+        tree_recv(); //< receive node values required for combine
+
+        //> note that this method does not collapse those chains that cross multiple processes
+        for(int it = 0; it < LocalArr.size(); it++){
+            if(!internal[it]){
+                for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); it++){
+                    if(*itt <= 0) TreeCombine<ComID, T, R>(it, ghostmap[*itt]); //< combine all boundary nodes
+                    if(!(LocalArr[it].dGen)){ //< all generates are considered for it
+                        if(strict) Evolve<EvoID, T, R>(it); //< update pVar with the combined value for positive dependency case
+                        Collapse(it); //< collapse from *it till a node with dGen > 1
+                    }
                 }
             }
         }
+
         if(!strict){
             for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++)
                 Evolve<EvoID, T, R>(*it); //< update pVar with the combined value all at once for reversed or non dependency cases
