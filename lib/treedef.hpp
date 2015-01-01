@@ -67,11 +67,16 @@ namespace treedef {
     template <typename T, typename R> class BaseTree {
     protected:
         NodePtr<T, R> Root; //< pointer to the root
+        std::vector<NodePtr<T,R> >  ghost; //< stores ghost nodes
+        std::map<int,int> indexmap, ghostmap; //< maps local index to global index and vice versa
+        std::vector<int> sendrequest, recvrequest; 
         NodePtr<T, R> getCommonAncestor(NodePtr<T,R> u, NodePtr<T,R> v); //< get common ancestors of nodes u and v
         void Insert(T* data_in); //< insert node with input value stored in data_in
         void Remove(NodePtr<T,R> u); //< remove node u from the residual graph
         void Collapse(NodePtr<T,R> u); //< collapse node u upward the tree
         NodeList<T,R> TreeNodeList;  //< stores the entire list of the tree nodes. in case of array implementation, this should be a vector instead of list
+        void tree_send(int); 
+        void tree_recv();
 
     public: 
         BaseTree(std::ifstream); //< constructs a base tree from an input filestream 

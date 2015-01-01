@@ -172,7 +172,10 @@ template<typename T, typename R> void BaseTree::tree_recv(){
     auto it = ghostmap.begin();
     for(int i = 0; i < recvrequest.size(); i++){
         int proc = indexmap[-recvrequest[i]].first; 
-        MPI_IRECV(ghost[i], proc, MPI_COMM_TREE); //< receive nodes from neighbors and store in ghost
+        auto buffer = new NodePtr<T,R>;
+        MPI_IRECV(buffer, proc, MPI_COMM_TREE); //< receive nodes from neighbors and store in ghost
+        ghost.pushback(buffer);
+        delete buffer;
         ghostmap.insert(it, std::pair<int,int>(recvrequest[i],i); //< insert the global index for reverse lookup
     }
     #endif
@@ -202,7 +205,7 @@ template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::s
         //> first round combine: get all local combines done
         for(int it = 0; it < LocalArr.size(); it++){
             for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); itt++){
-                if(*itt > 0) TreeCombine<ComID, T, R>(it, *itt); //< call tree combine with dependency when the required nodes are local
+                if(*itt > 0) TreeCombine<ComID, T, R>(it, *itt, false); //< call tree combine with dependency when the required nodes are local
                 //< note: necessary markings need to be done during combine
                 if(!(LocalArr[it].dGen)){ //< all generates are considered for it
                     internal[it] = true;
@@ -218,8 +221,6 @@ template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::s
                 //> request can be reused if communication is persistant
                 for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); itt++)
                     if(*itt <= 0) recvrequest.pushback(-(*itt));
-                //>allocate vector of nodes called ghost that stores all ghost node copies
-                auto ghost = new std::vector<NodePtr<T,R> >; //< should store actual nodes not pointers
             }
         }
 
@@ -229,7 +230,7 @@ template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::s
         for(int it = 0; it < LocalArr.size(); it++){
             if(!internal[it]){
                 for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); it++){
-                    if(*itt <= 0) TreeCombine<ComID, T, R>(it, ghostmap[*itt]); //< combine all boundary nodes
+                    if(*itt <= 0) TreeCombine<ComID, T, R>(it, ghostmap[*itt], true); //< combine all boundary nodes
                     if(!(LocalArr[it].dGen)){ //< all generates are considered for it
                         if(strict) Evolve<EvoID, T, R>(it); //< update pVar with the combined value for positive dependency case
                         Collapse(it); //< collapse from *it till a node with dGen > 1
@@ -242,6 +243,9 @@ template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::s
             for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++)
                 Evolve<EvoID, T, R>(*it); //< update pVar with the combined value all at once for reversed or non dependency cases
         }
+
+        sendrequest.clear();
+        recvrequest.clear();
     }
 }
 
