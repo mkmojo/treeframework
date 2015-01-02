@@ -194,4 +194,3 @@ template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::s
         }
     }
 }
-

@@ -1,11 +1,12 @@
 //Tree Library code
 using namespace treedef;
 
-template class<typename T> OctTree : public BaseTree{
+template <typename T> class OctTree : public BaseTree{
     //implement specialized methods for OctTree
+    void construct_Tree(std::fstream &file_in);
 }
 
-template class<typename T> RBTree : public BaseTree{
+template <typename T> class RBTree : public BaseTree{
     //implement specialized methods for RBTree
 }
 

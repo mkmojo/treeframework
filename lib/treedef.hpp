@@ -25,8 +25,8 @@ namespace treedef {
     template <typename U, typename V> using NodeList = std::list<std::shared_ptr<TreeNode<U, V> > >; //< this typedef only works for 0x
     template <typename U, typename V> using NodeSet = std::set<std::shared_ptr<TreeNode<U, V> > >; //< this typedef only works for 0x
     template <std::string GenID, typename T, typename R> NodeList* Generate(NodePtr<T, R>);
-    template <std::string ComID, typename T, typename R> void Combine(R*, T*);
-    template <std::string EvoID, typename T, typename R> void Evolve(R*, T*);
+    template <std::string ComID, typename T, typename R> void Combine(T*, R*);
+    template <std::string EvoID, typename T, typename R> void Evolve(T*, R*);
     template <std::string ComID, typename T, typename R> void TreeCombine(NodePtr<T,R>, NodePtr<T,R>);
     template <typename T, typename R> class BaseTree;
 
