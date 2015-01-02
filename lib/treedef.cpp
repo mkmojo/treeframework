@@ -104,7 +104,7 @@ template<std::string ComID, typename T, typename R> void TreeCombine(int u, int 
 /** @brief This function constructs a base type tree from an input data filestream. T: input data type, R: combined type
  *  @param file_in filestream pointing to input data
  */
-template<typename T, typename R> BaseTree::BaseTree(std::ifstream file_in){
+template<typename T, typename R> BaseTree::BaseTree(std::ifstream file_in, bool dynamic_in):dynamic(dynamic_in){
     auto tmp = std::getline(file_in);
     Root = new TreeNode<T,R>(tmp);
     while(tmp != nullptr){
@@ -200,52 +200,85 @@ template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::s
         }
         for(int it = 0; it < LocalArr.size(); it++){
             LocalArr[it].getGenSet(Generate<GenID, T, R>(it)); //have all gensets of nodes figured out. Note that here gen set can contain negative indices pointing to other processors
-        if(strict) LocalArr.sort(); //< sort needs to be overloaded: this sorting needs to reflect how the tree nodes are removed from the residual tree
-        //< note that after sorting, the indices may change. this requires all indices stores in each node to be adjusted
-        //> first round combine: get all local combines done
-        for(int it = 0; it < LocalArr.size(); it++){
-            for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); itt++){
-                if(*itt > 0) TreeCombine<ComID, T, R>(it, *itt, false); //< call tree combine with dependency when the required nodes are local
-                //< note: necessary markings need to be done during combine
-                if(!(LocalArr[it].dGen)){ //< all generates are considered for it
-                    internal[it] = true;
-                    if(strict) Evolve<EvoID, T, R>(it); //< update pVar with the combined value for positive dependency case
-                    Collapse(it); //< collapse from *it till a node with dGen > 1
+        if(strict){ //< dependency required: combine depends on the updated combined value
+            LocalArr.sort();
+            //< note that after sorting, the indices may change. this requires all indices stores in each node to be adjusted
+            //> first round combine: get all local combines done
+            for(int it = 0; it < LocalArr.size(); it++){
+                for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); itt++){
+                    if(*itt > 0) TreeCombine<ComID, T, R>(it, *itt, false); //< call tree combine with dependency when the required nodes are local
+                    //< note: necessary markings need to be done during combine
+                    if(!(LocalArr[it].dGen)){ //< all generates are considered for it
+                        internal[it] = true;
+                        Evolve<EvoID, T, R>(it); //< update pVar with the combined value for positive dependency case
+                        Collapse(it); //< collapse from *it till a node with dGen > 1
+                    }
+                }
+                if(internal[it]){
+                    if(dynamic || sendrequest.empty()){
+                        for(auto itt = LocalArr[it].pOwn->begin(); itt != LocalArr[it].pOwn->end(); itt++)
+                            if(*itt <= 0) sendrequest.pushback(-(*itt));
+                    }
+                    tree_send(it); //< send finished nodes to neighbors
+                }else{
+                    if(dynamic || recvrequest.empty()){
+                        for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); itt++)
+                            if(*itt <= 0) recvrequest.pushback(-(*itt));
+                    }
                 }
             }
-            if(internal[it]){
-                for(auto itt = LocalArr[it].pOwn->begin(); itt != LocalArr[it].pOwn->end(); itt++)
-                    if(*itt <= 0) sendrequest.pushback(-(*itt));
-                tree_send(it); //< send finished nodes to neighbors
-            }else{
-                //> request can be reused if communication is persistant
-                for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); itt++)
-                    if(*itt <= 0) recvrequest.pushback(-(*itt));
+
+            tree_recv(); //< receive node values required for combine
+
+            //> note that this method does not collapse those chains that cross multiple processes
+            for(int it = 0; it < LocalArr.size(); it++){
+                if(!internal[it]){
+                    for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); it++){
+                        if(*itt <= 0) TreeCombine<ComID, T, R>(it, ghostmap[*itt], true); //< combine all boundary nodes
+                        if(!(LocalArr[it].dGen)){ //< all generates are considered for it
+                            if(strict) Evolve<EvoID, T, R>(it); //< update pVar with the combined value for positive dependency case
+                            Collapse(it); //< collapse from *it till a node with dGen > 1
+                        }
+                    }
+                }
             }
-        }
+        }else{ //< no dependency required: combine depends on the input value or the old combined value
+            for(int it = 0; it < LocalArr.size(); it++){ //< do communication beforehand
+                if(dynamic || recvrequest.empty()){
+                    for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); itt++)
+                        if(*itt <= 0) recvrequest.pushback(-(*itt));
+                }
+                if(dynamic || sendrequest.empty()){
+                    for(auto itt = LocalArr[it].pOwn->begin(); itt != LocalArr[it].pOwn->end(); itt++)
+                        if(*itt <= 0) sendrequest.pushback(-(*itt));
+                }
+                tree_send(it); //< send finished nodes to neighbors
+            }
+            tree_recv(); //< receive node values required for combine
 
-        tree_recv(); //< receive node values required for combine
-
-        //> note that this method does not collapse those chains that cross multiple processes
-        for(int it = 0; it < LocalArr.size(); it++){
-            if(!internal[it]){
-                for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); it++){
-                    if(*itt <= 0) TreeCombine<ComID, T, R>(it, ghostmap[*itt], true); //< combine all boundary nodes
+            for(int it = 0; it < LocalArr.size(); it++){
+                for(auto itt = LocalArr[it].pGen->begin(); itt != LocalArr[it].pGen->end(); itt++){
+                    if(*itt > 0){
+                        TreeCombine<ComID, T, R>(it, *itt, false); //< call tree combine with dependency when the required nodes are local
+                    }else{
+                        TreeCombine<ComID, T, R>(it, *itt, true); //< call tree combine with dependency when the required nodes are local
+                    }
+                    //< note: necessary markings need to be done during combine
                     if(!(LocalArr[it].dGen)){ //< all generates are considered for it
-                        if(strict) Evolve<EvoID, T, R>(it); //< update pVar with the combined value for positive dependency case
+                        internal[it] = true;
                         Collapse(it); //< collapse from *it till a node with dGen > 1
                     }
                 }
             }
-        }
 
-        if(!strict){
             for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++)
                 Evolve<EvoID, T, R>(*it); //< update pVar with the combined value all at once for reversed or non dependency cases
         }
 
-        sendrequest.clear();
-        recvrequest.clear();
+        if(dynamic){
+            sendrequest.clear();
+            recvrequest.clear();
+        }
     }
 }
 

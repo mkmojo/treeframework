@@ -16,6 +16,7 @@
 #include <list>
 #include <memory>
 #include <exception>
+#include <vector>
 
 namespace treedef {
 
@@ -66,6 +67,7 @@ namespace treedef {
      */
     template <typename T, typename R> class BaseTree {
     protected:
+        bool dynamic; //< the tree can have dynamic change during computation
         NodePtr<T, R> Root; //< pointer to the root
         std::vector<NodePtr<T,R> >  ghost; //< stores ghost nodes
         std::map<int,int> indexmap, ghostmap; //< maps local index to global index and vice versa
@@ -79,7 +81,7 @@ namespace treedef {
         void tree_recv();
 
     public: 
-        BaseTree(std::ifstream); //< constructs a base tree from an input filestream 
+        BaseTree(std::ifstream,bool); //< constructs a base tree from an input filestream 
         virtual ~BaseTree(); //< destructor. needs overriding
         void tree_compute(bool, std::string, std::string, std::string); //< calls generate or combine templates. specialized tree_compute can be implemented for different types of trees by overriding
     };
