@@ -28,6 +28,9 @@ namespace treedef {
     template <std::string ComID, typename T, typename R> void Combine(R*, T*);
     template <std::string EvoID, typename T, typename R> void Evolve(R*, T*);
     template <std::string ComID, typename T, typename R> void TreeCombine(NodePtr<T,R>, NodePtr<T,R>);
+    template <std::string ComID, typename T, typename R> void PerformCombine(std::list<std::list<std::shared_ptr<std::pair <TreeNode<T, R>, TreeNode<T, R>> > > > &, , bool);
+    template <std::string ComID, typename T, typename R> void SendReceiveTreeData(std::list<std::list<std::shared_ptr<std::pair <int ,TreeNode<U, V>> > > > &, std::list<std::list<std::shared_ptr<std::pair <TreeNode<T, R>, TreeNode<T, R>> > > > &);
+
     template <typename T, typename R> class BaseTree;
 
     /** @brief This class stores customized error message
@@ -77,6 +80,8 @@ namespace treedef {
         BaseTree(std::ifstream); //< constructs a base tree from an input filestream 
         virtual ~BaseTree(); //< destructor. needs overriding
         void tree_compute(bool, std::string, std::string, std::string); //< calls generate or combine templates. specialized tree_compute can be implemented for different types of trees by overriding
+    private:
+        template<typename U, typename V> void setupLists(std::list<std::list<std::shared_ptr<std::pair <TreeNode<U, V>, TreeNode<U, V>> > > > &, std::list<std::list<std::shared_ptr<std::pair <int ,TreeNode<U, V>> > > > &, std::list<std::list<std::shared_ptr<std::pair <TreeNode<U, V>,TreeNode<U, V>> > > > &);
     };
 
 }

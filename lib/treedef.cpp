@@ -157,6 +157,51 @@ template<typename T, typename R> void Collapse(NodePtr<T,R> u){
     }
 }
 
+/*
+ * @brief Arrange the nodes in the TreeNodeList in to 3 lists where,
+ * @param independentCombineList	- has set of node pairs which the combine can be run independently in the given order
+ * @param dependentNodeList			- will wait for node data from other processors before running combine
+ * @param sharedNodeDataList		- node data that needs to be send to another processor
+ *
+ */
+template<typename U, typename V> void BaseTree::setupLists(std::list<std::list<std::shared_ptr<std::pair <TreeNode<U, V>, TreeNode<U, V>> > > > &independentCombineList, std::list<std::list<std::shared_ptr<std::pair <int ,TreeNode<U, V>> > > > &sharedNodeDataList, std::list<std::list<std::shared_ptr<std::pair <TreeNode<U, V> ,TreeNode<U, V>> > > > &dependentCombineList){
+
+}
+
+/**
+ * @brief perfrom combine between the given list of node pairs
+ */
+template <std::string ComID, typename T, typename R> void PerformCombine(std::list<std::list<std::shared_ptr<std::pair <TreeNode<T, R>, TreeNode<T, R>> > > > &combineList, bool strict){
+	for(auto i = combineList.begin(); i != combineList.end(); i++){
+		for(auto it = (*i).begin(); it != (*i).end(); it++){
+			for(auto itt = (*it)->pGen.begin(); itt != (*it)->pGen.end(); itt++){
+				TreeCombine<ComID, T, R>(*it, *itt); //< call tree combine with dependency
+				//< note: necessary markings need to be done during combine
+				if(!(*it->dGen)){ //< all generates are considered for it
+					if(strict) Evolve<EvoID, T, R>(*it); //< update pVar with the combined value for positive dependency case
+					Collapse(*it); //< collapse from *it till a node with dGen > 1
+				}
+			}
+		}
+	}
+}
+
+/**
+ * @brief send and receive tree node data that is required by the current processor and other processors to perform the combine operations. this is done in a thread.
+ * @param sendData		- tree node data that is required to be sent to other mpi process
+ * @param receiveData	- list of combine pairs which is dependent upon tree node data present in other mpi process
+ * @return returns the thread Id
+ */
+template <std::string ComID, typename T, typename R> int SendReceiveTreeData(std::list<std::list<std::shared_ptr<std::pair <int ,TreeNode<U, V>> > > > &sendData, std::list<std::list<std::shared_ptr<std::pair <TreeNode<T, R>, TreeNode<T, R>> > > > &receiveData){
+
+}
+
+/**
+ * @brief wait until the send and receive operations have being completed
+ */
+void waitUntilSendReceiveCompletes(int threadId){
+
+}
 
 /** @brief This function do one pass of tree computation involving three steps: generate, combine and evolve. T: input data type, R: combined type
  *  @param strict if the computation has dependency on the newly combined values
@@ -171,27 +216,33 @@ template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::s
         if(some node has node.genset -> nullptr) 
             throw UnknownGenerateSetException;
     }else{
-        for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++){
-            (*it)->pGen->clear(); //< clear the generate and owner sets for all nodes before inserting
-            (*it)->pOwn->clear();
-        }
-        for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++)
-            (*it)->getGenSet(Generate<GenID, T, R>(*it)); //have all gensets of nodes figured out
-        if(strict) TreeNodeList.sort(); //< sort needs to be overloaded: this sorting needs to reflect how the tree nodes are removed from the residual tree
-        for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++){
-            for(auto itt = (*it)->pGen.begin(); itt != (*it)->pGen.end(); itt++){
-                TreeCombine<ComID, T, R>(*it, *itt); //< call tree combine with dependency
-                //< note: necessary markings need to be done during combine
-                if(!(*it->dGen)){ //< all generates are considered for it
-                    if(strict) Evolve<EvoID, T, R>(*it); //< update pVar with the combined value for positive dependency case
-                    Collapse(*it); //< collapse from *it till a node with dGen > 1
-                }
-            }
-        }
-        if(!strict){
-            for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++)
-                Evolve<EvoID, T, R>(*it); //< update pVar with the combined value all at once for reversed or non dependency cases
-        }
+    	for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++)
+			(*it)->getGenSet(Generate<GenID, T, R>(*it)); //have all gensets of nodes figured out
     }
+    std::list<std::list<std::shared_ptr<std::pair <U ,V> > > > independentCombineList;
+    std::list<std::list<std::shared_ptr<std::pair <int ,V> > > > sharedNodeDataList;
+    std::list<std::list<std::shared_ptr<std::pair <U ,V> > > > dependentCombineList;
+    setupLists(TreeNodeList, independentCombineList, sharedNodeDataList, dependentCombineList);
+
+    for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++){
+        (*it)->pGen->clear(); //< clear the generate and owner sets for all nodes before inserting
+        (*it)->pOwn->clear();
+    }
+
+    int sendReceiveId;
+    if (!strict){
+    	sendReceiveId=SendReceiveTreeData(sharedNodeDataList,dependentCombineList);
+	}
+    PerformCombine<ComID, T, R>(independentCombineList, strict);
+    if (strict){
+    	sendReceiveId=SendReceiveTreeData(sharedNodeDataList,dependentCombineList);
+	}
+    waitUntilSendReceiveCompletes(sendReceiveId);
+    PerformCombine<ComID, T, R>(dependentCombineList, strict);
+	if(!strict){
+		for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++)
+			Evolve<EvoID, T, R>(*it); //< update pVar with the combined value all at once for reversed or non dependency cases
+	}
+
 }
 
