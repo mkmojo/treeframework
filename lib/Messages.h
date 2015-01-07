@@ -1,7 +1,7 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H 1
 
-#include "Treedef.h"
+#include "Treedef.hpp"
 #include <ostream>
 
 class LocalTree;
@@ -43,8 +43,6 @@ class Message
         }
 
         static MessageType readMessageType(char* buffer);
-        virtual size_t serialize(char* buffer) = 0;
-        virtual size_t unserialize(const char* buffer);
 
         friend std::ostream& operator <<(std::ostream& out,
                 const Message& message)
@@ -56,27 +54,25 @@ class Message
 };
 
 /** Add a TreeNode. */
-class SeqAddMessage : public Message
+class BinAddMessage : public Message
 {
     public:
-        SeqAddMessage() { }
-        SeqAddMessage(const TreeNode& x) : Message(x) { }
+        BinAddMessage() { }
+        BinAddMessage(const TreeNode& x) : Message(x) { }
 
         void handle(int senderID, LocalTree& handler);
-        size_t serialize(char* buffer);
 
         static const MessageType TYPE = MT_ADD;
 };
 
-/** Remove a Kmer. */
-class SeqRemoveMessage : public Message
+/** Remove a TreeNode. */
+class BinRemoveMessage : public Message
 {
     public:
-        SeqRemoveMessage() { }
-        SeqRemoveMessage(const TreeNode& x) : Message(x) { }
+        BinRemoveMessage() { }
+        BinRemoveMessage(const TreeNode& x) : Message(x) { }
 
         void handle(int senderID, LocalTree& handler);
-        size_t serialize(char* buffer);
 
         static const MessageType TYPE = MT_REMOVE;
 };
@@ -95,8 +91,6 @@ class SetFlagMessage : public Message
         }
 
         void handle(int senderID, LocalTree& handler);
-        size_t serialize(char* buffer);
-        size_t unserialize(const char* buffer);
 
         static const MessageType TYPE = MT_SET_FLAG;
         uint8_t m_flag; // SeqFlag
@@ -104,11 +98,11 @@ class SetFlagMessage : public Message
 
 
 /** Request vertex properties. */
-class SeqDataRequest : public Message
+class BinDataRequest : public Message
 {
     public:
-        SeqDataRequest() { }
-        SeqDataRequest(const TreeNode& x, IDType group, IDType id)
+        BinDataRequest() { }
+        BinDataRequest(const TreeNode& x, IDType group, IDType id)
             : Message(seq), m_group(group), m_id(id) { }
 
         size_t getNetworkSize() const
@@ -118,8 +112,6 @@ class SeqDataRequest : public Message
         }
 
         void handle(int senderID, LocalTree& handler);
-        size_t serialize(char* buffer);
-        size_t unserialize(const char* buffer);
 
         static const MessageType TYPE = MT_BIN_DATA_REQUEST;
         IDType m_group;
@@ -127,13 +119,13 @@ class SeqDataRequest : public Message
 };
 
 /** The response to a request for vertex properties. */
-class SeqDataResponse : public Message
+class BinDataResponse : public Message
 {
     public:
-        SeqDataResponse() { }
-        SeqDataResponse(const TreeNode& x, IDType group, IDType id,
+        BinDataResponse() { }
+        BinDataResponse(const TreeNode& x, IDType group, IDType id,
                 ExtensionRecord& extRecord, int multiplicity) :
-            Message(seq), m_group(group), m_id(id),
+            Message(x), m_group(group), m_id(id),
             m_extRecord(extRecord), m_multiplicity(multiplicity) { }
 
         size_t getNetworkSize() const
@@ -144,8 +136,6 @@ class SeqDataResponse : public Message
         }
 
         void handle(int senderID, LocalTree& handler);
-        size_t serialize(char* buffer);
-        size_t unserialize(const char* buffer);
 
         static const MessageType TYPE = MT_BIN_DATA_RESPONSE;
         IDType m_group;
