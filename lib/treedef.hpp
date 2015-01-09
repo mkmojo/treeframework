@@ -17,6 +17,7 @@
 #include <memory>
 #include <exception>
 #include <vector>
+#include "MessageBuffer.h"
 
 namespace treedef {
     //> type declarations and short hands
@@ -29,6 +30,8 @@ namespace treedef {
     template <const std::string& EvoID, typename T, typename R> void Evolve(T*, R*);
     template <const std::string& ComID, typename T, typename R> void TreeCombine(NodePtr<T,R>, NodePtr<T,R>);
     template <typename T, typename R> class BaseTree;
+    MessageBuffer m_comm;
+    
 
     /** @brief This class stores customized error message
      *  can be derived further to include more detailed error
