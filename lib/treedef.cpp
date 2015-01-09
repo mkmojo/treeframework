@@ -11,25 +11,26 @@
  *  @copyright Rochester Software License
  */
 
-#include "treedef.hpp"
+#include "./treedef.hpp"
 using namespace treedef;
 
 /** @brief This function contructs a tree node. U: input data type, V: combined type
  *  @param pVar_in pointer to the input data structure
  */
-
-template<typename U, typename V> TreeNode::TreeNode(U* pVar_in):dGen(0),dOwn(0){
-    pVar = pVar_in; //< copy to shared pointer
-    pGen = new NodeSet<U, V>; //< initialize generate set
-    pOwn = new NodeSet<U, V>; //< initialize owner set
+template <typename U, typename V> 
+TreeNode<U, V>::TreeNode(U* pVar_in):dGen(0),dOwn(0) {
+    //pVar = pVar_in; //< copy to shared pointer
+    //pGen = new NodeSet<U, V>; //< initialize generate set
+    //pOwn = new NodeSet<U, V>; //< initialize owner set
 }
 
 
 /** @brief This function destroys a tree node. U: input data type, V: combined type
- */
-template<typename U, typename V> TreeNode::~TreeNode(){
-    pGen->clear(); //< clear the generate and owner sets
-    pOwn->clear();
+*/
+template<typename U, typename V> 
+TreeNode<U,V>::~TreeNode(){
+    //pGen->clear(); //< clear the generate and owner sets
+    //pOwn->clear();
 }
 
 
@@ -37,14 +38,15 @@ template<typename U, typename V> TreeNode::~TreeNode(){
  *  @param list_in pointer to the input list
  *  @return void
  */
-template<typename U, typename V> void TreeNode::getGenSet(NodeList<U,V>* list_in){
+template<typename U, typename V> 
+void TreeNode<U,V>::getGenSet(NodeList<U, V>* list_in){
     if(list_in->empty()) return;
     for(auto it = list_in.begin(); it != list_in.end(); it++){
-        pGen->insert(*it); //< insert list nodes into the generate set
+        this->pGen->insert(*it); //< insert list nodes into the generate set
         (*it)->pOwn->insert(this); //< insert this into the list nodes' own set
         (*it)->dOwn++; //< increment the owner's counter
     }
-    (*it)->dGen = list_in.size(); //< set generate counter to be the length of the list
+    this->dGen = list_in.size(); //< set generate counter to be the length of the list
 
     list_in->clear(); //< clear the list
     delete(list_in);
@@ -55,7 +57,7 @@ template<typename U, typename V> void TreeNode::getGenSet(NodeList<U,V>* list_in
  *  @param u pointer to the node being worked on
  *  @return NodeList
  */
-template <std::string GenID, typename T, typename R> NodeList<T,R>* Generate(NodePtr<T, R> u) {
+template <const std::string& GenID, typename T, typename R> NodeList<T,R>* Generate(NodePtr<T, R> u) {
     //> default generate function for tree:
     auto pChild = u->left;
     auto tmplist = new NodeList<T, R>;
@@ -63,17 +65,17 @@ template <std::string GenID, typename T, typename R> NodeList<T,R>* Generate(Nod
     //> push all children into the list
     do{
         tmplist->push_back(pChild);
-    } while(pChild.sibling != nullptr)
+    } while(pChild.sibling != nullptr);
     return tmplist;
-};
-   
+}
+
 
 /** @brief This function combines input data type stored in v into u. It needs to be specialized by the user. ComID: type of combine, T: input data type, R: combined type
  *  @param u pointer to the data structure storing the combined value
  *  @param v pointer to the data structure storing the input value
  *  @return void 
  */
-template <std::string ComID, typename T, typename R> void Combine(R* u, T* v) {
+template <const std::string& ComID, typename T, typename R> void Combine(R* u, T* v) {
     //>default: add all child node's input
     *u += *v;
 }
@@ -84,7 +86,7 @@ template <std::string ComID, typename T, typename R> void Combine(R* u, T* v) {
  *  @param v pointer to the data structure storing the input value
  *  @return void 
  */
-template<std::string EvoID, typename T, typename R> void Evolve(R* u, T* v) {
+template<const std::string& EvoID, typename T, typename R> void Evolve(R* u, T* v) {
     //>default: set the new input to be the old combine
     v = u;
 }
@@ -95,17 +97,18 @@ template<std::string EvoID, typename T, typename R> void Evolve(R* u, T* v) {
  *  @param v pointer to the data structure storing the input value
  *  @return void 
  */
-template<std::string ComID, typename T, typename R> void TreeCombine(NodePtr<T,R> u, NodePtr<T,R> v){
-        Combine<ComID, T, R>(u->pCom, v->pVar);
-        u->dGen--; //< decrease the gen counter and the own counter
-        v->dOwn--; //< a tree node with dOwn = 0 is considered to be removed from the residual tree
+template<const std::string& ComID, typename T, typename R> void TreeCombine(NodePtr<T,R> u, NodePtr<T,R> v){
+    Combine<ComID, T, R>(u->pCom, v->pVar);
+    u->dGen--; //< decrease the gen counter and the own counter
+    v->dOwn--; //< a tree node with dOwn = 0 is considered to be removed from the residual tree
 }
 
 
 /** @brief This function constructs a base type tree from an input data filestream. T: input data type, R: combined type
  *  @param file_in filestream pointing to input data
  */
-template<typename T, typename R> BaseTree::BaseTree(std::ifstream file_in){
+template<typename T, typename R> 
+BaseTree<T,R>::BaseTree(std::ifstream& file_in){
     auto tmp = std::getline(file_in);
     Root = new TreeNode<T,R>(tmp);
     while(tmp != nullptr){
@@ -119,7 +122,7 @@ template<typename T, typename R> BaseTree::BaseTree(std::ifstream file_in){
 /** @brief This function destroys a base type tree. T: input data type, R: combined type
  *  @param file_in filestream pointing to input data
  */
-template<typename T, typename R> BaseTree::~BaseTree(){
+template<typename T, typename R> BaseTree<>::~BaseTree(){
     TreeNodeList.clear(); //< delete all nodes associated with this tree
 }
 
@@ -165,10 +168,10 @@ template<typename T, typename R> void Collapse(NodePtr<T,R> u){
  *  @param GenID type of generate: default to null
  *  @return void
  */
-template<typename T, typename R> void BaseTree::tree_compute(bool strict, std::string ComID, std::string EvoID, std::string GenID = "null"){
+template<typename T, typename R> void BaseTree::tree_compute(bool strict, const std::string& ComID, const std::string& EvoID, const std::string& GenID = "null"){
     //> note: needs to figure out the direction of tree compute based on generate
     if(GenID == "null"){
-        if(some node has node.genset -> nullptr) 
+        if(std::string dummy_str= "some node has node.genset -> nullptr") 
             throw UnknownGenerateSetException;
     }else{
         for(auto it = TreeNodeList.begin(); it != TreeNodeList.end(); it++){

@@ -1,13 +1,17 @@
 //Tree Library code
 using namespace treedef;
 
-template class<typename T> OctTree : public BaseTree{
+template <typename T, typename R> 
+class OctTree : public BaseTree<T, R>{
     //implement specialized methods for OctTree
-}
+    public:
+        ~OctTree();
+};
 
-template class<typename T> RBTree : public BaseTree{
+template <typename T, typename R> 
+class RBTree : public BaseTree <T, R>{
     //implement specialized methods for RBTree
-}
+};
 
 template <typename T, typename R> NodeList* Generate<"UpwardAggregate">(NodePtr<T,R> u){
     //implement specialized upward aggregate generate set
