@@ -1,53 +1,63 @@
 #include "MessageBuffer.h"
 #include "Common/Options.h"
 #include <iostream>
+#include "treedef.hpp"
 
 using namespace std;
+using treedef::TreeNode;
+using treedef::NodeFlag;
 
 //allocate space for message queues
-MessageBuffer::MessageBuffer()
+template <typename U, typename V>
+MessageBuffer<U, V>::MessageBuffer()
 	: m_msgQueues(opt::numProc)
 {
 	for (unsigned i = 0; i < m_msgQueues.size(); i++)
 		m_msgQueues[i].reserve(MAX_MESSAGES);
 }
 
-void MessageBuffer::sendBinAddMessage(int nodeID, const TreeNode& x)
+template <typename U, typename V> 
+void MessageBuffer<U, V>::sendBinAddMessage(int nodeID, const TreeNode<U, V>& x)
 {
 	queueMessage(nodeID, new BinAddMessage(x), SM_BUFFERED);
 }
 
-void MessageBuffer::sendBinRemoveMessage(int nodeID, const TreeNode& x)
+template <typename U, typename V>
+void MessageBuffer<U, V>::sendBinRemoveMessage(int nodeID, const TreeNode<U, V>& x)
 {
 	queueMessage(nodeID, new BinRemoveMessage(x), SM_BUFFERED);
 }
 
 // Send a set flag message
-void MessageBuffer::sendSetFlagMessage(int nodeID,
-		const TreeNode& x, NodeFlag flag)
+template <typename U, typename V>
+void MessageBuffer<U,V>::sendSetFlagMessage(int nodeID,
+		const TreeNode<U, V>& x, NodeFlag flag)
 {
 	queueMessage(nodeID, new SetFlagMessage(x, flag), SM_BUFFERED);
 }
 
 // Send a binary data request
-void MessageBuffer::sendBinDataRequest(int nodeID,
-		IDType group, IDType id, const TreeNode& x)
+template <typename U, typename V>
+void MessageBuffer<U, V>::sendBinDataRequest(int nodeID,
+		IDType group, IDType id, const TreeNode<U, V>& x)
 {
 	queueMessage(nodeID,
 			new BinDataRequest(x, group, id), SM_IMMEDIATE);
 }
 
 // Send a binary data response
-void MessageBuffer::sendBinDataResponse(int nodeID,
-		IDType group, IDType id, const TreeNode& x,
-		ExtensionRecord extRec, int multiplicity)
+template <typename U, typename V>
+void MessageBuffer<U, V>::sendBinDataResponse(int nodeID,
+		IDType group, IDType id, const TreeNode<U, V>& x,
+		 int multiplicity)
 {
 	queueMessage(nodeID,
 			new BinDataResponse(x, group, id, extRec, multiplicity),
 			SM_IMMEDIATE);
 }
 
-void MessageBuffer::queueMessage(
+template <typename U, typename V>
+void MessageBuffer<U, V>::queueMessage(
 		int nodeID, Message* message, SendMode mode)
 {
 	if (opt::verbose >= 9)
@@ -56,7 +66,8 @@ void MessageBuffer::queueMessage(
 	checkQueueForSend(nodeID, mode);
 }
 
-void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
+template <typename U, typename V>
+void MessageBuffer<U, V>::checkQueueForSend(int nodeID, SendMode mode)
 {
 	size_t numMsgs = m_msgQueues[nodeID].size();
 	// check if the messages should be sent
@@ -91,7 +102,8 @@ void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
 }
 
 // Clear a queue of messages
-void MessageBuffer::clearQueue(int nodeID)
+template <typename U, typename V>
+void MessageBuffer<U,V>::clearQueue(int nodeID)
 {
 	size_t numMsgs = m_msgQueues[nodeID].size();
 	for(size_t i = 0; i < numMsgs; i++)
@@ -104,7 +116,8 @@ void MessageBuffer::clearQueue(int nodeID)
 }
 
 // Flush the message buffer by sending all messages that are queued
-void MessageBuffer::flush()
+template <typename U, typename V>
+void MessageBuffer<U, V>::flush()
 {
 	// Send all messages in all queues
 	for(size_t id = 0; id < m_msgQueues.size(); ++id)
@@ -115,7 +128,8 @@ void MessageBuffer::flush()
 }
 
 // Check if all the queues are empty
-bool MessageBuffer::transmitBufferEmpty() const
+template <typename U, typename V>
+bool MessageBuffer<U, V>::transmitBufferEmpty() const
 {
 	bool isEmpty = true;
 	for (MessageQueues::const_iterator it = m_msgQueues.begin();

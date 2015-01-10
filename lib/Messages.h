@@ -1,8 +1,11 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H 1
 
-#include "Treedef.hpp"
+#include "treedef.hpp"
 #include <ostream>
+
+using treedef::TreeNode;
+using treedef::NodeFlag;
 
 class LocalTree;
 
@@ -26,11 +29,12 @@ enum MessageOp
 typedef uint32_t IDType;
 
 /** The base class of all interprocess messages. */
+template<typename U, typename V>
 class Message
 {
     public:
         Message() { }
-        Message(const TreeNode& x) : m_node(x) { }
+        Message(const TreeNode<U, V>& x) : m_node(x) { }
         virtual ~Message() { }
 
         virtual void handle(
@@ -38,8 +42,8 @@ class Message
 
         virtual size_t getNetworkSize() const
         {
-            return sizeof (uint8_t) // MessageType
-                + TreeNode::serialSize();
+            return sizeof (uint8_t); // MessageType
+                //+ TreeNode<U, V>::serialSize();
         }
 
         static MessageType readMessageType(char* buffer);
@@ -50,15 +54,16 @@ class Message
             return out << message.m_seq.str() << '\n';
         }
 
-        TreeNode m_node;
+        TreeNode<U, V> m_node;
 };
 
 /** Add a TreeNode. */
-class BinAddMessage : public Message
+template <typename U, typename V>
+class BinAddMessage : public Message<U, V>
 {
     public:
         BinAddMessage() { }
-        BinAddMessage(const TreeNode& x) : Message(x) { }
+        BinAddMessage(const TreeNode<U, V>& x) : Message<U, V>(x) { }
 
         void handle(int senderID, LocalTree& handler);
 
@@ -66,11 +71,12 @@ class BinAddMessage : public Message
 };
 
 /** Remove a TreeNode. */
-class BinRemoveMessage : public Message
+template <typename U, typename V>
+class BinRemoveMessage : public Message<U,V>
 {
     public:
         BinRemoveMessage() { }
-        BinRemoveMessage(const TreeNode& x) : Message(x) { }
+        BinRemoveMessage(const TreeNode<U, V>& x) : Message<U,V>(x) { }
 
         void handle(int senderID, LocalTree& handler);
 
@@ -78,16 +84,17 @@ class BinRemoveMessage : public Message
 };
 
 /** Set a flag. */
-class SetFlagMessage : public Message
+template <typename U, typename V>
+class SetFlagMessage : public Message<U,V>
 {
     public:
         SetFlagMessage() { }
-        SetFlagMessage(const TreeNode& x, NodeFlag flag)
-            : Message(seq), m_flag(flag) { }
+        SetFlagMessage(const TreeNode<U, V>& x, NodeFlag flag)
+            : Message<U,V>(x), m_flag(flag) { }
 
         size_t getNetworkSize() const
         {
-            return Message::getNetworkSize() + sizeof m_flag;
+            return Message<U, V>::getNetworkSize() + sizeof m_flag;
         }
 
         void handle(int senderID, LocalTree& handler);
@@ -98,16 +105,17 @@ class SetFlagMessage : public Message
 
 
 /** Request vertex properties. */
-class BinDataRequest : public Message
+template <typename U, typename V>
+class BinDataRequest : public Message<U,V>
 {
     public:
         BinDataRequest() { }
-        BinDataRequest(const TreeNode& x, IDType group, IDType id)
-            : Message(seq), m_group(group), m_id(id) { }
+        BinDataRequest(const TreeNode<U, V>& x, IDType group, IDType id)
+            : Message<U,V>(x), m_group(group), m_id(id) { }
 
         size_t getNetworkSize() const
         {
-            return Message::getNetworkSize()
+            return Message<U, V>::getNetworkSize()
                 + sizeof m_group + sizeof m_id;
         }
 
@@ -119,20 +127,21 @@ class BinDataRequest : public Message
 };
 
 /** The response to a request for vertex properties. */
-class BinDataResponse : public Message
+template < typename U, typename V>
+class BinDataResponse : public Message<U,V>
 {
     public:
         BinDataResponse() { }
-        BinDataResponse(const TreeNode& x, IDType group, IDType id,
-                ExtensionRecord& extRecord, int multiplicity) :
-            Message(x), m_group(group), m_id(id),
-            m_extRecord(extRecord), m_multiplicity(multiplicity) { }
+        BinDataResponse(const TreeNode<U, V>& x, IDType group, IDType id,
+                 int multiplicity) :
+            Message<U, V>(x), m_group(group), m_id(id),
+             m_multiplicity(multiplicity) { }
 
         size_t getNetworkSize() const
         {
-            return Message::getNetworkSize()
+            return Message<U, V>::getNetworkSize()
                 + sizeof m_group + sizeof m_id
-                + sizeof m_extRecord + sizeof m_multiplicity;
+                + sizeof m_multiplicity;
         }
 
         void handle(int senderID, LocalTree& handler);
@@ -140,7 +149,6 @@ class BinDataResponse : public Message
         static const MessageType TYPE = MT_BIN_DATA_RESPONSE;
         IDType m_group;
         IDType m_id;
-        ExtensionRecord m_extRecord;
         uint16_t m_multiplicity;
 };
 

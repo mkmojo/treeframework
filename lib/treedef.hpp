@@ -19,9 +19,13 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
-//#include "MessageBuffer.h"
+#include "MessageBuffer.h"
 
 namespace treedef {
+    enum NodeFlag
+    {
+        NF_DELETE = 0x1,
+    };
     //> type declarations and short hands
     template <typename U, typename V> class TreeNode;
     template <typename U, typename V> using NodePtr = std::shared_ptr<TreeNode<U, V> >; //< this typedef only works for 0x
@@ -32,7 +36,7 @@ namespace treedef {
     template <const std::string& EvoID, typename T, typename R> void Evolve(T*, R*);
     template <const std::string& ComID, typename T, typename R> void TreeCombine(NodePtr<T,R>, NodePtr<T,R>);
     template <typename T, typename R> class BaseTree;
-    //MessageBuffer m_comm;
+    //MessageBuffer m_comm; // < comunication layer
 
 
     /** @brief This class stores customized error message

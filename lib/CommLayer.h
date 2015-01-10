@@ -21,7 +21,8 @@ enum APControl
     APC_BARRIER,
 };
 
-typedef std::vector<Message*> MessagePtrVector;
+template<typename U, typename V>
+using MessagePtrVector = std::vector<Message<U, V>* > ;
 
 struct ControlMessage
 {
@@ -31,6 +32,7 @@ struct ControlMessage
 };
 
 /** Interprocess communication and synchronization primitives. */
+template < typename U, typename V>
 class CommLayer
 {
     public:
@@ -72,7 +74,7 @@ class CommLayer
         void sendBufferedMessage(int destID, char* msg, size_t size);
 
         // Receive a buffered sequence of messages
-        void receiveBufferedMessage(MessagePtrVector& outmessages);
+        void receiveBufferedMessage(MessagePtrVector<U, V>& outmessages);
 
         uint64_t reduceInflight()
         {
