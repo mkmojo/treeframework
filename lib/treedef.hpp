@@ -1,3 +1,5 @@
+#ifndef TREEDEF_H
+#define TREEDEF_H 1
 /** @file treedef.hpp
  *
  *  @brief This header file contains base classes and default template definitions to use the tree framework
@@ -22,7 +24,7 @@
 #include "MessageBuffer.h"
 
 namespace treedef {
-    enum NodeFlag
+    enum NodeFlag // < mark to delete node
     {
         NF_DELETE = 0x1,
     };
@@ -279,3 +281,4 @@ namespace treedef {
             return counter;
         }
 }
+#endif
