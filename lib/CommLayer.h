@@ -131,13 +131,13 @@ namespace CommLayer {
         int dummy = sizeof(U); // < DEBUG 
         MPI_Cancel(&m_request);
         delete[] m_rxBuffer;
-        logger(1) << "Sent " << m_msgID << " control, "
-            << m_txPackets << " packets, "
-            << m_txMessages << " messages, "
-            << m_txBytes << " bytes. "
-            << "Received " << m_rxPackets << " packets, "
-            << m_rxMessages << " messages, "
-            << m_rxBytes << " bytes.\n";
+       // logger(1) << "Sent " << m_msgID << " control, "
+       //     << m_txPackets << " packets, "
+       //     << m_txMessages << " messages, "
+       //     << m_txBytes << " bytes. "
+       //     << "Received " << m_rxPackets << " packets, "
+       //     << m_rxMessages << " messages, "
+       //     << m_rxBytes << " bytes.\n";
     }
 
     /** Return the status of an MPI request.
@@ -183,9 +183,9 @@ namespace CommLayer {
     template <typename U, typename V>
     void CommLayer<U, V>::barrier()
     {
-        logger(4) << "entering barrier\n";
+        //logger(4) << "entering barrier\n";
         MPI_Barrier(MPI_COMM_WORLD);
-        logger(4) << "left barrier\n";
+        //logger(4) << "left barrier\n";
     }
 
     /** Broadcast a message. */
@@ -214,11 +214,11 @@ namespace CommLayer {
     template <typename U, typename V>
     long long unsigned CommLayer<U, V>::reduce(long long unsigned count)
     {
-        logger(4) << "entering reduce: " << count << '\n';
+        //logger(4) << "entering reduce: " << count << '\n';
         long long unsigned sum;
         MPI_Allreduce(&count, &sum, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM,
                 MPI_COMM_WORLD);
-        logger(4) << "left reduce: " << sum << '\n';
+        //logger(4) << "left reduce: " << sum << '\n';
         return sum;
     }
 
@@ -226,12 +226,12 @@ namespace CommLayer {
     template <typename U, typename V>
     vector<unsigned> CommLayer<U, V>::reduce(const vector<unsigned>& v)
     {
-        logger(4) << "entering reduce\n";
+        //logger(4) << "entering reduce\n";
         vector<unsigned> sum(v.size());
         MPI_Allreduce(const_cast<unsigned*>(&v[0]),
                 &sum[0], v.size(), MPI_UNSIGNED, MPI_SUM,
                 MPI_COMM_WORLD);
-        logger(4) << "left reduce\n";
+        //logger(4) << "left reduce\n";
         return sum;
     }
 
@@ -240,19 +240,19 @@ namespace CommLayer {
     vector<long unsigned> CommLayer<U, V>::reduce(
             const vector<long unsigned>& v)
     {
-        logger(4) << "entering reduce\n";
+        //logger(4) << "entering reduce\n";
         vector<long unsigned> sum(v.size());
         MPI_Allreduce(const_cast<long unsigned*>(&v[0]),
                 &sum[0], v.size(), MPI_UNSIGNED_LONG, MPI_SUM,
                 MPI_COMM_WORLD);
-        logger(4) << "left reduce\n";
+        //logger(4) << "left reduce\n";
         return sum;
     }
 
     template <typename U, typename V>
     uint64_t CommLayer<U, V>::sendCheckPointMessage(int argument)
     {
-        logger(4) << "checkpoint: " << argument << '\n';
+        //logger(4) << "checkpoint: " << argument << '\n';
         assert(opt::rank != 0);
         ControlMessage msg;
         msg.id = m_msgID++;

@@ -1,9 +1,9 @@
-#include "Common/Options.h"
+#include "Options.h"
 
 namespace opt {
 
 	/** MPI rank */
-	int rank = -1;
+	int rank = 0;
 
 	/** Number of MPI processes */
 	int numProc = 1;
