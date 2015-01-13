@@ -96,10 +96,11 @@ namespace treedef {
      *  @param GenID type of generate: default to null
      *  @return void
      */
-    template<typename T, typename R> void BaseTree<T, R>::tree_compute(bool strict, const std::string& ComID, const std::string& EvoID, const std::string& GenID = "null"){
+    template<typename T, typename R> void BaseTree<T, R>::tree_compute(bool strict, const std::string& ComID, const std::string& EvoID, const std::string& GenID){
         //> note: needs to figure out the direction of tree compute based on generate
         if(GenID == "null"){
-            if(std::string dummy_str = "some node has node.genset -> nullptr") {
+            if(false) {
+                //std::string dummy_str = "some node has node.genset -> nullptr"
                 //throw UnknownGenerateSetException;
             }
         }else{
@@ -154,12 +155,12 @@ namespace treedef {
     template<typename U, typename V> 
         void TreeNode<U,V>::getGenSet(NodeList<U, V>* list_in){
             if(list_in->empty()) return;
-            for(auto it = list_in.begin(); it != list_in.end(); it++){
-                this->pGen->insert(*it); //< insert list nodes into the generate set
-                (*it)->pOwn->insert(this); //< insert this into the list nodes' own set
-                (*it)->dOwn++; //< increment the owner's counter
-            }
-            this->dGen = list_in.size(); //< set generate counter to be the length of the list
+            //for(auto it = list_in.begin(); it != list_in.end(); it++){
+            //    this->pGen->insert(*it); //< insert list nodes into the generate set
+            //    (*it)->pOwn->insert(this); //< insert this into the list nodes' own set
+            //    (*it)->dOwn++; //< increment the owner's counter
+            //}
+            //this->dGen = list_in.size(); //< set generate counter to be the length of the list
 
             list_in->clear(); //< clear the list
             delete(list_in);
