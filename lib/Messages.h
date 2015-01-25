@@ -43,7 +43,7 @@ class Message
         virtual size_t getNetworkSize() const
         {
             return sizeof (uint8_t); // MessageType
-                //+ TreeNode<U, V>::serialSize();
+            //+ TreeNode<U, V>::serialSize();
         }
 
         static MessageType readMessageType(char* buffer);
@@ -133,9 +133,9 @@ class BinDataResponse : public Message<U,V>
     public:
         BinDataResponse() { }
         BinDataResponse(const TreeNode<U, V>& x, IDType group, IDType id,
-                 int multiplicity) :
+                int multiplicity) :
             Message<U, V>(x), m_group(group), m_id(id),
-             m_multiplicity(multiplicity) { }
+            m_multiplicity(multiplicity) { }
 
         size_t getNetworkSize() const
         {
