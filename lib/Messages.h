@@ -151,5 +151,4 @@ class BinDataResponse : public Message<U,V>
         IDType m_id;
         uint16_t m_multiplicity;
 };
-
 #endif
