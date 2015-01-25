@@ -7,6 +7,13 @@ namespace treedef{
 	template <typename U, typename V> class TreeNode<U, V>;
 	template <typename U, typename V> class LocalTree<U, V>;
 
+
+
+	using treedef::TreeNode;
+	using treedef::NodeFlag;
+
+	class LocalTree;
+
 	enum MessageType
 	{
 		MT_VOID,
@@ -27,32 +34,33 @@ namespace treedef{
 	typedef uint32_t IDType;
 
 	/** The base class of all interprocess messages. */
-	template<typename U, typename V> class Message
-	{
-		public:
-			Message() { }
-			Message(const TreeNode<U, V>& x) : m_node(x) { }
-			virtual ~Message() { }
+	template<typename U, typename V>
+		class Message
+		{
+			public:
+				Message() { }
+				Message(const TreeNode<U, V>& x) : m_node(x) { }
+				virtual ~Message() { }
 
-			virtual void handle(
-					int senderID, LocalTree<U, V>& handler) = 0;
+				virtual void handle(
+						int senderID, LocalTree& handler) = 0;
 
-			virtual size_t getNetworkSize() const
-			{
-				return sizeof (uint8_t); // MessageType
-				//+ TreeNode<U, V>::serialSize();
-			}
+				virtual size_t getNetworkSize() const
+				{
+					return sizeof (uint8_t); // MessageType
+					//+ TreeNode<U, V>::serialSize();
+				}
 
-			static MessageType readMessageType(char* buffer);
+				static MessageType readMessageType(char* buffer);
 
-			friend std::ostream& operator <<(std::ostream& out,
-					const Message& message)
-			{
-				return out << message.m_seq.str() << '\n';
-			}
+				friend std::ostream& operator <<(std::ostream& out,
+						const Message& message)
+				{
+					return out << message.m_seq.str() << '\n';
+				}
 
-			TreeNode<U, V> m_node;
-	};
+				TreeNode<U, V> m_node;
+		};
 
 	/** Add a TreeNode. */
 	template <typename U, typename V>
@@ -62,7 +70,7 @@ namespace treedef{
 			BinAddMessage() { }
 			BinAddMessage(const TreeNode<U, V>& x) : Message<U, V>(x) { }
 
-			void handle(int senderID, LocalTree<U, V>& handler);
+			void handle(int senderID, LocalTree& handler);
 
 			static const MessageType TYPE = MT_ADD;
 	};
@@ -75,7 +83,7 @@ namespace treedef{
 			BinRemoveMessage() { }
 			BinRemoveMessage(const TreeNode<U, V>& x) : Message<U,V>(x) { }
 
-			void handle(int senderID, LocalTree<U, V>& handler);
+			void handle(int senderID, LocalTree& handler);
 
 			static const MessageType TYPE = MT_REMOVE;
 	};
@@ -94,7 +102,7 @@ namespace treedef{
 				return Message<U, V>::getNetworkSize() + sizeof m_flag;
 			}
 
-			void handle(int senderID, LocalTree<U, V>& handler);
+			void handle(int senderID, LocalTree& handler);
 
 			static const MessageType TYPE = MT_SET_FLAG;
 			uint8_t m_flag; // SeqFlag
@@ -116,7 +124,7 @@ namespace treedef{
 					+ sizeof m_group + sizeof m_id;
 			}
 
-			void handle(int senderID, LocalTree<U, V>& handler);
+			void handle(int senderID, LocalTree& handler);
 
 			static const MessageType TYPE = MT_BIN_DATA_REQUEST;
 			IDType m_group;
@@ -141,7 +149,7 @@ namespace treedef{
 					+ sizeof m_multiplicity;
 			}
 
-			void handle(int senderID, LocalTree<U, V>& handler);
+			void handle(int senderID, LocalTree& handler);
 
 			static const MessageType TYPE = MT_BIN_DATA_RESPONSE;
 			IDType m_group;
