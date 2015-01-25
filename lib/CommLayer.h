@@ -24,10 +24,10 @@ namespace CommLayer {
     enum APControl
     {
         APC_SET_STATE,
-        APC_GLOBAL_SORT,
         APC_CHECKPOINT,
         APC_WAIT,
         APC_BARRIER,
+        APC_GLOBAL_SORT,
     };
 
     template<typename U, typename V>

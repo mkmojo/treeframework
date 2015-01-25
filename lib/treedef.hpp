@@ -255,31 +255,94 @@ namespace treedef {
             T setCounter(T);
             OctTree();
             ~OctTree();
+			size_t pumpNetwork();
+			
         private:
             T counter;
-    };
-    template <typename T, typename R> OctTree<T,R>::OctTree():counter(T()){
-        std::cout << "OctTree constructor" << std::endl;
+			MessageBuffer m_comm;
+			unsigned int m_numReachedCheckPoint;
+	};
 
-        // auto tmp = std::getline(file_in);
-        // Root = new TreeNode<T,R>(tmp);
-        // while(tmp != nullptr){
-        //     tmp = std::getline(file_in);
-        //     this->Insert(tmp); //< add to tree
-        //     TreeNodeList.pushback(tmp); //< add to nodelist
-        // }
-    }
+	/*  Receive and dispatch packets
+	 *  @return the number of packets received
+	 */
+	template <typename T, typename R> OctTree<T, R>::pumpNetwork(){
+		for(size_t count = 0;  ;count++){
+			int senderID;
+			APMessage msg = m_comm.checkMessage(senderID);
+			switch(msg)
+			{
+				case APM_CONTROL:
+					parseControlMessage(senderID);
+					return ++count;
+				case APM_BUFFED:
+					{
+						MessagePtrVector msgs;
+						// < receive buffed message, need to do pointer calculation
+						// < which is challenging
+						m_comm.receiveBufferedMessage(msgs);
+						for(auto iter = msg.begin(); 
+								iter != megs.end();iter++;){
+							//handle each message based on its type
+							(*iter)->handle(senderID, *this);
+							//delete the message
+							delete(*iter);
+							*iter = 0;
+						}
+						break;
+					}
+				case APM_NONE:
+					return count;
+			}
+		}
+	}
 
-    template <typename T, typename R>
-        OctTree<T,R>::~OctTree(){
-            std::cout<< " OctTree destructor " << std::endl;
-        }
+	template <typename T, typename R> OctTree<T, R>::parseControlMessage(int senderID){
+		ControlMessage controlMsg = m_comm.receiveControlMessage();
+		switch(controlMsg.msgType)
+		{
+			case APC_SET_STATE:
+				SetState(NetworkAssemblyState(controlMsg.argument));
+				break;
+			case APC_CHECKPOINT:
+				m_numReachedCheckpoint++;
+				m_checkpointSum += controlMsg.argument;
+				break;
+			case APC_WAIT:
+				SetState(NAS_WAITING);
+				m_comm.barrier();
+				break;
+			case APC_BARRIER:
+				assert(m_state == NAS_WAITING);
+				m_comm.barrier();
+				break;
+		}
+	}
 
 
-    template <typename T, typename R> 
-        T OctTree<T,R>::setCounter(T val){  
-            counter = val;
-            return counter;
-        }
+	template <typename T, typename R> OctTree<T,R>::OctTree():counter(T()){
+		std::cout << "OctTree constructor" << std::endl;
+
+		// auto tmp = std::getline(file_in);
+		// Root = new TreeNode<T,R>(tmp);
+		// while(tmp != nullptr){
+		//     tmp = std::getline(file_in);
+		//     this->Insert(tmp); //< add to tree
+		//     TreeNodeList.pushback(tmp); //< add to nodelist
+		// }
+	}
+
+	template <typename T, typename R>
+		OctTree<T,R>::~OctTree(){
+			std::cout<< " OctTree destructor " << std::endl;
+		}
+
+
+	template <typename T, typename R> 
+		T OctTree<T,R>::setCounter(T val){  
+			counter = val;
+			return counter;
+		}
 }
+#include "Messages.h"
 #endif

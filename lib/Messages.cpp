@@ -1,5 +1,5 @@
 #include "Messages.h"
-#include "Treedef.hpp"
+#include "treedef.hpp"
 #include <cstring>
 
 MessageType Message::readMessageType(char* buffer)
