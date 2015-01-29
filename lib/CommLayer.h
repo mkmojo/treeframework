@@ -18,7 +18,7 @@ struct ControlMessage
 	int64_t id;
 	APControl msgType;
 	int argument;
-}
+};
 
 class CommLayer
 {
@@ -37,8 +37,7 @@ class CommLayer
 		long long unsigned reduce(long long unsigned count);
 		std::vector<unsigned> reduce(const std::vector<unsigned>& v);
 		std::vector<unsigned> reduce(const std::vector<unsigned>& v);
-		std::vector<long unsigned> reduce( 
-				const std::vector<long unsigned>& v);
+		std::vector<long unsigned> reduce(const std::vector<long unsigned>& v);
 
 		void sendControlMessage(APControl m, int argument = 0);
 		void sendControlMessageToNode(int nodeID, APControl m, int argument = 0);
@@ -62,4 +61,4 @@ class CommLayer
 		uint64_t m_rxPackets;
 		uint64_t m_txMessages;
 		uint64_t m_txBytes;
-}
+};
