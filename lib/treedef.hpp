@@ -32,7 +32,7 @@ namespace treedef{
 	void Combine(double*, double*);
 	void Evolve(double*, double*);
 	void TreeCombine(NodePtr, NodePtr);
-	//MessageBuffer m_comm;
+	MessageBuffer m_comm;
 
 
 	class TreeNode {
