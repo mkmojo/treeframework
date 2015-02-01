@@ -7,6 +7,7 @@
  */
 namespace opt {
 	extern int numProc;
+    extern int treeHeight;
 	extern int rank;
 	extern int verbose;
 }

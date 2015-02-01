@@ -10,4 +10,7 @@ namespace opt {
 
 	/** Verbose output */
 	int verbose;
+
+    /** OctTree height **/
+    int treeHeight;
 }
