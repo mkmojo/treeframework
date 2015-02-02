@@ -20,7 +20,7 @@ class BaseTree
     public:
         virtual ~BaseTree() {}
         virtual void add() = 0;
-        virtual size_t pumpNetwokr() = 0;
+        virtual size_t pumpNetwork() = 0;
 };
 
 
@@ -33,6 +33,7 @@ class LocalOctTree : public LocalBaseTree
         void runControl();
         void run();
         void SetState(NetworkActionState newState);
+        void EndState();
         
         //Recieve and dispatch packets
         size_t pumpNetwork();
@@ -44,8 +45,76 @@ class LocalOctTree : public LocalBaseTree
         unsigned m_checkpointSum;
 }
 
+void LocalOctTree::parseControlMessage(int source)
+{
+    ControlMessage controlMsg = m_comm.receiveControlMessage();
+    switch(controlMsg.msgType)
+    {
+        case APC_SET_STATE:
+            SetState(NetworkActionState(controlMsg.argument));
+            break;
+        case APC_CHECKPOINT:
+            logger(4) << "checkpoint from " << source << ": "
+                << controlMsg.argument << '\n';
+            m_numReachedCheckpoint++;
+            m_checkpointSum += controlMsg.argument;
+            break;
+        case APC_WAIT:
+            SetState(NAS_WAITING);
+            m_comm.barrier();
+            break;
+        case APC_BARRIER:
+            assert(m_state == NAS_WAITING);
+            m_comm.barrier();
+            break;
+    }
+}
+
+
+size_t LocalOctTree::pumpNetwork()
+{
+    for( size_t count = 0; ;count++){
+        int senderID;
+        APMessage msg = m_comm.checkMessage(senderID);
+        switch(msg)
+        {
+            case APM_CONTROL:
+                {
+                    parseControlMessage(senderID);
+                    //deal with control message before 
+                    //any other type of message
+                    return ++count;
+                }
+            case APM_BUFFERED:
+                {
+                    //Deal all message here until done
+                    MessagePtrVector msgs;
+                    m_comm.receiveBufferedMessage(msgs);
+                    for(MessagePtrVector::iterator 
+                            iter = msgs.begin();
+                            iter != msgs.end(); iter++){
+                        //handle message based on its type
+                        (*iter)->handle(senderID, *this);
+                        delete (*iter);
+                        *iter = 0;
+                    }
+                    break;
+                }
+            case APM_NONE:
+                return count;
+        }
+    }
+}
+
+
+
+void LocalOctTree::EndState()
+{
+    m_comm.flush();
+}
+
 //
-// Set the state and clear counters
+// Set the action state 
 //
 void LocalOctTree::SetState(
         NetworkActionState newState)
@@ -108,7 +177,7 @@ void LocalOctTree::run()
                 {
                     loadPoints();
                     EndState();
-                    SetState();
+                    SetState(NAS_WAITING);
                     m_comm.sendCheckPointMessage();
                     break;
                 }

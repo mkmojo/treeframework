@@ -39,26 +39,14 @@ class MessageBuffer : public CommLayer
                     command, argument);
         }
 
+        bool transmitBufferEmpty() const;
+
         void flush();
+
+        APMessage checkMessage(int senderID);
     private:
         static const size_t MAX_MESSAGES = 100;
         MessageQueues m_msgQueues;
-
 };
 
-
-MessageBuffer::MessageBuffer() : m_msgQueues(opt::numProc)
-{
-    for (unsigned i = 0; i < m_msgQueues.size(); i++)
-        m_msgQueues[i].reserve(MAX_MESSAGES);
-}
-
-void MessageBuffer::flush()
-{
-    for(int i=0; i < m_msgQueues; i++)
-    {
-        // force the queue to send any pending messages
-        checkQueueForSend(id, SM_IMMEDIATE);
-    }
-}
 #endif
