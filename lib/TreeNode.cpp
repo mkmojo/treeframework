@@ -1,6 +1,6 @@
 #include "TreeNode.h"
 
-unsigned TreeNode::getNodeID(int TreeHeight) const
+void TreeNode::addPoint(Point& p)
 {
-    return 1;
+    points.push_back(p);
 }
