@@ -55,6 +55,7 @@ class TreeNode
         explicit TreeNode(const Point& seq);
         unsigned NodeID = 0;
         void addPoint(Point& p);
+        int getnumPoints(){return points.size()};
 
     private:
         vector<Point> points;

@@ -202,7 +202,4 @@ LocalOctTree::flush()
 {
     m_comm.flush();
 }
-
-
-
 #endif

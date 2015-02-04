@@ -1,6 +1,0 @@
-#include "TreeNode.h"
-
-TreeNode::addPoint(Point& p)
-{
-    points.puch_back(p);
-}
