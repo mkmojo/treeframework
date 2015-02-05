@@ -2,6 +2,7 @@
 #define MESSAGES_H 1
 
 #include "Treedef.h"
+#include "Point.h"
 
 class Message
 {
