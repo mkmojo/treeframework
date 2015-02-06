@@ -2,6 +2,7 @@
 #define MESSAGES_H 1
 
 #include "Treedef.h"
+#include "Point.h"
 
 class Message
 {
@@ -13,6 +14,6 @@ class Message
         virtual size_t unserialize(const char* buffer);
         virtual size_t serialize(char* buffer) = 0;
 
-        Point m_node;
+        Point m_point;
 };
 #endif

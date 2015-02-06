@@ -2,6 +2,7 @@
 #define TREEDEF_H 1
 #include "Log.h"
 #include "MessageBuffer.h"
+#include "LocalOctTreeArray.h" // for oct tree data points
 
 using namespace std;
 
@@ -202,7 +203,4 @@ LocalOctTree::flush()
 {
     m_comm.flush();
 }
-
-
-
 #endif
