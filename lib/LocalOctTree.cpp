@@ -1,5 +1,12 @@
 #include "LocalOctTree.h"
 
+void LocalOctTree::handle(int, const SeqAddMessage& message)
+{
+    assert(isLocal(message.m_point));
+    //need to use the local structure to put content in message to local m_data
+    m_point.add(message.m_point);
+}
+
 void LocalOctTree::parseControlMessage(int source)
 {
     ControlMessage controlMsg = m_comm.receiveControlMessage();

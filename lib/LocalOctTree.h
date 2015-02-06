@@ -1,5 +1,7 @@
 #ifndef LOCALOCTTREE_H
 #define LOCALOCTTREE_H 1
+#include "BaseTree.h"
+
 /* -------------------------- OctTree ---------------------------- */
 class LocalOctTree : public LocalBaseTree
 {
@@ -10,6 +12,7 @@ class LocalOctTree : public LocalBaseTree
         void run();
         void SetState(NetworkActionState newState);
         void EndState();
+        void handle(int, const SeqAddMessage& Message);
         
         //Recieve and dispatch packets
         size_t pumpNetwork();

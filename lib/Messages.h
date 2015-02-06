@@ -1,11 +1,11 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H 1
 
-#include "Treedef.h"
 #include "Point.h"
 
 enum MessageType
 {
+    MT_VOID,
     MT_ADD
 };
 
@@ -13,7 +13,7 @@ class Message
 {
     public:
         Message(){}
-        Message(const Point& point) : m_point(point){}
+        Message(const Point& p) : m_point(p){}
         static MessageType readMessageType(char* buffer);
         virtual void handle(int senderID, LocalOctTree& handler) = 0;
         virtual size_t unserialize(const char* buffer);
@@ -21,5 +21,19 @@ class Message
 
         Point m_point;
 };
+
+/** Add a Point. */
+class SeqAddMessage : public Message
+{
+    public:
+        SeqAddMessage() { }
+        SeqAddMessage(const Point& p) : Message(p) { }
+
+        void handle(int senderID, LocalOctTree& handler);
+        size_t serialize(char* buffer);
+
+        static const MessageType TYPE = MT_ADD;
+};
+
 
 #endif

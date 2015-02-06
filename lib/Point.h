@@ -3,6 +3,8 @@
 
 #include "Common/Options.h"
 #include <vector>
+#include <cstring> //for memcpy
+
 using namespace std;
 
 class Point
@@ -20,6 +22,19 @@ class Point
         unsigned cell_key;
 
         unsigned getCellID() const;
-};
+        size_t serialize(void* dest) const
+        {
+            memcpy(dest, m_point, sizeof m_point);
+            return sizeof m_point;
+        }
 
+        size_t unserialize(const void* src)
+        {
+            memcpy(m_point, src, sizeof m_point);
+            return sizeof m_point;
+        }
+        static const unsigned NUM_BYTES =  sizeof(double) * 4;
+    protected:
+        char m_point[NUM_BYTES];
+}; 
 #endif
