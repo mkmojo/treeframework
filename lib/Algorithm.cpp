@@ -28,4 +28,4 @@ namespace FMMAlgorithms
             cout<< "Unable to open file" << endl;
         }
     }
-}
+};

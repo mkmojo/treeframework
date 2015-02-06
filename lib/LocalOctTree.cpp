@@ -1,6 +1,7 @@
 #include <time.h> 
 #include "LocalOctTree.h"
 #include "Common/Options.h"
+#include "Algorithm.h"
 
 int LocalOctTree::computeProcID(const Point& p) const
 {
@@ -109,6 +110,13 @@ void LocalOctTree::SetState(
     // Reset the checkpoint counter
     m_numReachedCheckpoint = 0;
     m_checkpointSum = 0;
+}
+
+void LocalOctTree::loadPoints()
+{
+    Timer timer("LoadSequences");
+    if(opt::rank == 0)
+        FMMAlgorithms::loadPoints(this, opt::inFile);
 }
 
 //

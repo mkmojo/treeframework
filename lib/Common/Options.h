@@ -11,6 +11,7 @@ namespace opt {
     extern int domain;
 	extern int rank;
 	extern int verbose;
+    extern string inFile="file.txt"; //this need to be changed layter
 }
 
 #endif
