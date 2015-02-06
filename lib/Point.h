@@ -22,6 +22,7 @@ class Point
         unsigned cell_key;
 
         unsigned getCellID() const;
+        int getCode();
         size_t serialize(void* dest) const
         {
             memcpy(dest, m_point, sizeof m_point);
@@ -38,3 +39,4 @@ class Point
         char m_point[NUM_BYTES];
 }; 
 #endif
+    

@@ -1,10 +1,30 @@
+#include <time.h> 
 #include "LocalOctTree.h"
+#include "Common/Options.h"
+
+int LocalOctTree::computeProcID(const Point& p) const
+{
+    return p.getCode() % (unsigned) opt::numProc;
+}
 
 void LocalOctTree::handle(int, const SeqAddMessage& message)
 {
     assert(isLocal(message.m_point));
     //need to use the local structure to put content in message to local m_data
     m_point.add(message.m_point);
+}
+
+bool LocalOctTree::isLocal(const Point& p) const
+{
+    return computeProcID(p) == opt::rank;
+}
+
+void LocalOctTree::add(Point &p)
+{
+    if(isLocal(p))
+        m_data.add(p);
+    else
+        m_comm.sendSeqAddMessage(computeProcID(p), p);
 }
 
 void LocalOctTree::parseControlMessage(int source)

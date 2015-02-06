@@ -13,6 +13,7 @@ class LocalOctTree : public LocalBaseTree
         void SetState(NetworkActionState newState);
         void EndState();
         void handle(int, const SeqAddMessage& Message);
+        void add(Point& p);
         
         //Recieve and dispatch packets
         size_t pumpNetwork();
