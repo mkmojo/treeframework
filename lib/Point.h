@@ -8,12 +8,9 @@ using namespace std;
 class Point
 {
     public:
-        double x;
-        double y;
-        double z;
+        double x, y, z;
         double mass;
         explicit Point(double x, double y, double z):x(x), y(y), z(z){}
-
 
         unsigned x_key;
         unsigned y_key;

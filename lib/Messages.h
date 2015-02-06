@@ -4,6 +4,11 @@
 #include "Treedef.h"
 #include "Point.h"
 
+enum MessageType
+{
+    MT_ADD
+};
+
 class Message
 {
     public:
@@ -16,4 +21,5 @@ class Message
 
         Point m_point;
 };
+
 #endif
