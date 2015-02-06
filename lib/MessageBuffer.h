@@ -39,6 +39,8 @@ class MessageBuffer : public CommLayer
                     command, argument);
         }
 
+        void sendSeqAddMessage(int procID, const Point& p);
+
         bool transmitBufferEmpty() const;
 
         void flush();

@@ -22,3 +22,8 @@ size_t SeqAddMessage::unserialize(char* buffer)
     offset += m_point.unserialize(buffer + offset);
     return offset;
 }
+
+MessageType Messages::readMessageType(char* buffer)
+{
+    return (MessageType)*(uint8_t*)buffer;
+}

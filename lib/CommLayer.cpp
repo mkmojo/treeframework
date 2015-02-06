@@ -71,6 +71,11 @@ void CommLayer::receiveBufferedMessage(MessagePtrVector& outmessages)
 }
 
 
+void CommLayer::sendBufferedMessage(int destID, char* msg, size_t size)
+{
+    MPI_Send(msg, size, MPI_BYTE, destID, APM_BUFFERED, MPI_COMM_WORLD);
+}
+
 /** Send a control message to every other process. */
 void CommLayer::sendControlMessage(APControl m, int argument)
 {

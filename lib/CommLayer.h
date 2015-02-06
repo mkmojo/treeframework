@@ -46,6 +46,9 @@ class CommLayer
         // Send a message that the checkpoint has been reached
         uint64_t sendCheckPointMessage(int argument = 0);
 
+        // Send a buffered message
+        void sendBufferedMessage(int destID, char* msg, size_t size);
+
 
     private:
         uint64_t m_msgID;
