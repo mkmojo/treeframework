@@ -2,5 +2,5 @@
 
 namespace FMMAlgorithms
 {
-    loadNodes(LocalOctTree* localOctTree, std::string inFile); 
+    loadPoints(LocalOctTree* localOctTree, std::string inFile); 
 }

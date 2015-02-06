@@ -10,7 +10,9 @@ class Point
     public:
         double x, y, z;
         double mass;
-        explicit Point(double x, double y, double z):x(x), y(y), z(z){}
+        explicit Point(double x, 
+                double y, double z, double mass)
+            :x(x), y(y), z(z), mass(mass){}
 
         unsigned x_key;
         unsigned y_key;
