@@ -43,6 +43,7 @@ class LocalOctTree : public LocalBaseTree
         unsigned m_numReachedCheckpoint;
 
         unsigned m_checkpointSum;
+        Vector<DataPoint> m_data;
 }
 
 void LocalOctTree::parseControlMessage(int source)

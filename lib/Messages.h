@@ -13,6 +13,6 @@ class Message
         virtual size_t unserialize(const char* buffer);
         virtual size_t serialize(char* buffer) = 0;
 
-        Node m_node;
+        Point m_node;
 };
 #endif

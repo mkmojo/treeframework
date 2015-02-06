@@ -19,17 +19,18 @@ int main(int argc, char** argv)
     gethostname(hostname, sizeof hostname);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    if(opt::rank == 0 ){
-        LocalOctTree localTree;
-        localTree.runControl();
-    }else{
-        LocalOctTree localTree;
-        localTree.run();
-    }
+//    if(opt::rank == 0 ){
+//        LocalOctTree localTree;
+//        localTree.runControl();
+//    }else{
+//        LocalOctTree localTree;
+//        localTree.run();
+//    }
 
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();
 
+    cout << "DEBUG: " << opt::rank << endl;
     if(opt::rank == 0){
         cout << "Done." <<endl;
     }
