@@ -28,9 +28,15 @@ class Point
             return sizeof m_point;
         }
 
-        //copy bytes from src to point data
+        //copy bytes from src buffer region to point m_point char arrary
         size_t unserialize(const void* src)
         {
+            //This is now ugly, should be done through a function
+            memcpy(&x, m_point, sizeof(double));
+            memcpy(&y, m_point + sizeof(double), sizeof y);
+            memcpy(&z, m_point + sizeof(double) * 2, sizeof z);
+            memcpy(&mass, m_point + sizeof(double) * 3, sizeof mass);
+
             memcpy(m_point, src, sizeof m_point);
             return sizeof m_point;
         }
