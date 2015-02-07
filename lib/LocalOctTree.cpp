@@ -53,7 +53,6 @@ void LocalOctTree::parseControlMessage(int source)
     }
 }
 
-
 size_t LocalOctTree::pumpNetwork()
 {
     for( size_t count = 0; ;count++){
