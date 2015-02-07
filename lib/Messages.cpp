@@ -25,10 +25,6 @@ size_t SeqAddMessage::unserialize(char* buffer)
 }
 */
 
-void handle(int senderID, LocalOctTree& handler)
-{
-    handler.handle(senderID, *this);
-}
 
 MessageType Message::readMessageType(char* buffer)
 {

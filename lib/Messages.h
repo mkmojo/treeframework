@@ -2,6 +2,7 @@
 #define MESSAGES_H 1
 
 #include "Point.h"
+#include <stdint.h> //for unit8_t
 
 //avoid circular header dependency
 class LocalOctTree;
