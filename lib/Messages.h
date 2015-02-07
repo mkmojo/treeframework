@@ -2,8 +2,8 @@
 #define MESSAGES_H 1
 
 #include "Point.h"
-#include "LocalOctTree.h"
 
+//avoid circular header dependency
 class LocalOctTree;
 
 enum MessageType
