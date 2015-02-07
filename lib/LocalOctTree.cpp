@@ -38,8 +38,8 @@ void LocalOctTree::parseControlMessage(int source)
             SetState(NetworkActionState(controlMsg.argument));
             break;
         case APC_CHECKPOINT:
-            logger(4) << "checkpoint from " << source << ": "
-                << controlMsg.argument << '\n';
+            //logger(4) << "checkpoint from " << source << ": "
+                //<< controlMsg.argument << '\n';
             m_numReachedCheckpoint++;
             m_checkpointSum += controlMsg.argument;
             break;
@@ -100,8 +100,8 @@ void LocalOctTree::EndState()
 void LocalOctTree::SetState(
         NetworkActionState newState)
 {
-    logger(2) << "SetState " << newState
-        << " (was " << m_state << ")\n";
+    //logger(2) << "SetState " << newState
+        //<< " (was " << m_state << ")\n";
 
     // Ensure there are no pending messages
     assert(m_comm.transmitBufferEmpty());

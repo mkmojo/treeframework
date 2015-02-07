@@ -47,8 +47,13 @@ class MessageBuffer : public CommLayer
         bool transmitBufferEmpty() const;
 
         void flush();
+        void clearQueue(int procID);
+        void queueMessage
+            (int nodeID, Message* message, SendMode mode);
 
-        APMessage checkMessage(int senderID);
+        //APMessage checkMessage(int senderID);
+
+        void checkQueueForSend(int procID, SendMode mode);
     private:
         static const size_t MAX_MESSAGES = 100;
         MessageQueues m_msgQueues;

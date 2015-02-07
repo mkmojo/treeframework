@@ -17,7 +17,7 @@ class Message
 {
     public:
         Message(){}
-        virtual ~Message() {}
+        virtual ~Message(){}
         Message(const Point& p) : m_point(p){}
         static MessageType readMessageType(char* buffer);
         virtual void handle(int senderID, LocalOctTree& handler) = 0; 
@@ -29,6 +29,7 @@ class Message
         virtual size_t unserialize(const char* buffer);
         virtual size_t serialize(char* buffer) = 0;
 
+        
         Point m_point;
 };
 

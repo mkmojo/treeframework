@@ -1,8 +1,11 @@
 #include "CommLayer.h"
+#include "Common/Log.h"
+#include <assert.h>
+#include <mpi.h>
 
-static const unsigned RX_BUFFSIZE = 16*1024;
+static const unsigned RX_BUFSIZE = 16*1024;
 
-void CommLayer::receiveControlMessage()
+ControlMessage CommLayer::receiveControlMessage()
 {
     int flag;
     MPI_Status status;
@@ -16,8 +19,8 @@ void CommLayer::receiveControlMessage()
     assert(count == sizeof msg);
     memcpy(&msg, m_rxBuffer, sizeof msg);
     assert(m_request == MPI_REQUEST_NULL);
-    MPI_Irecv(m_rxBuffer, RX_BUSIZE,
-            MPI_BYTE, MPI_ANY_SOURDE, MPI_ANY_TAG, MPI_COMM_WORLD,
+    MPI_Irecv(m_rxBuffer, RX_BUFSIZE,
+            MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
             &m_request);
     return msg;
 }
@@ -101,7 +104,7 @@ uint64_t CommLayer::sendControlMessageToNode(int nodeID,
 
 uint64_t CommLayer::sendCheckPointMessage(int argument)
 {
-    logger(4) << "checkpoint: " << argument << '\n';
+    //logger(4) << "checkpoint: " << argument << '\n';
     assert(opt::rank != 0);
     ControlMessage msg;
     msg.id = m_msgID++;
@@ -130,13 +133,27 @@ CommLayer::~CommLayer()
 {
     MPI_Cancel(&m_request);
     delete[] m_rxBuffer;
-    logger(1) << "Sent " << m_msgID << " control, "
-        << m_txPackets << " packets, "
-        << m_txMessages << " messages, "
-        << m_txBytes << " bytes. "
-        << "Received " << m_rxPackets << " packets, "
-        << m_rxMessages << " messages, "
-        << m_rxBytes << " bytes.\n";
+    ////logger(1) << "Sent " << m_msgID << " control, "
+    //    << m_txPackets << " packets, "
+    //    << m_txMessages << " messages, "
+    //    << m_txBytes << " bytes. "
+    //    << "Received " << m_rxPackets << " packets, "
+    //    << m_rxMessages << " messages, "
+    //    << m_rxBytes << " bytes.\n";
+}
+
+static bool request_get_status(const MPI_Request& req, MPI_Status& status)
+{
+    int flag;
+    MPI_Request_get_status(req, &flag, &status);
+    //Work around a bug prestn in Open MPI 1.3.3
+    //and eailer.
+    //MPI_Request_get_status may return false on
+    //the first call even though a message
+    //is waiting. The second call should work.
+    if(!flag)
+        MPI_Request_get_status(req, &flag, &status);
+    return flag;
 }
 
 APMessage CommLayer::checkMessage(int& senderID)
@@ -144,7 +161,7 @@ APMessage CommLayer::checkMessage(int& senderID)
     MPI_Status status;
     bool flag = request_get_status(m_request, status);
     if (flag)
-        sendID = status.MPI_SOURCE;
+        senderID = status.MPI_SOURCE;
     return flag ? (APMessage)status.MPI_TAG : APM_NONE;
 }
 
@@ -152,7 +169,7 @@ APMessage CommLayer::checkMessage(int& senderID)
 /** Block until all processes have reached this routine. */
 void CommLayer::barrier()
 {
-    logger(4) << "entering barrier\n";
+    //logger(4) << "entering barrier\n";
     MPI_Barrier(MPI_COMM_WORLD);
-    logger(4) << "left barrier\n";
+    //logger(4) << "left barrier\n";
 }

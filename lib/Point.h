@@ -4,10 +4,10 @@
 #include "Common/Options.h"
 #include <stdio.h>
 #include <vector>
+#include <string>
 #include <cstring> // for memcpy
 #define NUM_SLOT 4 // Need to be changed to adjust automatically
 
-using namespace std;
 
 class Point
 {
@@ -44,6 +44,7 @@ class Point
             return sizeof m_point;
         }
         static const unsigned NUM_BYTES =  sizeof(double) * NUM_SLOT;
+        std::string str() const;
         void print_m_point()
         {
             double x;

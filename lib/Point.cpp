@@ -1,4 +1,6 @@
 #include "Point.h"
+#include <string>
+using namespace std;
 
 //unsigned Point::getCellID() const
 //{
@@ -15,3 +17,5 @@ unsigned Point::getCode() const
         sum = prime * sum + m_point[i];
     return sum;
 }
+
+

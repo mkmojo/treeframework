@@ -15,18 +15,18 @@ size_t SeqAddMessage::serialize(char* buffer)
     return offset;
 }
 
-/*
-size_t SeqAddMessage::unserialize(char* buffer)
+MessageType Message::readMessageType(char* buffer)
+{
+    return (MessageType)*(uint8_t*)buffer;
+}
+
+size_t Message::unserialize(const char* buffer)
 {
     size_t offset = 0;
     offset++; //Message Type
     offset += m_point.unserialize(buffer + offset);
     return offset;
 }
-*/
 
 
-MessageType Message::readMessageType(char* buffer)
-{
-    return (MessageType)*(uint8_t*)buffer;
-}
+

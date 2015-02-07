@@ -24,10 +24,12 @@ LFLAGS = -L/u/qqiu/usr/local/mpich-3.1.3/lib  -L../lib
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
-LIBS = -lmylib -lm
+LIBS = 
 
 # define the C source files
-SRCS = Point.cpp Messages.cpp CommLayer.cpp MessageBuffer.cpp LocalOctTree.cpp Algorithm.cpp ParallelFMM.cpp 
+SRCS = Point.cpp Messages.cpp CommLayer.cpp MessageBuffer.cpp \
+	   LocalOctTree.cpp Algorithm.cpp ParallelFMM.cpp \
+	   Common/Options.cpp
 
 # define the C object files 
 #

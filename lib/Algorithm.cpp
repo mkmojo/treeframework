@@ -13,7 +13,7 @@ namespace FMMAlgorithms
     void loadPoints(LocalOctTree* localOctTree, string inFile)
     {
         //Timer timer("LoadSequences " + inFile);
-        logger(0) << "Reading `" << inFile << "'...\n";
+        //logger(0) << "Reading `" << inFile << "'...\n";
         ifstream particleFile("inFile.txt"); // This need to be modifed to take in any file name
 
         if(particleFile.is_open()) {

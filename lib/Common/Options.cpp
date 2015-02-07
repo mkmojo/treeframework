@@ -14,6 +14,4 @@ namespace opt {
 
     /** OctTree height **/
     int treeHeight;
-
-    char inFile = "file.txt";
 }
