@@ -4,6 +4,13 @@
 #include "Point.h"
 #include <vector>
 
+enum NetworkActionState
+{
+    NAS_LOADING, // loading points
+    NAS_LOAD_COMPLETE, // loading is complete
+    NAS_WAITING, // non-control process is waiting
+    NAS_DONE // finished, clean up and exit
+};
 /* -------------------------- OctTree ---------------------------- */
 class LocalOctTree : public BaseTree
 {
