@@ -4,6 +4,7 @@ class MessageBuffer;
 
 #include "CommLayer.h"
 #include <vector>
+#include <assert.h>
 
 using MsgBuffer = std::vector<Message*>;
 using MessageQueues = std::vector<MsgBuffer>;

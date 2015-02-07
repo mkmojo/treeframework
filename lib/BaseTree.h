@@ -1,6 +1,6 @@
 #ifndef BASETREE_H
 #define BASETREE_H 1
-#include "Log.h"
+#include "Common/Log.h"
 #include "MessageBuffer.h"
 
 using namespace std;

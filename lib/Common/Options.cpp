@@ -1,4 +1,5 @@
 #include "Options.h"
+#include <iostream>
 
 namespace opt {
 
@@ -13,4 +14,6 @@ namespace opt {
 
     /** OctTree height **/
     int treeHeight;
+
+    std::string inFile = "file.txt";
 }

@@ -2,6 +2,7 @@
 #define MESSAGES_H 1
 
 #include "Point.h"
+#include "LocalOctTree.h"
 
 enum MessageType
 {
@@ -19,10 +20,9 @@ class Message
 
         virtual size_t getNetworkSize() const
         {
-            return sizeof (unit8_t)
+            return sizeof (uint8_t)
                 + Point::serialSize();
         }
-        static MessageType readMessageType(char* buffer);
         virtual size_t unserialize(const char* buffer);
         virtual size_t serialize(char* buffer) = 0;
 

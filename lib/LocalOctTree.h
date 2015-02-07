@@ -3,7 +3,7 @@
 #include "BaseTree.h"
 
 /* -------------------------- OctTree ---------------------------- */
-class LocalOctTree : public LocalBaseTree
+class LocalOctTree : public BaseTree
 {
     public:
         LocalOctTree()
@@ -14,15 +14,18 @@ class LocalOctTree : public LocalBaseTree
         void EndState();
         void handle(int, const SeqAddMessage& Message);
         void add(Point& p);
+        void pumpFlush();
+        bool checkpointReached() const;
         
         //Recieve and dispatch packets
         size_t pumpNetwork();
     private:
+        void loadPoints();
         NetworkActionState m_state;
         MessageBuffer m_comm;
         unsigned m_numReachedCheckpoint;
 
         unsigned m_checkpointSum;
         Vector<DataPoint> m_data;
-}
+};
 #endif

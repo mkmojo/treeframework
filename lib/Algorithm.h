@@ -1,6 +1,6 @@
 #ifndef ALGORITHM_H
 #define ALGORITHM_H 1
-#include "treedef.h"
+#include "LocalOctTree.h"
 
 namespace FMMAlgorithms
 {

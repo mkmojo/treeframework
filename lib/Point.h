@@ -21,6 +21,7 @@ class Point
                 memcpy(m_point + sizeof(double)*2, &z, sizeof z);
                 memcpy(m_point + sizeof(double)*3, &mass, sizeof mass);
             }
+        static unsigned serialSize() {return NUM_BYTES;}
         //copy point data to memory location starting from dest;
         size_t serialize(void* dest) const
         {

@@ -49,6 +49,8 @@ class CommLayer
         // Send a buffered message
         void sendBufferedMessage(int destID, char* msg, size_t size);
 
+        void receiveBufferedMessage(MessagePtrVector& outmessages);
+
 
     private:
         uint64_t m_msgID;

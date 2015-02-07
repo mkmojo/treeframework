@@ -53,6 +53,26 @@ void LocalOctTree::parseControlMessage(int source)
     }
 }
 
+void LocalOctTree::parseControlMessage(int source)
+{
+    ControlMessage controlMsg = m_comm.receiveBufferedMessage();
+    switch(controlMsg.msgType)
+    {
+        case APC_SET_STATE:
+            SetState(NetworkActionState(controlMsg.argument));
+            break;
+        case APC_CHECKPOINT:
+            cout << "checkpoint from " << source << ": " 
+                << controlMsg.argument << endl;
+            m_numReachedCheckpoint++;
+            break;
+        case APC_WAIT:
+            SetState(NAS_WAITING);
+            m_comm.barrier();
+            break;
+    }
+}
+
 size_t LocalOctTree::pumpNetwork()
 {
     for( size_t count = 0; ;count++){
@@ -113,9 +133,14 @@ void LocalOctTree::SetState(
 
 void LocalOctTree::loadPoints()
 {
-    Timer timer("LoadSequences");
+    //Timer timer("LoadSequences");
     if(opt::rank == 0)
         FMMAlgorithms::loadPoints(this, opt::inFile);
+}
+
+bool LocalOctTree::checkpointReached() const
+{
+    return m_numReachedCheckpoint == (unsigned) opt::numProc;
 }
 
 //
@@ -125,7 +150,7 @@ void LocalOctTree::runControl()
 {
     SetState(NAS_LOADING);
     while(m_state != NAS_DONE){
-        swicth(m_state){
+        switch(m_state){
             case NAS_LOADING:
                 {
                     loadPoints();
@@ -183,7 +208,9 @@ void LocalOctTree::run()
     }
 }
 
-LocalOctTree::flush()
+//should be modified to return a difference
+void LocalOctTree::pumpFlush()
 {
+    pumpNetwork();
     m_comm.flush();
 }

@@ -4,14 +4,14 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include "treedef.h"
-#include "Log.h"
+#include "LocalOctTree.h"
+#include "Common/Log.h"
 using namespace std;
 namespace FMMAlgorithms
 {
-    void loadNodes(LocalOctTree* localOctTree, string inFile)
+    void loadPoints(LocalOctTree* localOctTree, string inFile)
     {
-        Timer timer("LoadSequences " + inFile);
+        //Timer timer("LoadSequences " + inFile);
         logger(0) << "Reading `" << inFile << "'...\n";
         ifstream particleFile(inFile);
 
