@@ -15,6 +15,7 @@ size_t SeqAddMessage::serialize(char* buffer)
     return offset;
 }
 
+/*
 size_t SeqAddMessage::unserialize(char* buffer)
 {
     size_t offset = 0;
@@ -22,8 +23,14 @@ size_t SeqAddMessage::unserialize(char* buffer)
     offset += m_point.unserialize(buffer + offset);
     return offset;
 }
+*/
 
-MessageType Messages::readMessageType(char* buffer)
+void handle(int senderID, LocalOctTree& handler)
+{
+    handler.handle(senderID, *this);
+}
+
+MessageType Message::readMessageType(char* buffer)
 {
     return (MessageType)*(uint8_t*)buffer;
 }

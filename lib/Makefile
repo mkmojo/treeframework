@@ -27,8 +27,7 @@ LFLAGS = -L/u/qqiu/usr/local/mpich-3.1.3/lib  -L../lib
 LIBS = -lmylib -lm
 
 # define the C source files
-SRCS = LocalOctTree.cpp Algorithm.cpp CommLayer.cpp MessageBuffer.cpp \
-	   Messages.cpp ParallelFMM.cpp Point.cpp
+SRCS = Point.cpp Messages.cpp CommLayer.cpp MessageBuffer.cpp LocalOctTree.cpp Algorithm.cpp ParallelFMM.cpp 
 
 # define the C object files 
 #

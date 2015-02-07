@@ -3,11 +3,12 @@
 class MessageBuffer;
 
 #include "CommLayer.h"
+#include "Messages.h"
 #include <vector>
 #include <assert.h>
 
-using MsgBuffer = std::vector<Message*>;
-using MessageQueues = std::vector<MsgBuffer>;
+typedef std::vector<Message*> MsgBuffer;
+typedef std::vector<MsgBuffer> MessageQueues;
 
 enum SendMode
 {
@@ -20,10 +21,10 @@ class MessageBuffer : public CommLayer
     public:
         MessageBuffer();
 
-        void sendCheckPointMessage(int argument = 0);
+        void sendCheckPointMessage(int argument = 0)
         {
             assert(transmitBufferEmpty());
-            CommLayer::sendCheckPointeMessage(argument);
+            CommLayer::sendCheckPointMessage(argument);
         }
 
         void sendControlMessage(APControl command, int argument = 0)
@@ -36,11 +37,12 @@ class MessageBuffer : public CommLayer
                 APControl command, int argument = 0)
         {
             assert(transmitBufferEmpty());
-            CommLayer::sendControlMessageToNode(dest,
-                    command, argument);
+            CommLayer::sendControlMessageToNode
+                (dest, command, argument);
         }
 
-        void sendSeqAddMessage(int procID, const Point& p);
+        void sendSeqAddMessage(int procID, 
+                const Point& p);
 
         bool transmitBufferEmpty() const;
 

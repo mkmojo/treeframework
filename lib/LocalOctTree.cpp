@@ -2,6 +2,7 @@
 #include "LocalOctTree.h"
 #include "Common/Options.h"
 #include "Algorithm.h"
+#include "Point.h"
 
 int LocalOctTree::computeProcID(const Point& p) const
 {
@@ -12,7 +13,7 @@ void LocalOctTree::handle(int, const SeqAddMessage& message)
 {
     assert(isLocal(message.m_point));
     //need to use the local structure to put content in message to local m_data
-    m_point.add(message.m_point);
+    m_data.push_back(message.m_point);
 }
 
 bool LocalOctTree::isLocal(const Point& p) const
@@ -20,10 +21,10 @@ bool LocalOctTree::isLocal(const Point& p) const
     return computeProcID(p) == opt::rank;
 }
 
-void LocalOctTree::add(Point &p)
+void LocalOctTree::add(const Point &p)
 {
     if(isLocal(p))
-        m_data.add(p);
+        m_data.push_back(p);
     else
         m_comm.sendSeqAddMessage(computeProcID(p), p);
 }
@@ -53,25 +54,6 @@ void LocalOctTree::parseControlMessage(int source)
     }
 }
 
-void LocalOctTree::parseControlMessage(int source)
-{
-    ControlMessage controlMsg = m_comm.receiveBufferedMessage();
-    switch(controlMsg.msgType)
-    {
-        case APC_SET_STATE:
-            SetState(NetworkActionState(controlMsg.argument));
-            break;
-        case APC_CHECKPOINT:
-            cout << "checkpoint from " << source << ": " 
-                << controlMsg.argument << endl;
-            m_numReachedCheckpoint++;
-            break;
-        case APC_WAIT:
-            SetState(NAS_WAITING);
-            m_comm.barrier();
-            break;
-    }
-}
 
 size_t LocalOctTree::pumpNetwork()
 {
@@ -135,7 +117,7 @@ void LocalOctTree::loadPoints()
 {
     //Timer timer("LoadSequences");
     if(opt::rank == 0)
-        FMMAlgorithms::loadPoints(this, opt::inFile);
+        FMMAlgorithms::loadPoints(this, "" /*opt::inFile*/); 
 }
 
 bool LocalOctTree::checkpointReached() const

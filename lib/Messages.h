@@ -4,6 +4,8 @@
 #include "Point.h"
 #include "LocalOctTree.h"
 
+class LocalOctTree;
+
 enum MessageType
 {
     MT_VOID,
@@ -14,10 +16,10 @@ class Message
 {
     public:
         Message(){}
+        virtual ~Message() {}
         Message(const Point& p) : m_point(p){}
         static MessageType readMessageType(char* buffer);
-        virtual void handle(int senderID, LocalOctTree& handler) = 0;
-
+        virtual void handle(int senderID, LocalOctTree& handler) = 0; 
         virtual size_t getNetworkSize() const
         {
             return sizeof (uint8_t)
@@ -41,6 +43,4 @@ class SeqAddMessage : public Message
 
         static const MessageType TYPE = MT_ADD;
 };
-
-
 #endif

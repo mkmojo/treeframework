@@ -1,8 +1,9 @@
 #ifndef COMMLAYER_H
 #define COMMLAYER_H 1
+
+#include "Messages.h"
 #include <mpi.h>
 #include <vector>
-#include "Messages.h"
 
 enum APMessage
 {
@@ -19,7 +20,7 @@ enum APControl
     APC_BARRIER,
 };
 
-using MessagePtrVector = std::vector<Message*>;
+typedef std::vector<Message*> MessagePtrVector;
 
 struct ControlMessage
 {
@@ -40,6 +41,8 @@ class CommLayer
         // Send a control message
         void sendControlMessage(APControl m, int argument = 0 );
 
+        uint64_t sendControlMessageToNode(int nodeID,
+                APControl command, int argument = 0);
         // Receive a control message
         ControlMessage receiveControlMessage();
 

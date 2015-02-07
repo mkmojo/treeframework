@@ -2,6 +2,7 @@
 #define POINT_H 1
 
 #include "Common/Options.h"
+#include <stdio.h>
 #include <vector>
 #include <cstring> // for memcpy
 #define NUM_SLOT 4 // Need to be changed to adjust automatically
@@ -13,6 +14,7 @@ class Point
     public:
         double x, y, z;
         double mass;
+        Point () {}
         explicit Point(double x, 
                 double y, double z, double mass)
             :x(x), y(y), z(z), mass(mass){
@@ -50,6 +52,8 @@ class Point
                 printf("%lf\n",x);
             }
         };
+
+        unsigned getCode() const;
     protected:
         char m_point[NUM_BYTES];
 };

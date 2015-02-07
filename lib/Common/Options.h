@@ -11,7 +11,6 @@ namespace opt {
     extern int domain;
 	extern int rank;
 	extern int verbose;
-    extern std::string inFile; //this need to be changed layter to take care of any file name
 }
 
 #endif

@@ -4,7 +4,7 @@
 
 namespace FMMAlgorithms
 {
-    loadPoints(LocalOctTree* localOctTree, std::string inFile); 
+    void loadPoints(LocalOctTree* localOctTree, std::string inFile); 
 };
 
 #endif
