@@ -133,10 +133,14 @@ void LocalOctTree::printPoints()
     int rank = 0;
     while(rank < opt::numProc){
         if(opt::rank == rank){
-            cout << "DEBUG " << opt::rank << ": ";
-            for(int i=0; i<m_data.size();i++) {
-                Point p = m_data[i];
-                p.print_m_point();
+            if(m_data.size() == 0) {
+                cout << "DEBUG " << opt::rank << ": empty" <<endl;
+            } else{
+                for(int i=0; i<m_data.size();i++) {
+                    Point p = m_data[i];
+                    cout << "DEBUG " << opt::rank << ": ";
+                    p.print_m_point();
+                }
             }
         }
         rank++;

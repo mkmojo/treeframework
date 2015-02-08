@@ -50,7 +50,7 @@ class Point
             double x;
             for( int i = 0; i < NUM_SLOT ;i++){
                 memcpy(&x, &m_point[i*sizeof(double)], sizeof x);
-                printf("%lf ",x);
+                printf("%.2lf ",x);
             }
             printf("\n");
         };
