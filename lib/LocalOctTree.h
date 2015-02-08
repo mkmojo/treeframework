@@ -32,6 +32,7 @@ class LocalOctTree : public BaseTree
         size_t pumpNetwork();
     private:
         void loadPoints();
+        void printPoints();
         NetworkActionState m_state;
         MessageBuffer m_comm;
         unsigned m_numReachedCheckpoint;

@@ -17,5 +17,3 @@ unsigned Point::getCode() const
         sum = prime * sum + m_point[i];
     return sum;
 }
-
-

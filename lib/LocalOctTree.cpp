@@ -26,12 +26,12 @@ bool LocalOctTree::isLocal(const Point& p) const
 void LocalOctTree::add(const Point &p)
 {
     if(isLocal(p)){
-        cout << p.x << " "  << p.y << " "  << p.z << " "  << "is local" << endl;
-        cout << "this point has procID as " << computeProcID(p) << endl;
+        cout << p.x << " "  << p.y << " "  << p.z << " " 
+            << p.mass << " local --> " <<  computeProcID(p) << endl;
         m_data.push_back(p);
     } else{
-        cout << p.x << " "  << p.y << " "  << p.z << " "  << "is not local" << endl;
-        cout << "this point has procID as " << computeProcID(p) << endl;
+        cout << p.x << " "  << p.y << " "  << p.z << " " 
+            <<  p.mass << " not local --> " << computeProcID(p) << endl;
         m_comm.sendSeqAddMessage(computeProcID(p), p);
     }
 }
@@ -46,7 +46,7 @@ void LocalOctTree::parseControlMessage(int source)
             break;
         case APC_CHECKPOINT:
             //logger(4) << "checkpoint from " << source << ": "
-                //<< controlMsg.argument << '\n';
+            //<< controlMsg.argument << '\n';
             m_numReachedCheckpoint++;
             m_checkpointSum += controlMsg.argument;
             break;
@@ -108,7 +108,7 @@ void LocalOctTree::SetState(
         NetworkActionState newState)
 {
     //logger(2) << "SetState " << newState
-        //<< " (was " << m_state << ")\n";
+    //<< " (was " << m_state << ")\n";
 
     // Ensure there are no pending messages
     assert(m_comm.transmitBufferEmpty());
@@ -125,6 +125,23 @@ void LocalOctTree::loadPoints()
     //Timer timer("LoadSequences");
     if(opt::rank == 0)
         FMMAlgorithms::loadPoints(this, "" /*opt::inFile*/); 
+}
+
+void LocalOctTree::printPoints()
+{
+    //simple MPI critical section
+    int rank = 0;
+    while(rank < opt::numProc){
+        if(opt::rank == rank){
+            cout << "DEBUG " << opt::rank << ": ";
+            for(int i=0; i<m_data.size();i++) {
+                Point p = m_data[i];
+                p.print_m_point();
+            }
+        }
+        rank++;
+        m_comm.barrier();
+    }
 }
 
 bool LocalOctTree::checkpointReached() const
@@ -156,6 +173,9 @@ void LocalOctTree::runControl()
                     m_comm.barrier();
                     pumpNetwork();
 
+                    //DEBUG: out put current points
+                    printPoints();
+
                     SetState(NAS_DONE);
                     break;
                 }
@@ -185,7 +205,10 @@ void LocalOctTree::run()
                 {
                     m_comm.barrier();
                     pumpNetwork();
-                    SetState(NAS_WAITING);
+
+                    //DEBUG print current points
+                    printPoints();
+                    SetState(NAS_DONE);
                     break;
                 }
             case NAS_WAITING:

@@ -21,7 +21,7 @@ namespace FMMAlgorithms
             double x, y, z, mass;
             while(getline (particleFile, line)){
                 stringstream sstr(line);
-                cout << line << endl;
+                //cout << line << endl;
                 sstr >> x >> y >> z >> mass;
                 localOctTree->add(Point(x, y, z, mass));
             }

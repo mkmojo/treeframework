@@ -35,7 +35,7 @@ class Point
         size_t unserialize(const void* src)
         {
             //This is now ugly, should be done through a function
-            memcpy(&x, m_point, sizeof(double));
+            memcpy(&x, m_point, sizeof x);
             memcpy(&y, m_point + sizeof(double), sizeof y);
             memcpy(&z, m_point + sizeof(double) * 2, sizeof z);
             memcpy(&mass, m_point + sizeof(double) * 3, sizeof mass);
@@ -50,8 +50,9 @@ class Point
             double x;
             for( int i = 0; i < NUM_SLOT ;i++){
                 memcpy(&x, &m_point[i*sizeof(double)], sizeof x);
-                printf("%lf\n",x);
+                printf("%lf ",x);
             }
+            printf("\n");
         };
 
         unsigned getCode() const;
