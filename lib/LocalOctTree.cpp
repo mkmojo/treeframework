@@ -1,8 +1,10 @@
-#include <time.h> 
 #include "LocalOctTree.h"
 #include "Common/Options.h"
 #include "Algorithm.h"
+#include <time.h> 
+#include <iostream>
 #include "Point.h"
+using namespace std;
 
 int LocalOctTree::computeProcID(const Point& p) const
 {
@@ -23,10 +25,15 @@ bool LocalOctTree::isLocal(const Point& p) const
 
 void LocalOctTree::add(const Point &p)
 {
-    if(isLocal(p))
+    if(isLocal(p)){
+        cout << p.x << " "  << p.y << " "  << p.z << " "  << "is local" << endl;
+        cout << "this point has procID as " << computeProcID(p) << endl;
         m_data.push_back(p);
-    else
+    } else{
+        cout << p.x << " "  << p.y << " "  << p.z << " "  << "is not local" << endl;
+        cout << "this point has procID as " << computeProcID(p) << endl;
         m_comm.sendSeqAddMessage(computeProcID(p), p);
+    }
 }
 
 void LocalOctTree::parseControlMessage(int source)

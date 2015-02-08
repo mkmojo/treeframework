@@ -55,7 +55,7 @@ class MessageBuffer : public CommLayer
 
         void checkQueueForSend(int procID, SendMode mode);
     private:
-        static const size_t MAX_MESSAGES = 100;
+        static const size_t MAX_MESSAGES = 1;
         MessageQueues m_msgQueues;
 };
 
