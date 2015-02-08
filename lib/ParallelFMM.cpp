@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();
 
-    cout << "DEBUG: " << opt::rank << endl;
+    
     if(opt::rank == 0){
         cout << "Done." <<endl;
     }
