@@ -124,7 +124,7 @@ void LocalOctTree::loadPoints()
 {
     //Timer timer("LoadSequences");
     if(opt::rank == 0)
-        FMMAlgorithms::loadPoints(this, "" /*opt::inFile*/); 
+        FMMAlgorithms::loadPoints(this, opt::inFile); 
 }
 
 void LocalOctTree::printPoints()

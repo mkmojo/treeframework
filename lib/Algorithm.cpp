@@ -14,8 +14,8 @@ namespace FMMAlgorithms
     {
         //Timer timer("LoadSequences " + inFile);
         //logger(0) << "Reading `" << inFile << "'...\n";
-        ifstream particleFile("inFile.txt"); // This need to be modifed to take in any file name
-
+        ifstream particleFile(inFile); 
+        // This need to be modifed to take in any file name
         if(particleFile.is_open()) {
             string line;
             double x, y, z, mass;
