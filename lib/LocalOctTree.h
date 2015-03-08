@@ -12,6 +12,7 @@ enum NetworkActionState
     NAS_WAITING, // non-control process is waiting
     NAS_DONE // finished, clean up and exit
 };
+
 /* -------------------------- OctTree ---------------------------- */
 class LocalOctTree : public BaseTree
 {
@@ -28,6 +29,8 @@ class LocalOctTree : public BaseTree
         bool isLocal(const Point& p) const;
         int computeProcID(const Point& p) const;
         void handle(int senderID, const SeqAddMessage& message);
+        void setlocalMinMax();
+        //return local
 
         //DEBUG
         NetworkActionState getState(){
