@@ -35,6 +35,8 @@ class Point
         size_t unserialize(const void* src)
         {
             //This is now ugly, should be done through a function
+            //I may want to change it to vector and use vector to hold 
+            //things together
             memcpy(&x, m_point, sizeof x);
             memcpy(&y, m_point + sizeof(double), sizeof y);
             memcpy(&z, m_point + sizeof(double) * 2, sizeof z);

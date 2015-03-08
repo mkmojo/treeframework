@@ -127,6 +127,10 @@ void LocalOctTree::loadPoints()
         FMMAlgorithms::loadPoints(this, opt::inFile); 
 }
 
+void LocalOctTree::setlocalMinMax()
+{
+    FMMAlgorithms::setUpMinMax(this);
+}
 
 void LocalOctTree::printPoints()
 {
@@ -187,7 +191,8 @@ void LocalOctTree::runControl()
             case NAS_SORT:
                 {
                     //TODO
-                    //getDimensionRanges();
+                    //figure out global minimum and maximum
+                    setUpMinMax();
                 }
             case NAS_DONE:
                 break;
@@ -225,7 +230,8 @@ void LocalOctTree::run()
             case NAS_SORT:
                 {
                     //TODO
-                    //getDimensionRanges();
+                    //figure out global minimum and maximum
+                    setUpMinMax();
                 }
             case NAS_WAITING:
                 pumpNetwork();
