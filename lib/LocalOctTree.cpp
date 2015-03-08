@@ -177,6 +177,7 @@ void LocalOctTree::runControl()
                     m_comm.barrier();
                     pumpNetwork();
 
+
                     //DEBUG: out put current points
                     printPoints();
 
@@ -209,6 +210,7 @@ void LocalOctTree::run()
                 {
                     m_comm.barrier();
                     pumpNetwork();
+
 
                     //DEBUG print current points
                     printPoints();

@@ -2,6 +2,7 @@
 #include "Common/Log.h"
 #include <assert.h>
 #include <mpi.h>
+using namespace std;
 
 static const unsigned RX_BUFSIZE = 16*1024;
 
@@ -172,4 +173,28 @@ void CommLayer::barrier()
     //logger(4) << "entering barrier\n";
     MPI_Barrier(MPI_COMM_WORLD);
     //logger(4) << "left barrier\n";
+}
+
+/** Reduce the specified vector. */
+vector<long unsigned> CommLayer::reduce(
+        const vector<long unsigned>& v)
+{
+    //logger(4) << "entering reduce\n";
+    vector<long unsigned> sum(v.size());
+    MPI_Allreduce(const_cast<long unsigned*>(&v[0]),
+            &sum[0], v.size(), MPI_UNSIGNED_LONG, MPI_SUM,
+            MPI_COMM_WORLD);
+    //logger(4) << "left reduce\n";
+    return sum;
+}
+
+/** Reduce a sum **/
+long long unsigned CommLayer::reduce( long long unsigned count)
+{
+    //logger(4) << "entering reduce\n";
+    long long unsigned sum;
+    MPI_Allreduce(&count, &sum, 1, MPI_UNSIGNED_LONG, MPI_SUM,
+            MPI_COMM_WORLD);
+    //logger(4) << "left reduce\n";
+    return sum;
 }

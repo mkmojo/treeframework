@@ -37,7 +37,13 @@ class CommLayer
 
         APMessage checkMessage(int &senderID);
 
+        std::vector<long unsigned> reduce(
+                const std::vector<long unsigned>& v);
+
+        long long unsigned reduce(
+                long long unsigned v);
         void barrier();
+
         // Send a control message
         void sendControlMessage(APControl m, int argument = 0 );
 
