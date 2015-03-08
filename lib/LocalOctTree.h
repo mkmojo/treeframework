@@ -8,6 +8,7 @@ enum NetworkActionState
 {
     NAS_LOADING, // loading points
     NAS_LOAD_COMPLETE, // loading is complete
+    NAS_SORT,
     NAS_WAITING, // non-control process is waiting
     NAS_DONE // finished, clean up and exit
 };

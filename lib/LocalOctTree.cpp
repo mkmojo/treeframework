@@ -127,6 +127,7 @@ void LocalOctTree::loadPoints()
         FMMAlgorithms::loadPoints(this, opt::inFile); 
 }
 
+
 void LocalOctTree::printPoints()
 {
     //simple MPI critical section
@@ -180,8 +181,13 @@ void LocalOctTree::runControl()
                     //DEBUG: out put current points
                     printPoints();
 
-                    SetState(NAS_DONE);
+                    SetState(NAS_SORT);
                     break;
+                }
+            case NAS_SORT:
+                {
+                    //TODO
+                    //getDimensionRanges();
                 }
             case NAS_DONE:
                 break;
@@ -213,8 +219,13 @@ void LocalOctTree::run()
 
                     //DEBUG print current points
                     printPoints();
-                    SetState(NAS_DONE);
+                    SetState(NAS_SORT);
                     break;
+                }
+            case NAS_SORT:
+                {
+                    //TODO
+                    //getDimensionRanges();
                 }
             case NAS_WAITING:
                 pumpNetwork();
