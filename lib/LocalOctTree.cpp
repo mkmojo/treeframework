@@ -136,7 +136,7 @@ void LocalOctTree::printPoints()
             if(m_data.size() == 0) {
                 cout << "DEBUG " << opt::rank << ": empty" <<endl;
             } else{
-                for(int i=0; i<m_data.size();i++) {
+                for(unsigned i=0; i<m_data.size();i++) {
                     Point p = m_data[i];
                     cout << "DEBUG " << opt::rank << ": ";
                     p.print_m_point();
@@ -176,7 +176,6 @@ void LocalOctTree::runControl()
 
                     m_comm.barrier();
                     pumpNetwork();
-
 
                     //DEBUG: out put current points
                     printPoints();

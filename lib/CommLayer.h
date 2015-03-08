@@ -9,7 +9,7 @@ enum APMessage
 {
     APM_NONE,
     APM_CONTROL,
-    APM_BUFFERED
+    APM_BUFFERED,
 };
 
 enum APControl
@@ -18,6 +18,11 @@ enum APControl
     APC_CHECKPOINT,
     APC_WAIT,
     APC_BARRIER,
+};
+
+//For reduce operation type
+enum MPI_OP_T{
+    SUM, MIN, MAX,
 };
 
 typedef std::vector<Message*> MessagePtrVector;
@@ -41,7 +46,7 @@ class CommLayer
                 const std::vector<long unsigned>& v);
 
         long long unsigned reduce(
-                long long unsigned v);
+                long long unsigned v, MPI_OP_T op=SUM);
         void barrier();
 
         // Send a control message

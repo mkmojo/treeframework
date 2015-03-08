@@ -12,6 +12,8 @@ int main(int argc, char** argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &opt::rank);
     MPI_Comm_size(MPI_COMM_WORLD, &opt::numProc);
+
+    //setup input file
     opt::inFile = string(argv[1]);
 
     MPI_Barrier(MPI_COMM_WORLD);

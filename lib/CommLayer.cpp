@@ -6,6 +6,7 @@ using namespace std;
 
 static const unsigned RX_BUFSIZE = 16*1024;
 
+
 ControlMessage CommLayer::receiveControlMessage()
 {
     int flag;
@@ -189,12 +190,22 @@ vector<long unsigned> CommLayer::reduce(
 }
 
 /** Reduce a sum **/
-long long unsigned CommLayer::reduce( long long unsigned count)
+long long unsigned CommLayer::reduce( long long unsigned count, MPI_OP_T op)
 {
     //logger(4) << "entering reduce\n";
-    long long unsigned sum;
-    MPI_Allreduce(&count, &sum, 1, MPI_UNSIGNED_LONG, MPI_SUM,
-            MPI_COMM_WORLD);
+    long long unsigned res;
+    if(op == SUM)
+        MPI_Allreduce(&count, &res, 1, MPI_UNSIGNED_LONG, MPI_SUM,
+                MPI_COMM_WORLD);
+
+    if(op == MIN)
+        MPI_Allreduce(&count, &res, 1, MPI_UNSIGNED_LONG, MPI_MIN,
+                MPI_COMM_WORLD);
+
+    if(op == MAX)
+        MPI_Allreduce(&count, &res, 1, MPI_UNSIGNED_LONG, MPI_MAX,
+                MPI_COMM_WORLD);
+
     //logger(4) << "left reduce\n";
-    return sum;
+    return res;
 }

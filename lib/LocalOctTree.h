@@ -27,6 +27,11 @@ class LocalOctTree : public BaseTree
         bool isLocal(const Point& p) const;
         int computeProcID(const Point& p) const;
         void handle(int senderID, const SeqAddMessage& message);
+
+        //DEBUG
+        NetworkActionState getState(){
+            return m_state;
+        }
         
         //Recieve and dispatch packets
         size_t pumpNetwork();
