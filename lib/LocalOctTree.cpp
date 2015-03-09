@@ -142,11 +142,6 @@ void LocalOctTree::setUpGlobalMinMax()
     double minZ(cntPoint.z), maxZ(cntPoint.z);
 
 
-    //DEBUG
-    cout << opt::rank <<  " cntPoint.x " << cntPoint.x <<endl;
-    cout << opt::rank <<  " cntPoint.y " << cntPoint.y <<endl;
-    cout << opt::rank <<  " cntPoint.z " << cntPoint.z <<endl;
-
     for(unsigned i=1;i<m_data.size();i++){
         Point cntPoint = m_data[i];
         //For current smallest cord
@@ -179,8 +174,6 @@ void LocalOctTree::setUpGlobalMinMax()
     localMaxY = maxY;
     localMaxZ = maxZ;
 
-    m_comm.barrier();
-
 
     //set globla dimension
     globalMinX = m_comm.reduce(minX, MIN);
@@ -190,6 +183,16 @@ void LocalOctTree::setUpGlobalMinMax()
     globalMaxX = m_comm.reduce(maxX, MAX);
     globalMaxY = m_comm.reduce(maxY, MAX);
     globalMaxZ = m_comm.reduce(maxZ, MAX);
+}
+
+void LocalOctTree::printGlobalMinMax()
+{
+    cout << "DEBUG: globalMinX " << globalMinX <<endl;
+    cout << "DEBUG: globalMinY " << globalMinY <<endl;
+    cout << "DEBUG: globalMinZ " << globalMinZ <<endl;
+    cout << "DEBUG: globalMaxX " << globalMaxX <<endl;
+    cout << "DEBUG: globalMaxY " << globalMaxY <<endl;
+    cout << "DEBUG: globalMaxZ " << globalMaxZ <<endl;
 }
 
 void LocalOctTree::printPoints()
@@ -220,6 +223,7 @@ bool LocalOctTree::checkpointReached() const
     return m_numReachedCheckpoint == (unsigned) opt::numProc;
 }
 
+
 //
 // Run master process state machine
 //
@@ -244,9 +248,6 @@ void LocalOctTree::runControl()
                     m_comm.barrier();
                     pumpNetwork();
 
-                    //DEBUG: out put current points
-                    printPoints();
-
                     SetState(NAS_SORT);
                     break;
                 }
@@ -259,12 +260,7 @@ void LocalOctTree::runControl()
 
                     setUpGlobalMinMax();
                     //DEBUG
-                    cout<<"globalMinX "<<globalMinX<<endl;
-                    cout<<"globalMinY "<<globalMinY<<endl;
-                    cout<<"globalMinZ "<<globalMinZ<<endl;
-                    cout<<"globlaMaxX "<<globalMaxX<<endl;
-                    cout<<"globalMaxY "<<globalMaxY<<endl;
-                    cout<<"globalMaxY "<<globalMaxZ<<endl;
+                    printGlobalMinMax();
 
                     SetState(NAS_DONE);
                     break;
@@ -296,9 +292,6 @@ void LocalOctTree::run()
                     m_comm.barrier();
                     pumpNetwork();
 
-
-                    //DEBUG print current points
-                    printPoints();
                     SetState(NAS_WAITING);
                     break;
                 }
@@ -308,9 +301,7 @@ void LocalOctTree::run()
                     //figure out global minimum and maximum
                     //and save them 
                     setUpGlobalMinMax();
-                    
-                    //DEBUG: print out global min and max
-                                        
+
                     SetState(NAS_DONE);
                     break;
                 }

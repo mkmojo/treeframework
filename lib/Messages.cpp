@@ -27,6 +27,3 @@ size_t Message::unserialize(const char* buffer)
     offset += m_point.unserialize(buffer + offset);
     return offset;
 }
-
-
-

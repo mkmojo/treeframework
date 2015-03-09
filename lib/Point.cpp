@@ -17,3 +17,21 @@ unsigned Point::getCode() const
         sum = prime * sum + m_point[i];
     return sum;
 }
+
+void Point::print_m_point()
+{
+    double x;
+    for( int i = 0; i < NUM_SLOT ;i++){
+        memcpy(&x, &m_point[i*sizeof(double)], sizeof x);
+        printf("%.2lf ",x);
+    }
+    printf("\n");
+}
+
+void Point::print_cord(){
+    printf("%.2lf ",x);
+    printf("%.2lf ",y);
+    printf("%.2lf ",z);
+    printf("\n");
+}
+

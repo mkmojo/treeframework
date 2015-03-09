@@ -8,7 +8,6 @@
 #include <cstring> // for memcpy
 #define NUM_SLOT 4 // Need to be changed to adjust automatically
 
-
 class Point
 {
     public:
@@ -25,52 +24,34 @@ class Point
             }
 
         static unsigned serialSize() {return NUM_BYTES;}
-        //copy point data to memory location starting from dest;
-        //this is esentially unpakcing, moving things from recv
-        //buffer to local data structure.
+        //copy data to outgoing buffer to other procs
+        //unroll struct into one dimension array
         size_t serialize(void* dest) 
         {
             memcpy(dest, m_point, sizeof m_point);
-            //DEBUG: copy things received to data member
-            memcpy(&x, m_point, sizeof x);
-            memcpy(&y, m_point + sizeof(double), sizeof y);
-            memcpy(&z, m_point + sizeof(double)*2, sizeof z);
-            memcpy(&mass, m_point + sizeof(double)*3, sizeof mass);
             return sizeof m_point;
         }
 
-        //copy bytes from src buffer region to point m_point char arrary
+        //copy data from incoming buffer to Point
+        //roll things into struct
         size_t unserialize(const void* src)
         {
             //This is now ugly, should be done through a function
             //I may want to change it to vector and use vector to hold 
             //things together
+            memcpy(m_point, src, sizeof m_point);
+
             memcpy(&x, m_point, sizeof x);
             memcpy(&y, m_point + sizeof(double), sizeof y);
             memcpy(&z, m_point + sizeof(double) * 2, sizeof z);
             memcpy(&mass, m_point + sizeof(double) * 3, sizeof mass);
 
-            memcpy(m_point, src, sizeof m_point);
             return sizeof m_point;
         }
         static const unsigned NUM_BYTES =  sizeof(double) * NUM_SLOT;
-        void print_m_point()
-        {
-            double x;
-            for( int i = 0; i < NUM_SLOT ;i++){
-                memcpy(&x, &m_point[i*sizeof(double)], sizeof x);
-                printf("%.2lf ",x);
-            }
-            printf("\n");
-        }
-
-        void print_cord(){
-                printf("%.2lf ",x);
-                printf("%.2lf ",y);
-                printf("%.2lf ",z);
-                printf("\n");
-        }
-
+        //DEBUG
+        void print_m_point();
+        void print_cord();
         unsigned getCode() const;
     protected:
         char m_point[NUM_BYTES];
