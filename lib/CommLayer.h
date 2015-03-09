@@ -45,8 +45,8 @@ class CommLayer
         std::vector<long unsigned> reduce(
                 const std::vector<long unsigned>& v);
 
-        long long unsigned reduce(
-                long long unsigned v, MPI_OP_T op=SUM);
+        double reduce( double v, MPI_OP_T op=SUM);
+
         void barrier();
 
         // Send a control message
