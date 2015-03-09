@@ -29,6 +29,11 @@ class Point
         size_t serialize(void* dest) 
         {
             memcpy(dest, m_point, sizeof m_point);
+            //DEBUG: copy things received to data member
+            memcpy(&x, m_point, sizeof x);
+            memcpy(&y, m_point + sizeof(double), sizeof y);
+            memcpy(&z, m_point + sizeof(double)*2, sizeof z);
+            memcpy(&mass, m_point + sizeof(double)*3, sizeof mass);
             return sizeof m_point;
         }
 

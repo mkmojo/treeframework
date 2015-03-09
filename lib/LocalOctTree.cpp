@@ -142,6 +142,14 @@ void LocalOctTree::setUpGlobalMinMax()
     double minZ(cntPoint.z), maxZ(cntPoint.z);
 
 
+<<<<<<< HEAD
+=======
+    //DEBUG
+    cout << opt::rank <<  " cntPoint.x " << cntPoint.x <<endl;
+    cout << opt::rank <<  " cntPoint.y " << cntPoint.y <<endl;
+    cout << opt::rank <<  " cntPoint.z " << cntPoint.z <<endl;
+
+>>>>>>> 315171a8635f707a03811d45ce036ba2abe4315f
     for(unsigned i=1;i<m_data.size();i++){
         Point cntPoint = m_data[i];
         //For current smallest cord
@@ -173,7 +181,6 @@ void LocalOctTree::setUpGlobalMinMax()
     localMaxX = maxX;
     localMaxY = maxY;
     localMaxZ = maxZ;
-
 
     //set globla dimension
     globalMinX = m_comm.reduce(minX, MIN);
@@ -260,7 +267,16 @@ void LocalOctTree::runControl()
 
                     setUpGlobalMinMax();
                     //DEBUG
+<<<<<<< HEAD
                     printGlobalMinMax();
+=======
+                    cout<<"globalMinX "<<globalMinX<<endl;
+                    cout<<"globalMinY "<<globalMinY<<endl;
+                    cout<<"globalMinZ "<<globalMinZ<<endl;
+                    cout<<"globlaMaxX "<<globalMaxX<<endl;
+                    cout<<"globalMaxY "<<globalMaxY<<endl;
+                    cout<<"globalMaxY "<<globalMaxZ<<endl;
+>>>>>>> 315171a8635f707a03811d45ce036ba2abe4315f
 
                     SetState(NAS_DONE);
                     break;
@@ -301,7 +317,6 @@ void LocalOctTree::run()
                     //figure out global minimum and maximum
                     //and save them 
                     setUpGlobalMinMax();
-
                     SetState(NAS_DONE);
                     break;
                 }
