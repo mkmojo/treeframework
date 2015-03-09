@@ -23,11 +23,19 @@ class Point
                 memcpy(m_point + sizeof(double)*2, &z, sizeof z);
                 memcpy(m_point + sizeof(double)*3, &mass, sizeof mass);
             }
+
         static unsigned serialSize() {return NUM_BYTES;}
         //copy point data to memory location starting from dest;
-        size_t serialize(void* dest) const
+        //this is esentially unpakcing, moving things from recv
+        //buffer to local data structure.
+        size_t serialize(void* dest) 
         {
             memcpy(dest, m_point, sizeof m_point);
+            //DEBUG: copy things received to data member
+            memcpy(&x, m_point, sizeof x);
+            memcpy(&y, m_point + sizeof(double), sizeof y);
+            memcpy(&z, m_point + sizeof(double)*2, sizeof z);
+            memcpy(&mass, m_point + sizeof(double)*3, sizeof mass);
             return sizeof m_point;
         }
 
@@ -46,7 +54,6 @@ class Point
             return sizeof m_point;
         }
         static const unsigned NUM_BYTES =  sizeof(double) * NUM_SLOT;
-        std::string str() const;
         void print_m_point()
         {
             double x;
@@ -55,7 +62,14 @@ class Point
                 printf("%.2lf ",x);
             }
             printf("\n");
-        };
+        }
+
+        void print_cord(){
+                printf("%.2lf ",x);
+                printf("%.2lf ",y);
+                printf("%.2lf ",z);
+                printf("\n");
+        }
 
         unsigned getCode() const;
     protected:

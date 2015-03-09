@@ -29,7 +29,7 @@ class LocalOctTree : public BaseTree
         bool isLocal(const Point& p) const;
         int computeProcID(const Point& p) const;
         void handle(int senderID, const SeqAddMessage& message);
-        void setlocalMinMax();
+        void setUpGlobalMinMax();
         //return local
 
         //DEBUG
@@ -49,5 +49,14 @@ class LocalOctTree : public BaseTree
 
         unsigned m_checkpointSum;
         std::vector<Point> m_data;
+        //TODO
+        //delete all these stand alone variable
+        //and use a container for them
+        double localMinX, localMaxX;
+        double localMinY, localMaxY;
+        double localMinZ, localMaxZ;
+        double globalMinX, globalMaxX;
+        double globalMinY, globalMaxY;
+        double globalMinZ, globalMaxZ;
 };
 #endif

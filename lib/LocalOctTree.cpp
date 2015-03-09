@@ -127,9 +127,69 @@ void LocalOctTree::loadPoints()
         FMMAlgorithms::loadPoints(this, opt::inFile); 
 }
 
-void LocalOctTree::setlocalMinMax()
+
+//Find local min and max for each dimension
+//Find global min and max through MPI ALLreduce
+//distribute the result
+void LocalOctTree::setUpGlobalMinMax()
 {
-    FMMAlgorithms::setUpMinMax(this);
+    //what do we do with a processor that does not 
+    //have any data?
+    assert(m_data.size() > 0);
+    Point cntPoint = m_data[0];
+    double minX(cntPoint.x), maxX(cntPoint.x);
+    double minY(cntPoint.y), maxY(cntPoint.y);
+    double minZ(cntPoint.z), maxZ(cntPoint.z);
+
+
+    //DEBUG
+    cout << opt::rank <<  " cntPoint.x " << cntPoint.x <<endl;
+    cout << opt::rank <<  " cntPoint.y " << cntPoint.y <<endl;
+    cout << opt::rank <<  " cntPoint.z " << cntPoint.z <<endl;
+
+    for(unsigned i=1;i<m_data.size();i++){
+        Point cntPoint = m_data[i];
+        //For current smallest cord
+        if(cntPoint.x < minX){
+            minX = cntPoint.x;
+        }
+        if(cntPoint.y < minY){
+            minY = cntPoint.y;
+        }
+        if(cntPoint.z < minZ){
+            minZ = cntPoint.z;
+        }
+
+        //For current lareges cord
+        if(cntPoint.x > maxX){
+            maxX = cntPoint.x;
+        }
+        if(cntPoint.y > maxY){
+            maxY = cntPoint.y;
+        }
+        if(cntPoint.z > maxZ){
+            maxZ = cntPoint.z;
+        }
+    }
+    
+    localMinX = minX;
+    localMinY = minY;
+    localMinZ = minZ;
+    localMaxX = maxX;
+    localMaxY = maxY;
+    localMaxZ = maxZ;
+
+    m_comm.barrier();
+
+
+    //set globla dimension
+    globalMinX = m_comm.reduce(minX, MIN);
+    globalMinY = m_comm.reduce(minY, MIN);
+    globalMinZ = m_comm.reduce(minZ, MIN);
+    //set global dimension
+    globalMaxX = m_comm.reduce(maxX, MAX);
+    globalMaxY = m_comm.reduce(maxY, MAX);
+    globalMaxZ = m_comm.reduce(maxZ, MAX);
 }
 
 void LocalOctTree::printPoints()
@@ -143,7 +203,9 @@ void LocalOctTree::printPoints()
             } else{
                 for(unsigned i=0; i<m_data.size();i++) {
                     Point p = m_data[i];
-                    cout << "DEBUG " << opt::rank << ": ";
+                    cout << "DEBUG " << opt::rank << ": cord ";
+                    p.print_cord();
+                    cout << "DEBUG " << opt::rank << ": m_point ";
                     p.print_m_point();
                 }
             }
@@ -192,7 +254,20 @@ void LocalOctTree::runControl()
                 {
                     //TODO
                     //figure out global minimum and maximum
-                    setUpMinMax();
+                    m_comm.sendControlMessage(APC_SET_STATE,
+                            NAS_SORT);
+
+                    setUpGlobalMinMax();
+                    //DEBUG
+                    cout<<"globalMinX "<<globalMinX<<endl;
+                    cout<<"globalMinY "<<globalMinY<<endl;
+                    cout<<"globalMinZ "<<globalMinZ<<endl;
+                    cout<<"globlaMaxX "<<globalMaxX<<endl;
+                    cout<<"globalMaxY "<<globalMaxY<<endl;
+                    cout<<"globalMaxY "<<globalMaxZ<<endl;
+
+                    SetState(NAS_DONE);
+                    break;
                 }
             case NAS_DONE:
                 break;
@@ -224,14 +299,20 @@ void LocalOctTree::run()
 
                     //DEBUG print current points
                     printPoints();
-                    SetState(NAS_SORT);
+                    SetState(NAS_WAITING);
                     break;
                 }
             case NAS_SORT:
                 {
                     //TODO
                     //figure out global minimum and maximum
-                    setUpMinMax();
+                    //and save them 
+                    setUpGlobalMinMax();
+                    
+                    //DEBUG: print out global min and max
+                                        
+                    SetState(NAS_DONE);
+                    break;
                 }
             case NAS_WAITING:
                 pumpNetwork();

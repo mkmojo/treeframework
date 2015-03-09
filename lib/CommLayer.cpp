@@ -189,21 +189,22 @@ vector<long unsigned> CommLayer::reduce(
     return sum;
 }
 
-/** Reduce a sum **/
-long long unsigned CommLayer::reduce( long long unsigned count, MPI_OP_T op)
+
+
+double CommLayer::reduce( double count, MPI_OP_T op)
 {
     //logger(4) << "entering reduce\n";
-    long long unsigned res;
+    double res;
     if(op == SUM)
-        MPI_Allreduce(&count, &res, 1, MPI_UNSIGNED_LONG, MPI_SUM,
+        MPI_Allreduce(&count, &res, 1, MPI_DOUBLE, MPI_SUM,
                 MPI_COMM_WORLD);
 
     if(op == MIN)
-        MPI_Allreduce(&count, &res, 1, MPI_UNSIGNED_LONG, MPI_MIN,
+        MPI_Allreduce(&count, &res, 1, MPI_DOUBLE, MPI_MIN,
                 MPI_COMM_WORLD);
 
     if(op == MAX)
-        MPI_Allreduce(&count, &res, 1, MPI_UNSIGNED_LONG, MPI_MAX,
+        MPI_Allreduce(&count, &res, 1, MPI_DOUBLE, MPI_MAX,
                 MPI_COMM_WORLD);
 
     //logger(4) << "left reduce\n";
