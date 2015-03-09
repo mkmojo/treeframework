@@ -257,6 +257,7 @@ void LocalOctTree::runControl()
                             NAS_SORT);
 
                     setUpGlobalMinMax();
+                    EndState();
                     //DEBUG
                     printGlobalMinMax();
                     SetState(NAS_DONE);
@@ -298,6 +299,7 @@ void LocalOctTree::run()
                     //figure out global minimum and maximum
                     //and save them 
                     setUpGlobalMinMax();
+                    EndState();
                     SetState(NAS_DONE);
                     break;
                 }
