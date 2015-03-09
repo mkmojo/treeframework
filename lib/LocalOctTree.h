@@ -30,11 +30,7 @@ class LocalOctTree : public BaseTree
         int computeProcID(const Point& p) const;
         void handle(int senderID, const SeqAddMessage& message);
         void setUpGlobalMinMax();
-<<<<<<< HEAD
         void printGlobalMinMax();
-=======
->>>>>>> 315171a8635f707a03811d45ce036ba2abe4315f
-        //return local
 
         //DEBUG
         NetworkActionState getState(){
