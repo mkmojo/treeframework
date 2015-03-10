@@ -4,17 +4,18 @@
 
 namespace opt {
 
-	/** MPI rank */
-	int rank = 0;
+    /** MPI rank */
+    int rank = 0;
 
-	/** Number of MPI processes */
-	int numProc = 1;
+    /** Number of MPI processes */
+    int numProc = 1;
 
-	/** Verbose output */
-	int verbose;
+    /** Verbose output */
+    int verbose;
+
 
     /** OctTree height **/
-    int treeHeight;
+    int level;
 
     /** Input filename **/
     std::string inFile;

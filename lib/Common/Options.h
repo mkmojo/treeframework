@@ -6,11 +6,11 @@
  * execution of the program.
  */
 namespace opt {
-	extern int numProc; 
+    extern int numProc; 
     extern int level; // level of octTree, should be less than 21
     extern int domain;
-	extern int rank;
-	extern int verbose;
+    extern int rank;
+    extern int verbose;
     extern std::string inFile;
 }
 

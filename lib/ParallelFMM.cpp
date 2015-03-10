@@ -15,6 +15,8 @@ int main(int argc, char** argv)
 
     //setup input file
     opt::inFile = string(argv[1]);
+    //setup level of tree
+    opt::level = 3;
 
     MPI_Barrier(MPI_COMM_WORLD);
     char hostname[HOST_NAME_MAX];

@@ -1,6 +1,7 @@
 #include "LocalOctTree.h"
 #include "Common/Options.h"
 #include "Algorithm.h"
+#include <algorithm>
 #include <time.h> 
 #include <iostream>
 #include "Point.h"
@@ -221,6 +222,83 @@ bool LocalOctTree::checkpointReached() const
     return m_numReachedCheckpoint == (unsigned) opt::numProc;
 }
 
+long computeKey( unsigned int x, unsigned int y, unsigned z)
+{
+    // number of bits required for each x, y and z = height of the 
+    // tree = level_ - 1
+    // therefore, height of more than 21 is not supported
+    unsigned int height = opt::level - 1;
+
+    int key = 1;
+    long x_64 = (long) x << (64 - height);
+    long y_64 = (long) y << (64 - height);
+    long z_64 = (long) z << (64 - height);
+    long mask = 1;
+    mask = mask << 63; // leftmost bit is 1, rest 0
+
+    for(unsigned int i = 0; i < height; ++i) {
+        key = key << 1;
+        if(x_64 & mask) key = key | 1;
+        x_64 = x_64 << 1;
+
+        key = key << 1;
+        if(y_64 & mask) key = key | 1;
+        y_64 = y_64 << 1;
+
+        key = key << 1;
+        if(z_64 & mask) key = key | 1;
+        z_64 = z_64 << 1;
+    } // for
+
+    return key;
+
+}
+
+long LocalOctTree::getCellId(const Point& p)
+{
+    //return the cell id for a point; 
+    //r stands for range 
+    double x = p.x - localMinX;
+    double y = p.y - localMinY;
+    double z = p.z - localMinZ;
+    double rx = localMaxX - localMinX;
+    double ry = localMaxY - localMinY;
+    double rz = localMaxZ - localMinZ;
+
+    double domain = (rx > ry && rx > rz) ?  
+        rx :
+        ((ry > rz) ? ry : rz);
+
+    unsigned int numCells = 1 << (opt::level - 1);
+    double cellSize = domain / numCells;
+    int xKey = (unsigned int) (x / cellSize);
+    int yKey = (unsigned int) (y / cellSize);
+    int zKey = (unsigned int) (z / cellSize);
+
+    return computeKey(xKey, yKey, zKey);
+}
+
+void LocalOctTree::setUpCellIds()
+{
+    for(unsigned i=0; i < m_data.size(); i++) {
+        int cell_id = getCellId(m_data[i]);
+        vector<long>::const_iterator it;
+        it = find(m_cell_id.begin(), m_cell_id.end(), cell_id);
+        if( it == m_cell_id.end()){
+            m_cell_id.push_back(cell_id);
+        }
+    }
+}
+
+
+void LocalOctTree::printCellIds()
+{
+    cout <<  opt::rank << endl;
+    for(unsigned int i=0; i<m_cell_id.size();i++){
+        cout << m_cell_id[i]<<" ";
+    }
+    cout << endl;
+}
 
 //
 // Run master process state machine
@@ -255,12 +333,24 @@ void LocalOctTree::runControl()
                     //figure out global minimum and maximum
                     m_comm.sendControlMessage(APC_SET_STATE,
                             NAS_SORT);
-
                     setUpGlobalMinMax();
                     EndState();
                     //DEBUG
                     printGlobalMinMax();
+
+                    m_comm.sendControlMessage(APC_SET_STATE,
+                            NAS_SETUP_NODEID);
+
+                    SetState(NAS_SETUP_NODEID);
+                    break;
+                }
+            case NAS_SETUP_NODEID:
+                {
+                    m_comm.barrier();
+                    setUpCellIds();
                     SetState(NAS_DONE);
+                    m_comm.barrier();
+                    printCellIds();
                     break;
                 }
             case NAS_DONE:
@@ -300,7 +390,16 @@ void LocalOctTree::run()
                     //and save them 
                     setUpGlobalMinMax();
                     EndState();
+                    SetState(NAS_WAITING);
+                    break;
+                }
+            case NAS_SETUP_NODEID:
+                {
+                    m_comm.barrier();
+                    setUpCellIds();
                     SetState(NAS_DONE);
+                    m_comm.barrier();
+                    printCellIds();
                     break;
                 }
             case NAS_WAITING:

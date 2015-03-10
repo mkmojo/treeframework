@@ -10,6 +10,7 @@ enum NetworkActionState
     NAS_LOAD_COMPLETE, // loading is complete
     NAS_SORT,
     NAS_WAITING, // non-control process is waiting
+    NAS_SETUP_NODEID,
     NAS_DONE // finished, clean up and exit
 };
 
@@ -31,17 +32,20 @@ class LocalOctTree : public BaseTree
         void handle(int senderID, const SeqAddMessage& message);
         void setUpGlobalMinMax();
         void printGlobalMinMax();
+        void setUpCellIds();
 
         //DEBUG
         NetworkActionState getState(){
             return m_state;
         }
+        void printCellIds();
         
         //Recieve and dispatch packets
         size_t pumpNetwork();
     private:
         void loadPoints();
         void printPoints();
+        long getCellId(const Point& p);
         NetworkActionState m_state;
         MessageBuffer m_comm;
         unsigned m_numReachedCheckpoint;
@@ -49,6 +53,7 @@ class LocalOctTree : public BaseTree
 
         unsigned m_checkpointSum;
         std::vector<Point> m_data;
+        std::vector<long> m_cell_id;
         //TODO
         //delete all these stand alone variable
         //and use a container for them
