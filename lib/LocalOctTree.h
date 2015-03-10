@@ -11,6 +11,7 @@ enum NetworkActionState
     NAS_SORT,
     NAS_WAITING, // non-control process is waiting
     NAS_SETUP_NODEID,
+    NAS_SETUP_GLOBAL_INDECIES,
     NAS_DONE // finished, clean up and exit
 };
 
@@ -33,13 +34,14 @@ class LocalOctTree : public BaseTree
         void setUpGlobalMinMax();
         void printGlobalMinMax();
         void setUpCellIds();
+        void setUpGlobalIndices();
 
         //DEBUG
         NetworkActionState getState(){
             return m_state;
         }
         void printCellIds();
-        
+
         //Recieve and dispatch packets
         size_t pumpNetwork();
     private:

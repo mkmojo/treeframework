@@ -45,7 +45,9 @@ class CommLayer
         std::vector<long unsigned> reduce(
                 const std::vector<long unsigned>& v);
 
-        double reduce( double v, MPI_OP_T op=SUM);
+        double reduce( double count, MPI_OP_T op=SUM);
+        long reduce( long count, MPI_OP_T op=SUM);
+        void reduce(long *dest, long *recv, long size);
 
         void barrier();
 

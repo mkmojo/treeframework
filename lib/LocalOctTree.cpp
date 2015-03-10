@@ -7,6 +7,8 @@
 #include "Point.h"
 using namespace std;
 
+const int NOT_INIT = -1;
+
 int LocalOctTree::computeProcID(const Point& p) const
 {
     return p.getCode() % (unsigned) opt::numProc;
@@ -194,6 +196,63 @@ void LocalOctTree::printGlobalMinMax()
     cout << "DEBUG: globalMaxZ " << globalMaxZ <<endl;
 }
 
+
+void LocalOctTree::setUpGlobalIndices()
+{
+    //global min and max;
+    long min, max;
+
+    long localMin = NOT_INIT;
+    long localMax = NOT_INIT;
+
+    for(unsigned i=0; i<m_cell_id.size();i++){
+        long id = m_cell_id[i];
+        if( id > localMax){
+            localMax = id;
+        }
+        if( id == NOT_INIT || id < localMin){
+            localMin = id;
+        }
+    }
+
+    max = m_comm.reduce(localMin, MIN);
+    min = m_comm.reduce(localMax, MAX);
+
+    long k = max - min + 1;
+
+    long nodeCounter[k];
+    long localNodeCounter[k];
+
+    //init things
+    for(unsigned i=0;i<k;i++) {
+        localNodeCounter[i] = 0;
+        nodeCounter[i] = 0;
+    }
+
+    //keep track of which node ids are avaiable locally
+    for(unsigned i=0;i<m_cell_id.size();i++){
+        localNodeCounter[m_cell_id[i] - min]++;
+    }
+    
+    m_comm.reduce(localNodeCounter, nodeCounter, k);
+
+    long globalIndices[k];
+    long index = 0;
+    for(int i=0; i<k; i++){
+        if(nodeCounter[i] > 0){
+            globalIndices[i] = index++;
+        }else{
+            globalIndices[i] = NOT_INIT;
+        }
+    }
+
+    for(unsigned i=0; i<m_cell_id.size(); i++){
+        long globalIndicesArrayIndex=m_cell_id[i] - min;
+        m_cell_id[i]=globalIndices[globalIndicesArrayIndex];
+    }
+    
+}
+
 void LocalOctTree::printPoints()
 {
     //simple MPI critical section
@@ -349,8 +408,19 @@ void LocalOctTree::runControl()
                     m_comm.barrier();
                     setUpCellIds();
                     SetState(NAS_DONE);
+                    pumpNetwork();
                     m_comm.barrier();
                     printCellIds();
+                    m_comm.barrier();
+                    break;
+                }
+            case NAS_SETUP_GLOBAL_INDECIES:
+                {
+                    m_comm.sendControlMessage(APC_SET_STATE,
+                            NAS_SETUP_GLOBAL_INDECIES);
+                    m_comm.barrier();
+                    setUpGlobalIndices();
+                    SetState(NAS_DONE);
                     break;
                 }
             case NAS_DONE:
@@ -396,10 +466,19 @@ void LocalOctTree::run()
             case NAS_SETUP_NODEID:
                 {
                     m_comm.barrier();
+                    pumpNetwork();
                     setUpCellIds();
-                    SetState(NAS_DONE);
+                    SetState(NAS_SETUP_GLOBAL_INDECIES);
                     m_comm.barrier();
                     printCellIds();
+                    m_comm.barrier();
+                    break;
+                }
+            case NAS_SETUP_GLOBAL_INDECIES:
+                {
+                    m_comm.barrier();
+                    setUpGlobalIndices();
+                    SetState(NAS_WAITING);
                     break;
                 }
             case NAS_WAITING:

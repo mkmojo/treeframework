@@ -189,6 +189,33 @@ vector<long unsigned> CommLayer::reduce(
     return sum;
 }
 
+void CommLayer::reduce(long *dest, long* recv, long size)
+{
+    //logger(4) << "entering reduce\n";
+    MPI_Allreduce(dest, recv, size, MPI_LONG, MPI_SUM, 
+            MPI_COMM_WORLD);
+    //logger(4) << "left reduce\n";
+}
+
+long CommLayer::reduce( long count, MPI_OP_T op)
+{
+    //logger(4) << "entering reduce\n";
+    long res;
+    if(op == SUM)
+        MPI_Allreduce(&count, &res, 1, MPI_LONG, MPI_SUM,
+                MPI_COMM_WORLD);
+
+    if(op == MIN)
+        MPI_Allreduce(&count, &res, 1, MPI_LONG, MPI_MIN,
+                MPI_COMM_WORLD);
+
+    if(op == MAX)
+        MPI_Allreduce(&count, &res, 1, MPI_LONG, MPI_MAX,
+                MPI_COMM_WORLD);
+
+    //logger(4) << "left reduce\n";
+    return res;
+}
 
 
 double CommLayer::reduce( double count, MPI_OP_T op)
