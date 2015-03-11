@@ -387,22 +387,20 @@ void LocalOctTree::runControl()
                     m_comm.barrier();
                     pumpNetwork();
 
-                    SetState(NAS_SORT);
+                    SetState(NAS_SETUP_GLOBAL_MIN_MAX);
                     break;
                 }
-            case NAS_SORT:
+            case NAS_SETUP_GLOBAL_MIN_MAX:
                 {
                     //TODO
                     //figure out global minimum and maximum
                     m_comm.sendControlMessage(APC_SET_STATE,
-                            NAS_SORT);
+                            NAS_SETUP_GLOBAL_MIN_MAX);
+                    m_comm.barrier();
                     setUpGlobalMinMax();
                     EndState();
                     //DEBUG
-                    printGlobalMinMax();
-
-                    m_comm.sendControlMessage(APC_SET_STATE,
-                            NAS_SETUP_NODEID);
+                    //printGlobalMinMax();
 
                     SetState(NAS_SETUP_NODEID);
                     break;
@@ -413,6 +411,7 @@ void LocalOctTree::runControl()
                             NAS_SETUP_NODEID);
                     m_comm.barrier();
                     setUpCellIds();
+                    EndState();
                     //printCellIds();
                     SetState(NAS_SETUP_GLOBAL_INDECIES);
                     break;
@@ -458,11 +457,12 @@ void LocalOctTree::run()
                     SetState(NAS_WAITING);
                     break;
                 }
-            case NAS_SORT:
+            case NAS_SETUP_GLOBAL_MIN_MAX:
                 {
                     //TODO
                     //figure out global minimum and maximum
                     //and save them 
+                    m_comm.barrier();
                     setUpGlobalMinMax();
                     EndState();
                     SetState(NAS_WAITING);
@@ -470,9 +470,9 @@ void LocalOctTree::run()
                 }
             case NAS_SETUP_NODEID:
                 {
-                    pumpNetwork();
                     m_comm.barrier();
                     setUpCellIds();
+                    EndState();
                     //printCellIds();
                     SetState(NAS_WAITING);
                     break;
