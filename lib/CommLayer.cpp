@@ -95,8 +95,6 @@ uint64_t CommLayer::sendControlMessageToNode(int nodeID,
         APControl m, int argument)
 {
     assert(opt::rank == 0);
-    cout << "DEBUG " << opt::rank << ": --> "  
-         << nodeID << " Type: " << m<< endl;
     ControlMessage msg;
     msg.id = m_msgID++;
     msg.msgType = m;

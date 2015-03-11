@@ -42,18 +42,10 @@ void LocalOctTree::add(const Point &p)
 void LocalOctTree::parseControlMessage(int source)
 {
     ControlMessage controlMsg = m_comm.receiveControlMessage();
-    cout << "DEBUG "<<opt::rank << ": <-- "
-        << source << " Type: "<< controlMsg.msgType <<endl;
     switch(controlMsg.msgType)
     {
         case APC_SET_STATE:
             SetState(NetworkActionState(controlMsg.argument));
-            //DEBUG
-            if(controlMsg.argument == NAS_SETUP_GLOBAL_MIN_MAX)
-            {
-                cout<< "DEBUG " << opt::rank << ": " 
-                    << "SET_MIN_MAX succeed"<<endl;
-            }
             break;
         case APC_CHECKPOINT:
             //logger(4) << "checkpoint from " << source << ": "
@@ -390,8 +382,6 @@ void LocalOctTree::runControl()
                     SetState(NAS_LOAD_COMPLETE);
                     m_comm.sendControlMessage(APC_SET_STATE,
                             NAS_LOAD_COMPLETE);
-                    cout << "DEBUG " << opt::rank 
-                        << ": NAS_LOAD_COMPLETE " <<endl;
                     m_comm.barrier();
 
                     pumpNetwork();
@@ -402,8 +392,6 @@ void LocalOctTree::runControl()
                 {
                     m_comm.sendControlMessage(APC_SET_STATE,
                             NAS_SETUP_GLOBAL_MIN_MAX);
-                    cout << "DEBUG " << opt::rank 
-                        << ": NAS_SETUP_GLOBAL_MIN_MAX "<<endl;
                     m_comm.barrier();
                     setUpGlobalMinMax();
                     setUpCellIds();
@@ -436,8 +424,6 @@ void LocalOctTree::run()
                 }
             case NAS_LOAD_COMPLETE:
                 {
-                    cout << "DEBUG " << opt::rank 
-                        << ": NAS_LOAD_COMPLETE "<<endl;
                     m_comm.barrier();
 
                     pumpNetwork();
@@ -446,8 +432,6 @@ void LocalOctTree::run()
                 }
             case NAS_SETUP_GLOBAL_MIN_MAX:
                 {
-                    cout << "DEBUG " << opt::rank 
-                        << ": NAS_SETUP_GLOBAL_MIN_MAX "<<endl;
                     m_comm.barrier();
                     setUpGlobalMinMax();
                     setUpCellIds();
