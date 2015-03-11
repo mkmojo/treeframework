@@ -19,4 +19,4 @@ namespace opt {
 
     /** Input filename **/
     std::string inFile;
-}
+};
