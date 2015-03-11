@@ -29,12 +29,12 @@ bool LocalOctTree::isLocal(const Point& p) const
 void LocalOctTree::add(const Point &p)
 {
     if(isLocal(p)){
-        cout << p.x << " "  << p.y << " "  << p.z << " " 
-            << p.mass << " local --> " <<  computeProcID(p) << endl;
+        //cout << p.x << " "  << p.y << " "  << p.z << " " 
+            //<< p.mass << " local --> " <<  computeProcID(p) << endl;
         m_data.push_back(p);
     } else{
-        cout << p.x << " "  << p.y << " "  << p.z << " " 
-            <<  p.mass << " not local --> " << computeProcID(p) << endl;
+        //cout << p.x << " "  << p.y << " "  << p.z << " " 
+            //<<  p.mass << " not local --> " << computeProcID(p) << endl;
         m_comm.sendSeqAddMessage(computeProcID(p), p);
     }
 }
@@ -396,7 +396,7 @@ void LocalOctTree::runControl()
                     setUpGlobalMinMax();
                     setUpCellIds();
                     setUpGlobalIndices();
-                    printCellIds();
+                    //printCellIds();
                     SetState(NAS_DONE);
                     break;
                 }
@@ -436,7 +436,7 @@ void LocalOctTree::run()
                     setUpGlobalMinMax();
                     setUpCellIds();
                     setUpGlobalIndices();
-                    printCellIds();
+                    //printCellIds();
                     SetState(NAS_DONE);
                     break;
                 }
