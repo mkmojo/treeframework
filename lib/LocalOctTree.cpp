@@ -42,10 +42,18 @@ void LocalOctTree::add(const Point &p)
 void LocalOctTree::parseControlMessage(int source)
 {
     ControlMessage controlMsg = m_comm.receiveControlMessage();
+    cout << "DEBUG "<<opt::rank << ": <-- "
+        << source << " Type: "<< controlMsg.msgType <<endl;
     switch(controlMsg.msgType)
     {
         case APC_SET_STATE:
             SetState(NetworkActionState(controlMsg.argument));
+            //DEBUG
+            if(controlMsg.argument == NAS_SETUP_GLOBAL_MIN_MAX)
+            {
+                cout<< "DEBUG " << opt::rank << ": " 
+                    << "SET_MIN_MAX succeed"<<endl;
+            }
             break;
         case APC_CHECKPOINT:
             //logger(4) << "checkpoint from " << source << ": "
@@ -356,7 +364,7 @@ void LocalOctTree::setUpCellIds()
 
 void LocalOctTree::printCellIds()
 {
-    cout <<  "DEBUG: " << "rank: " << opt::rank << endl;
+    cout <<  "DEBUG " << opt::rank<< ": " << endl;
     for(unsigned int i=0; i<m_cell_id.size();i++){
         cout << m_cell_id[i]<<" ";
     }
@@ -375,54 +383,31 @@ void LocalOctTree::runControl()
                 {
                     loadPoints();
                     EndState();
-
                     m_numReachedCheckpoint++;
                     while(!checkpointReached())
                         pumpNetwork();
-
+                    //Load complete
                     SetState(NAS_LOAD_COMPLETE);
                     m_comm.sendControlMessage(APC_SET_STATE,
                             NAS_LOAD_COMPLETE);
-
+                    cout << "DEBUG " << opt::rank 
+                        << ": NAS_LOAD_COMPLETE " <<endl;
                     m_comm.barrier();
-                    pumpNetwork();
 
+                    pumpNetwork();
                     SetState(NAS_SETUP_GLOBAL_MIN_MAX);
                     break;
                 }
             case NAS_SETUP_GLOBAL_MIN_MAX:
                 {
-                    //TODO
-                    //figure out global minimum and maximum
                     m_comm.sendControlMessage(APC_SET_STATE,
                             NAS_SETUP_GLOBAL_MIN_MAX);
+                    cout << "DEBUG " << opt::rank 
+                        << ": NAS_SETUP_GLOBAL_MIN_MAX "<<endl;
                     m_comm.barrier();
                     setUpGlobalMinMax();
-                    EndState();
-                    //DEBUG
-                    //printGlobalMinMax();
-
-                    SetState(NAS_SETUP_NODEID);
-                    break;
-                }
-            case NAS_SETUP_NODEID:
-                {
-                    m_comm.sendControlMessage(APC_SET_STATE,
-                            NAS_SETUP_NODEID);
-                    m_comm.barrier();
                     setUpCellIds();
-                    EndState();
-                    //printCellIds();
-                    SetState(NAS_SETUP_GLOBAL_INDECIES);
-                    break;
-                }
-            case NAS_SETUP_GLOBAL_INDECIES:
-                {
-                    m_comm.sendControlMessage(APC_SET_STATE,
-                            NAS_SETUP_GLOBAL_INDECIES);
-                    m_comm.barrier();
                     setUpGlobalIndices();
-                    m_comm.barrier();
                     printCellIds();
                     SetState(NAS_DONE);
                     break;
@@ -451,37 +436,22 @@ void LocalOctTree::run()
                 }
             case NAS_LOAD_COMPLETE:
                 {
+                    cout << "DEBUG " << opt::rank 
+                        << ": NAS_LOAD_COMPLETE "<<endl;
                     m_comm.barrier();
-                    pumpNetwork();
 
-                    SetState(NAS_WAITING);
+                    pumpNetwork();
+                    SetState(NAS_SETUP_GLOBAL_MIN_MAX);
                     break;
                 }
             case NAS_SETUP_GLOBAL_MIN_MAX:
                 {
-                    //TODO
-                    //figure out global minimum and maximum
-                    //and save them 
+                    cout << "DEBUG " << opt::rank 
+                        << ": NAS_SETUP_GLOBAL_MIN_MAX "<<endl;
                     m_comm.barrier();
                     setUpGlobalMinMax();
-                    EndState();
-                    SetState(NAS_WAITING);
-                    break;
-                }
-            case NAS_SETUP_NODEID:
-                {
-                    m_comm.barrier();
                     setUpCellIds();
-                    EndState();
-                    //printCellIds();
-                    SetState(NAS_WAITING);
-                    break;
-                }
-            case NAS_SETUP_GLOBAL_INDECIES:
-                {
-                    m_comm.barrier();
                     setUpGlobalIndices();
-                    m_comm.barrier();
                     printCellIds();
                     SetState(NAS_DONE);
                     break;

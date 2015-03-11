@@ -29,14 +29,4 @@ namespace FMMAlgorithms
             cout<< "Unable to open file" << endl;
         }
     }
-
-    //Find out the min/max dimension from all local points.
-    void setUpMinMax(LocalOctTree* localOctTree)
-    {
-        //getMaxX
-        //getMaxY
-        //getMaxZ
-        //TODO How can I avoid code duplication when user decides to add 
-        //one more dimesion later on?
-    }
 };
