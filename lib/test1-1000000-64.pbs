@@ -1,0 +1,18 @@
+#PBS -q class
+#PBS -l nodes=11:sixcore
+#PBS -l walltime=02:00:00
+#PBS -N parallel-fmm-11N-1M
+
+#input parameters
+n=1000000
+P=64
+
+export PBS_O_WORKDIR=$HOME/prj/aluru-lab/treeframework/lib
+GEN_EXE=$PBS_O_WORKDIR/gen_data.py
+EXE=$PBS_O_WORKDIR/ParallelFMM
+INPUT=$PBS_O_WORKDIR/data-$n.txt
+
+# run apps
+python $GEN_EXE $INPUT $n
+mpirun -np $P $EXE $INPUT
+#OMPI_MCA_mpi_yield_when_idle=0 mpirun --hostfile $PBS_NODEFILE -np $P $EXE $INPUT
