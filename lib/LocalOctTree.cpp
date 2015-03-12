@@ -383,7 +383,7 @@ void LocalOctTree::runControl()
                     m_comm.sendControlMessage(APC_SET_STATE,
                             NAS_LOAD_COMPLETE);
                     m_comm.barrier();
-                    printPoints();
+                    //printPoints();
 
                     pumpNetwork();
                     SetState(NAS_SETUP_GLOBAL_MIN_MAX);
@@ -427,7 +427,7 @@ void LocalOctTree::run()
             case NAS_LOAD_COMPLETE:
                 {
                     m_comm.barrier();
-                    printPoints();
+                    //printPoints();
 
                     pumpNetwork();
                     SetState(NAS_SETUP_GLOBAL_MIN_MAX);
