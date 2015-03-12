@@ -14,5 +14,9 @@ INPUT=$PBS_O_WORKDIR/data-$n.txt
 
 # run apps
 python $GEN_EXE $INPUT $n
+let start=`date +%s%N`
 mpirun -np $P $EXE $INPUT
+let end=`date +%s%N`
+let duration=$end-$start
+echo $duration
 #OMPI_MCA_mpi_yield_when_idle=0 mpirun --hostfile $PBS_NODEFILE -np $P $EXE $INPUT
