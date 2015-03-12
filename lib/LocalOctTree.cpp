@@ -396,7 +396,7 @@ void LocalOctTree::runControl()
                     setUpGlobalMinMax();
                     setUpCellIds();
                     setUpGlobalIndices();
-                    //printCellIds();
+                    printCellIds();
                     SetState(NAS_DONE);
                     break;
                 }
@@ -436,7 +436,7 @@ void LocalOctTree::run()
                     setUpGlobalMinMax();
                     setUpCellIds();
                     setUpGlobalIndices();
-                    //printCellIds();
+                    printCellIds();
                     SetState(NAS_DONE);
                     break;
                 }
