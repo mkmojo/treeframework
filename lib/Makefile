@@ -7,10 +7,10 @@
 #
 
 # define the C compiler to use
-CC = mpicxx
+CC = mpic++
 
 # define any compile-time flags
-CFLAGS = -Wall -g -std=c++11
+CFLAGS = -Wall -g -std=c++0x
 
 # define any directories containing header files other than /usr/include
 #
