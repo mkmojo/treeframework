@@ -3,6 +3,7 @@
 #include "BaseTree.h"
 #include "Point.h"
 #include <vector>
+#include <iostream>
 
 enum NetworkActionState
 {
@@ -10,8 +11,6 @@ enum NetworkActionState
     NAS_LOAD_COMPLETE, // loading is complete
     NAS_WAITING, // non-control process is waiting
     NAS_SETUP_GLOBAL_MIN_MAX,
-    NAS_SETUP_NODEID,
-    NAS_SETUP_GLOBAL_INDECIES,
     NAS_DONE // finished, clean up and exit
 };
 
@@ -40,7 +39,7 @@ class LocalOctTree : public BaseTree
         NetworkActionState getState(){
             return m_state;
         }
-        void printCellIds();
+        void printCellIds(std::string sectionName);
 
         //Recieve and dispatch packets
         size_t pumpNetwork();

@@ -270,8 +270,8 @@ void LocalOctTree::printPoints()
                     Point p = m_data[i];
                     cout << "DEBUG " << opt::rank << ": cord ";
                     p.print_cord();
-                    cout << "DEBUG " << opt::rank << ": m_point ";
-                    p.print_m_point();
+                    //cout << "DEBUG " << opt::rank << ": m_point ";
+                    //p.print_m_point();
                 }
             }
         }
@@ -354,9 +354,9 @@ void LocalOctTree::setUpCellIds()
 }
 
 
-void LocalOctTree::printCellIds()
+void LocalOctTree::printCellIds(string sectionName)
 {
-    cout <<  "DEBUG " << opt::rank<< ": " << endl;
+    cout <<  "DEBUG " << opt::rank<< ": "<< sectionName << endl;
     for(unsigned int i=0; i<m_cell_id.size();i++){
         cout << m_cell_id[i]<<" ";
     }
@@ -383,6 +383,7 @@ void LocalOctTree::runControl()
                     m_comm.sendControlMessage(APC_SET_STATE,
                             NAS_LOAD_COMPLETE);
                     m_comm.barrier();
+                    printPoints();
 
                     pumpNetwork();
                     SetState(NAS_SETUP_GLOBAL_MIN_MAX);
@@ -395,8 +396,9 @@ void LocalOctTree::runControl()
                     m_comm.barrier();
                     setUpGlobalMinMax();
                     setUpCellIds();
+                    printCellIds(string("nodeId"));
                     setUpGlobalIndices();
-                    printCellIds();
+                    printCellIds(string("globalIndex"));
                     SetState(NAS_DONE);
                     break;
                 }
@@ -425,6 +427,7 @@ void LocalOctTree::run()
             case NAS_LOAD_COMPLETE:
                 {
                     m_comm.barrier();
+                    printPoints();
 
                     pumpNetwork();
                     SetState(NAS_SETUP_GLOBAL_MIN_MAX);
@@ -435,8 +438,9 @@ void LocalOctTree::run()
                     m_comm.barrier();
                     setUpGlobalMinMax();
                     setUpCellIds();
+                    printCellIds(string("nodeId"));
                     setUpGlobalIndices();
-                    printCellIds();
+                    printCellIds(string("globalIndex"));
                     SetState(NAS_DONE);
                     break;
                 }
