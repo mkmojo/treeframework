@@ -1,7 +1,7 @@
 #PBS -q class
-#PBS -l nodes=8:sixcore
+#PBS -l nodes=11:sixcore
 #PBS -l walltime=02:00:00
-#PBS -N parallel-fmm-8N-1M
+#PBS -N parallel-fmm-11N-1M
 
 #input parameters
 n=1000000
