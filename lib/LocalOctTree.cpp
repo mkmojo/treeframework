@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <time.h> 
 #include <iostream>
+#include <math>
 #include "Point.h"
 #include "Cell.h"
 using namespace std;
@@ -312,7 +313,27 @@ void LocalOctTree::sortLocalCells()
     if(opt::rank == 0) 
         cout<< "DEBUG: total " << numTotal <<endl;
 
+    //TODO: extend this to user defined data type
+    //So customized iterator/cmp function etc.
     sort(m_cells.begin(), m_cells.end(), cmpCell);
+}
+
+void LocalOctTree::chooseLocalSamples()
+{
+    unsigned int n = m_cells.size();
+    unsigned int p = opt::numProc;
+    double step = (double) n / sqrt(p);
+    int offset = (int) (run * (double) opt::rank / (double) p);
+    int sampleSize = 0;
+    for(double k = offset; (int)k < n; k += run) sampleSize++;
+
+    //TODO: scope issue?
+    vector<Cell> samples(sampleSize);
+
+    int i = 0;
+    double k;
+    for(k = offset, i = 0; (int)k < n && i < sampleSize; k += run, ++ i)
+        samples[i] = m_cells[(int)k];
 }
 
 
