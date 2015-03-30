@@ -11,7 +11,7 @@ enum NetworkActionState
     NAS_LOADING, // loading points
     NAS_LOAD_COMPLETE, // loading is complete
     NAS_WAITING, // non-control process is waiting
-    NAS_SETUP_GLOBAL_MIN_MAX,
+    NAS_SORT,
     NAS_DONE // finished, clean up and exit
 };
 
@@ -35,6 +35,7 @@ class LocalOctTree : public BaseTree
         void printGlobalMinMax();
         void setUpCellIds();
         void setUpGlobalIndices();
+        void sortLocalCells();
 
         //DEBUG
         NetworkActionState getState(){

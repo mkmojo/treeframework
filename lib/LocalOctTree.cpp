@@ -137,7 +137,7 @@ void LocalOctTree::loadPoints()
 //distribute the result
 void LocalOctTree::setUpGlobalMinMax()
 {
-    //what do we do with a processor that does not 
+    //TODO: what do we do with a processor that does not 
     //have any data?
     assert(m_data.size() > 0);
     Point cntPoint = m_data[0];
@@ -300,6 +300,21 @@ void LocalOctTree::setUpCellIds()
     }
 }
 
+bool cmpCell(const Cell &c1, const Cell &c2)
+{
+    return  c1.cell_id < c2.cell_id;
+}
+
+void LocalOctTree::sortLocalCells()
+{
+    long numTotal = 0;
+    numTotal = m_comm.reduce((long)m_cells.size());
+    if(opt::rank == 0) 
+        cout<< "DEBUG: total " << numTotal <<endl;
+
+    sort(m_cells.begin(), m_cells.end(), cmpCell);
+}
+
 
 void LocalOctTree::printCellIds(string sectionName)
 {
@@ -333,16 +348,17 @@ void LocalOctTree::runControl()
                     //printPoints();
 
                     pumpNetwork();
-                    SetState(NAS_SETUP_GLOBAL_MIN_MAX);
+                    SetState(NAS_SORT);
                     break;
                 }
-            case NAS_SETUP_GLOBAL_MIN_MAX:
+            case NAS_SORT:
                 {
                     m_comm.sendControlMessage(APC_SET_STATE,
-                            NAS_SETUP_GLOBAL_MIN_MAX);
+                            NAS_SORT);
                     m_comm.barrier();
                     setUpGlobalMinMax();
                     setUpCellIds();
+                    sortLocalCells();
                     printCellIds(string("nodeId"));
                     SetState(NAS_DONE);
                     break;
@@ -375,14 +391,15 @@ void LocalOctTree::run()
                     //printPoints();
 
                     pumpNetwork();
-                    SetState(NAS_SETUP_GLOBAL_MIN_MAX);
+                    SetState(NAS_SORT);
                     break;
                 }
-            case NAS_SETUP_GLOBAL_MIN_MAX:
+            case NAS_SORT:
                 {
                     m_comm.barrier();
                     setUpGlobalMinMax();
                     setUpCellIds();
+                    sortLocalCells();
                     printCellIds(string("nodeId"));
                     SetState(NAS_DONE);
                     break;
