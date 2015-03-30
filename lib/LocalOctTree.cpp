@@ -5,6 +5,7 @@
 #include <time.h> 
 #include <iostream>
 #include "Point.h"
+#include "Cell.h"
 using namespace std;
 
 const long NOT_INIT = -1;
@@ -197,7 +198,7 @@ void LocalOctTree::printGlobalMinMax()
 }
 
 
-void LocalOctTree::setUpGlobalIndices()
+/*void LocalOctTree::setUpGlobalIndices()
 {
     //global min and max;
     long min=0, max=0;
@@ -255,7 +256,7 @@ void LocalOctTree::setUpGlobalIndices()
         m_cell_id[i]=globalIndices[globalIndicesArrayIndex];
     }
     
-}
+}*/
 
 void LocalOctTree::printPoints()
 {
@@ -343,13 +344,19 @@ long LocalOctTree::getCellId(const Point& p)
 
 void LocalOctTree::setUpCellIds()
 {
+    //compress all things into cells
     for(unsigned i=0; i < m_data.size(); i++) {
+        //m_data --> all the data points on this processor
         int cell_id = getCellId(m_data[i]);
-        vector<long>::const_iterator it;
-        it = find(m_cell_id.begin(), m_cell_id.end(), cell_id);
+        //TODO: change to user defined type
+        vector<Cell>::iterator it;
+        it = find(m_cell_id.begin(), m_cell_id.end(), Cell(cell_id));
         if( it == m_cell_id.end()){
-            m_cell_id.push_back(cell_id);
+            m_cell_id.push_back(Cell(cell_id, m_data[i]));
         }
+        //insert point to cell
+        it->points.push_back(m_data[i]);
+        //TODO: check that indeed succeed
     }
 }
 
@@ -397,8 +404,6 @@ void LocalOctTree::runControl()
                     setUpGlobalMinMax();
                     setUpCellIds();
                     printCellIds(string("nodeId"));
-                    setUpGlobalIndices();
-                    printCellIds(string("globalIndex"));
                     SetState(NAS_DONE);
                     break;
                 }
@@ -439,8 +444,6 @@ void LocalOctTree::run()
                     setUpGlobalMinMax();
                     setUpCellIds();
                     printCellIds(string("nodeId"));
-                    setUpGlobalIndices();
-                    printCellIds(string("globalIndex"));
                     SetState(NAS_DONE);
                     break;
                 }

@@ -2,6 +2,7 @@
 #define LOCALOCTTREE_H 1
 #include "BaseTree.h"
 #include "Point.h"
+#include "Cell.h"
 #include <vector>
 #include <iostream>
 
@@ -54,7 +55,7 @@ class LocalOctTree : public BaseTree
 
         unsigned m_checkpointSum;
         std::vector<Point> m_data;
-        std::vector<long> m_cell_id;
+        std::vector<Cell> m_cell_id;
         //TODO
         //delete all these stand alone variable
         //and use a container for them
