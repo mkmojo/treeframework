@@ -198,66 +198,6 @@ void LocalOctTree::printGlobalMinMax()
 }
 
 
-/*void LocalOctTree::setUpGlobalIndices()
-{
-    //global min and max;
-    long min=0, max=0;
-
-    long localMin = NOT_INIT;
-    long localMax = NOT_INIT;
-
-    for(unsigned i=0; i<m_cell_id.size();i++){
-        long id = m_cell_id[i];
-        if( id > localMax){
-            localMax = id;
-        }
-        if( localMin == NOT_INIT || id < localMin){
-            localMin = id;
-        }
-    }
-
-    //cout << "DEBUG before: mix - min: " << max <<" - "<< min << endl;
-
-    min = m_comm.reduce(localMin, MIN);
-    max = m_comm.reduce(localMax, MAX);
-
-    long k = max - min + 1;
-    //cout << "DEBUG after: mix - min: " << max <<" - "<< min << endl;
-    assert(k >= 0);
-
-    long nodeCounter[k];
-    long localNodeCounter[k];
-
-    //init things
-    for(unsigned i=0;i<k;i++) {
-        localNodeCounter[i] = 0;
-        nodeCounter[i] = 0;
-    }
-
-    //keep track of which node ids are avaiable locally
-    for(unsigned i=0;i<m_cell_id.size();i++){
-        localNodeCounter[m_cell_id[i] - min]++;
-    }
-    
-    m_comm.reduce(localNodeCounter, nodeCounter, k);
-
-    long globalIndices[k];
-    long index = 0;
-    for(int i=0; i<k; i++){
-        if(nodeCounter[i] > 0){
-            globalIndices[i] = index++;
-        }else{
-            globalIndices[i] = NOT_INIT;
-        }
-    }
-
-    for(unsigned i=0; i<m_cell_id.size(); i++){
-        long globalIndicesArrayIndex=m_cell_id[i] - min;
-        m_cell_id[i]=globalIndices[globalIndicesArrayIndex];
-    }
-    
-}*/
-
 void LocalOctTree::printPoints()
 {
     //simple MPI critical section
@@ -348,15 +288,15 @@ void LocalOctTree::setUpCellIds()
     for(unsigned i=0; i < m_data.size(); i++) {
         //m_data --> all the data points on this processor
         int cell_id = getCellId(m_data[i]);
-        //TODO: change to user defined type
+        //TODO: change to user defined type with template
         vector<Cell>::iterator it;
-        it = find(m_cell_id.begin(), m_cell_id.end(), Cell(cell_id));
-        if( it == m_cell_id.end()){
-            m_cell_id.push_back(Cell(cell_id, m_data[i]));
+        it = find(m_cells.begin(), m_cells.end(), Cell(cell_id));
+        if( it == m_cells.end() ){
+            m_cells.push_back(Cell(cell_id, m_data[i]));
+            continue;
         }
-        //insert point to cell
+        //Cell already exists
         it->points.push_back(m_data[i]);
-        //TODO: check that indeed succeed
     }
 }
 
@@ -364,8 +304,8 @@ void LocalOctTree::setUpCellIds()
 void LocalOctTree::printCellIds(string sectionName)
 {
     cout <<  "DEBUG " << opt::rank<< ": "<< sectionName << endl;
-    for(unsigned int i=0; i<m_cell_id.size();i++){
-        cout << m_cell_id[i]<<" ";
+    for(unsigned int i=0; i<m_cells.size();i++){
+        cout << m_cells[i] << " ";
     }
     cout << endl;
 }

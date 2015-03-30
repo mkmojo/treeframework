@@ -55,7 +55,7 @@ class LocalOctTree : public BaseTree
 
         unsigned m_checkpointSum;
         std::vector<Point> m_data;
-        std::vector<Cell> m_cell_id;
+        std::vector<Cell> m_cells;
         //TODO
         //delete all these stand alone variable
         //and use a container for them

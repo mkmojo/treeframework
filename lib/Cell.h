@@ -19,7 +19,7 @@ class Cell{
             return os;
         }
 
-        Cell(long cell_id, Point p)
+        Cell(long cell_id, Point &p)
             :cell_id(cell_id)
         {
             points.push_back(p);
