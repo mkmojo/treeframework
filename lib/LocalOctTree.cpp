@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <time.h> 
 #include <iostream>
-#include <math>
 #include "Point.h"
 #include "Cell.h"
 using namespace std;
@@ -320,20 +319,30 @@ void LocalOctTree::sortLocalCells()
 
 void LocalOctTree::chooseLocalSamples()
 {
-    unsigned int n = m_cells.size();
-    unsigned int p = opt::numProc;
-    double step = (double) n / sqrt(p);
-    int offset = (int) (run * (double) opt::rank / (double) p);
+    int n = m_cells.size();
+    int p = opt::numProc;
+    int r = opt::rank;
+    double step =  (double) n /  sqrt(p);
+    int offset = (int) (step * ( (double) r / (double) p));
     int sampleSize = 0;
-    for(double k = offset; (int)k < n; k += run) sampleSize++;
 
-    //TODO: scope issue?
-    vector<Cell> samples(sampleSize);
+    cout << "DEBUG: " << r << " n " << n << endl;
+    cout << "DEBUG: " << r << " p " << p << endl;
+    cout << "DEBUG: " << r << " r " << r << endl;
+    cout << "DEBUG: " << r << " step " << step << endl;
+    cout << "DEBUG: " << r << " offset " << offset << endl;
+
+    for(double k = offset; int(k) < n; k += step) ++sampleSize;
+
+    m_samples.resize(sampleSize);
 
     int i = 0;
     double k;
-    for(k = offset, i = 0; (int)k < n && i < sampleSize; k += run, ++ i)
-        samples[i] = m_cells[(int)k];
+    for(k = offset, i = 0; (int)k < n && i < sampleSize; k += step, ++ i)
+        m_samples[i] = m_cells[(int)k];
+
+    cout << "DEBUG " << r << ": sample.size(): " << m_samples.size()
+        << " sampleSize :" << sampleSize<< endl;
 }
 
 
@@ -381,6 +390,7 @@ void LocalOctTree::runControl()
                     setUpCellIds();
                     sortLocalCells();
                     printCellIds(string("nodeId"));
+                    chooseLocalSamples();
                     SetState(NAS_DONE);
                     break;
                 }
@@ -422,6 +432,7 @@ void LocalOctTree::run()
                     setUpCellIds();
                     sortLocalCells();
                     printCellIds(string("nodeId"));
+                    chooseLocalSamples();
                     SetState(NAS_DONE);
                     break;
                 }

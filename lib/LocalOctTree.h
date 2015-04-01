@@ -36,6 +36,7 @@ class LocalOctTree : public BaseTree
         void setUpCellIds();
         void setUpGlobalIndices();
         void sortLocalCells();
+        void chooseLocalSamples();
 
         //DEBUG
         NetworkActionState getState(){
@@ -57,6 +58,7 @@ class LocalOctTree : public BaseTree
         unsigned m_checkpointSum;
         std::vector<Point> m_data;
         std::vector<Cell> m_cells;
+        std::vector<Cell> m_samples;
         //TODO
         //delete all these stand alone variable
         //and use a container for them

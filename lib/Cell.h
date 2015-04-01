@@ -13,9 +13,10 @@ class Cell{
         {
             return c1.cell_id == c2.cell_id;
         }
+
         friend std::ostream& operator<<(std::ostream &os, const Cell &obj)
         {
-            os << obj.cell_id;
+            os << obj.cell_id << "(" << obj.points.size() << ")";
             return os;
         }
 
@@ -24,6 +25,9 @@ class Cell{
         {
             points.push_back(p);
         }
+
         Cell(long cell_id):cell_id(cell_id) {}
+
+        Cell():cell_id(-1){}
 };
 #endif
