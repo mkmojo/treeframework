@@ -317,6 +317,13 @@ void LocalOctTree::sortLocalCells()
     sort(m_cells.begin(), m_cells.end(), cmpCell);
 }
 
+void LocalOctTree::allGather()
+{
+    long total  = m_comm.reduce(m_samples.size());
+    
+    m_all_samples.resize(total);
+}
+
 void LocalOctTree::chooseLocalSamples()
 {
     int n = m_cells.size();
@@ -338,8 +345,10 @@ void LocalOctTree::chooseLocalSamples()
 
     int i = 0;
     double k;
-    for(k = offset, i = 0; (int)k < n && i < sampleSize; k += step, ++ i)
+    for(k = offset, i = 0; int(k) < n && i < sampleSize; k += step, ++ i){
         m_samples[i] = m_cells[(int)k];
+        //cout << m_samples[i] << endl;
+    }
 
     cout << "DEBUG " << r << ": sample.size(): " << m_samples.size()
         << " sampleSize :" << sampleSize<< endl;

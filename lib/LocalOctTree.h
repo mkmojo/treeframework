@@ -59,6 +59,7 @@ class LocalOctTree : public BaseTree
         std::vector<Point> m_data;
         std::vector<Cell> m_cells;
         std::vector<Cell> m_samples;
+        std::vector<Cell> m_all_samples;
         //TODO
         //delete all these stand alone variable
         //and use a container for them
