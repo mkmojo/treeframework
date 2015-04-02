@@ -1,6 +1,8 @@
 #include "MessageBuffer.h"
 #include "Common/Options.h"
+#include "Cell.h"
 #include <iostream>
+#include <vector>
 using namespace std;
 
 void MessageBuffer::checkQueueForSend(int procID, SendMode mode)
@@ -38,6 +40,7 @@ void MessageBuffer::checkQueueForSend(int procID, SendMode mode)
 
 void MessageBuffer::queueMessage(int procID, Message* message, SendMode mode)
 {
+    //push pointer into message queue
     m_msgQueues[procID].push_back(message);
     checkQueueForSend(procID, mode);
 }
@@ -45,6 +48,13 @@ void MessageBuffer::queueMessage(int procID, Message* message, SendMode mode)
 void MessageBuffer::sendSeqAddMessage(int procID, const Point& p)
 {
     queueMessage(procID, new SeqAddMessage(p), SM_BUFFERED);
+}
+
+//TODO 
+//check that message can capture a cell vector 
+void MessageBuffer::sendSampleAddMessage(int procID, const vector<Cell>& sample)
+{
+    queueMessage(procID, new SampleAddMessage(sample), SM_BUFFERED);
 }
 
 void MessageBuffer::clearQueue(int procID)

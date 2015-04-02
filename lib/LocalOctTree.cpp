@@ -317,11 +317,14 @@ void LocalOctTree::sortLocalCells()
     sort(m_cells.begin(), m_cells.end(), cmpCell);
 }
 
-void LocalOctTree::allGather()
+void LocalOctTree::gatherAllSamples()
 {
     long total  = m_comm.reduce(m_samples.size());
-    
     m_all_samples.resize(total);
+    //All proc gather all samples
+    for(int i=0;i<opt::numProc && i != opt::rank; i++){
+        m_comm.sendSampleAddMessage(i, m_samples);
+    }
 }
 
 void LocalOctTree::chooseLocalSamples()

@@ -20,6 +20,7 @@ MessageType Message::readMessageType(char* buffer)
     return (MessageType)*(uint8_t*)buffer;
 }
 
+
 size_t Message::unserialize(const char* buffer)
 {
     size_t offset = 0;
