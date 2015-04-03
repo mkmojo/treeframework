@@ -33,10 +33,9 @@ class LocalOctTree : public BaseTree
         void handle(int senderID, const SeqAddMessage& message);
         void setUpGlobalMinMax();
         void printGlobalMinMax();
-        void setUpCellIds();
-        void setUpGlobalIndices();
-        void sortLocalCells();
-        void chooseLocalSamples();
+        void sortLocalPoints();
+        long setCellId(Point &p);
+        void setUpPointIds();
 
         //DEBUG
         NetworkActionState getState(){

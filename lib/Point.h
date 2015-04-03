@@ -23,6 +23,9 @@ class Point
                 memcpy(m_point + sizeof(double)*3, &mass, sizeof mass);
             }
 
+        long setCellId(long newCellId);
+        long getCellId()const {return m_cell_id;}
+
         static unsigned serialSize() {return NUM_BYTES;}
         //copy data to outgoing buffer to other procs
         //unroll struct into one dimension array
@@ -53,6 +56,7 @@ class Point
 
             return sizeof m_point;
         }
+
         static const unsigned NUM_BYTES =  sizeof(double) * NUM_SLOT;
         //DEBUG
         void print_m_point();
@@ -60,6 +64,7 @@ class Point
         unsigned getCode() const;
     protected:
         char m_point[NUM_BYTES];
+        long m_cell_id;
 };
 #endif
 

@@ -1,11 +1,11 @@
 #include "LocalOctTree.h"
 #include "Common/Options.h"
 #include "Algorithm.h"
+#include "Point.h"
+#include "Cell.h"
 #include <algorithm>
 #include <time.h> 
 #include <iostream>
-#include "Point.h"
-#include "Cell.h"
 using namespace std;
 
 const long NOT_INIT = -1;
@@ -258,7 +258,10 @@ long computeKey( unsigned int x, unsigned int y, unsigned z)
 
 }
 
-long LocalOctTree::getCellId(const Point& p)
+//TODO:
+//Probably this should not be a member function
+//Pass min&max as parameter might be a better option
+long LocalOctTree::setCellId(Point &p)
 {
     //return the cell id for a point; 
     //r stands for range 
@@ -279,83 +282,75 @@ long LocalOctTree::getCellId(const Point& p)
     int yKey = (unsigned int) (y / cellSize);
     int zKey = (unsigned int) (z / cellSize);
 
-    return computeKey(xKey, yKey, zKey);
+    return p.setCellId(computeKey(xKey, yKey, zKey));
 }
 
-void LocalOctTree::setUpCellIds()
+void LocalOctTree::setUpPointIds()
 {
-    //compress all things into cells
     for(unsigned i=0; i < m_data.size(); i++) {
-        //m_data --> all the data points on this processor
-        int cell_id = getCellId(m_data[i]);
-        //TODO: change to user defined type with template
-        vector<Cell>::iterator it;
-        it = find(m_cells.begin(), m_cells.end(), Cell(cell_id));
-        if( it == m_cells.end() ){
-            m_cells.push_back(Cell(cell_id, m_data[i]));
-            continue;
-        }
-        //Cell already exists
-        it->points.push_back(m_data[i]);
+        //TODO:
+        //is it better to have setCellId as a member
+        //function of Point class?
+        setCellId(m_data[i]);
     }
 }
 
-bool cmpCell(const Cell &c1, const Cell &c2)
+bool cmpPoint(const Point &p1, const Point &p2)
 {
-    return  c1.cell_id < c2.cell_id;
+    return  p1.getCellId()< p2.getCellId();
 }
 
-void LocalOctTree::sortLocalCells()
+void LocalOctTree::sortLocalPoints()
 {
     long numTotal = 0;
-    numTotal = m_comm.reduce((long)m_cells.size());
+    numTotal = m_comm.reduce((long)m_data.size());
     if(opt::rank == 0) 
         cout<< "DEBUG: total " << numTotal <<endl;
 
     //TODO: extend this to user defined data type
     //So customized iterator/cmp function etc.
-    sort(m_cells.begin(), m_cells.end(), cmpCell);
+    sort(m_data.begin(), m_data.end(), cmpPoint);
 }
 
-void LocalOctTree::gatherAllSamples()
-{
-    long total  = m_comm.reduce(m_samples.size());
-    m_all_samples.resize(total);
-    //All proc gather all samples
-    for(int i=0;i<opt::numProc && i != opt::rank; i++){
-        m_comm.sendSampleAddMessage(i, m_samples);
-    }
-}
-
-void LocalOctTree::chooseLocalSamples()
-{
-    int n = m_cells.size();
-    int p = opt::numProc;
-    int r = opt::rank;
-    double step =  (double) n /  sqrt(p);
-    int offset = (int) (step * ( (double) r / (double) p));
-    int sampleSize = 0;
-
-    cout << "DEBUG: " << r << " n " << n << endl;
-    cout << "DEBUG: " << r << " p " << p << endl;
-    cout << "DEBUG: " << r << " r " << r << endl;
-    cout << "DEBUG: " << r << " step " << step << endl;
-    cout << "DEBUG: " << r << " offset " << offset << endl;
-
-    for(double k = offset; int(k) < n; k += step) ++sampleSize;
-
-    m_samples.resize(sampleSize);
-
-    int i = 0;
-    double k;
-    for(k = offset, i = 0; int(k) < n && i < sampleSize; k += step, ++ i){
-        m_samples[i] = m_cells[(int)k];
-        //cout << m_samples[i] << endl;
-    }
-
-    cout << "DEBUG " << r << ": sample.size(): " << m_samples.size()
-        << " sampleSize :" << sampleSize<< endl;
-}
+//void LocalOctTree::gatherAllSamples()
+//{
+//    long total  = m_comm.reduce(m_samples.size());
+//    m_all_samples.resize(total);
+//    //All proc gather all samples
+//    for(int i=0;i<opt::numProc && i != opt::rank; i++){
+//        m_comm.sendSampleAddMessage(i, m_samples);
+//    }
+//}
+//
+//void LocalOctTree::chooseLocalSamples()
+//{
+//    int n = m_cells.size();
+//    int p = opt::numProc;
+//    int r = opt::rank;
+//    double step =  (double) n /  sqrt(p);
+//    int offset = (int) (step * ( (double) r / (double) p));
+//    int sampleSize = 0;
+//
+//    cout << "DEBUG: " << r << " n " << n << endl;
+//    cout << "DEBUG: " << r << " p " << p << endl;
+//    cout << "DEBUG: " << r << " r " << r << endl;
+//    cout << "DEBUG: " << r << " step " << step << endl;
+//    cout << "DEBUG: " << r << " offset " << offset << endl;
+//
+//    for(double k = offset; int(k) < n; k += step) ++sampleSize;
+//
+//    m_samples.resize(sampleSize);
+//
+//    int i = 0;
+//    double k;
+//    for(k = offset, i = 0; int(k) < n && i < sampleSize; k += step, ++ i){
+//        m_samples[i] = m_cells[(int)k];
+//        //cout << m_samples[i] << endl;
+//    }
+//
+//    cout << "DEBUG " << r << ": sample.size(): " << m_samples.size()
+//        << " sampleSize :" << sampleSize<< endl;
+//}
 
 
 void LocalOctTree::printCellIds(string sectionName)
@@ -399,10 +394,8 @@ void LocalOctTree::runControl()
                             NAS_SORT);
                     m_comm.barrier();
                     setUpGlobalMinMax();
-                    setUpCellIds();
-                    sortLocalCells();
-                    printCellIds(string("nodeId"));
-                    chooseLocalSamples();
+                    setUpPointIds();
+                    sortLocalPoints();
                     SetState(NAS_DONE);
                     break;
                 }
@@ -441,10 +434,8 @@ void LocalOctTree::run()
                 {
                     m_comm.barrier();
                     setUpGlobalMinMax();
-                    setUpCellIds();
-                    sortLocalCells();
-                    printCellIds(string("nodeId"));
-                    chooseLocalSamples();
+                    setUpPointIds();
+                    sortLocalPoints();
                     SetState(NAS_DONE);
                     break;
                 }

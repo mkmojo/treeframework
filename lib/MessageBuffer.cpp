@@ -50,12 +50,6 @@ void MessageBuffer::sendSeqAddMessage(int procID, const Point& p)
     queueMessage(procID, new SeqAddMessage(p), SM_BUFFERED);
 }
 
-//TODO 
-//check that message can capture a cell vector 
-void MessageBuffer::sendSampleAddMessage(int procID, const vector<Cell>& sample)
-{
-    queueMessage(procID, new SampleAddMessage(sample), SM_BUFFERED);
-}
 
 void MessageBuffer::clearQueue(int procID)
 {

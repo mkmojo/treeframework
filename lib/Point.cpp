@@ -35,3 +35,8 @@ void Point::print_cord(){
     printf("\n");
 }
 
+long Point::setCellId(long newCellId)
+{
+    m_cell_id = newCellId;
+    return m_cell_id;
+}
