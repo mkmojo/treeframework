@@ -58,6 +58,7 @@ class LocalOctTree : public BaseTree
 
         unsigned m_checkpointSum;
         std::vector<Point> m_data;
+        std::vector<Point> m_sort_buffer;
         std::vector<long> m_cbuffer;
         std::vector<long> m_pivotbuffer;
         //TODO

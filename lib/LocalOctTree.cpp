@@ -31,11 +31,11 @@ void LocalOctTree::add(const Point &p)
 {
     if(isLocal(p)){
         //cout << p.x << " "  << p.y << " "  << p.z << " " 
-            //<< p.mass << " local --> " <<  computeProcID(p) << endl;
+        //<< p.mass << " local --> " <<  computeProcID(p) << endl;
         m_data.push_back(p);
     } else{
         //cout << p.x << " "  << p.y << " "  << p.z << " " 
-            //<<  p.mass << " not local --> " << computeProcID(p) << endl;
+        //<<  p.mass << " not local --> " << computeProcID(p) << endl;
         m_comm.sendSeqAddMessage(computeProcID(p), p);
     }
 }
@@ -169,7 +169,7 @@ void LocalOctTree::setUpGlobalMinMax()
             maxZ = cntPoint.z;
         }
     }
-    
+
     localMinX = minX;
     localMinY = minY;
     localMinZ = minZ;
@@ -329,12 +329,12 @@ void LocalOctTree::getLocalSample()
         long id = m_data[int(1.0*i*m_data.size()/opt::numProc)].getCellId();
         m_cbuffer.push_back(id);
     }
-   // cout<< "DEBUG " << opt::rank << ": " << m_cbuffer.size() <<endl; 
-   // for(unsigned int i=0;i<m_cbuffer.size();i++)
-   // {
-   //     cout << m_cbuffer[i] << " ";
-   // }
-   // cout <<endl;
+    // cout<< "DEBUG " << opt::rank << ": " << m_cbuffer.size() <<endl; 
+    // for(unsigned int i=0;i<m_cbuffer.size();i++)
+    // {
+    //     cout << m_cbuffer[i] << " ";
+    // }
+    // cout <<endl;
 }
 
 void LocalOctTree::setGlobalPivot()
@@ -382,6 +382,31 @@ void LocalOctTree::setGlobalPivot()
             cout << m_cbuffer[i] << " ";
         }
         cout << endl;
+    }
+}
+
+LocalOctTree::distributePoints()
+{
+    unsigned int i = 0;
+    for(unsigned int j=0;i<m_cbuffer.size()-1;j++){
+        long left = m_cbuffer[j];
+        long right = m_cbuffer[j+1];
+        
+        while(i < m_data.size()){
+            long cntId = m_data[i].getCellId();
+            if(cntId < right && cntId >= left){
+                //TODO do I need to create a new message 
+                //for different buffer?
+                m_comm.sendSeqAddMessage(j, m_data[i]);
+            }
+            i++;
+        }
+    }
+
+    //send the rest to the very last proce
+    while(i<m_data.size()){
+        m_comm.sendSeqAddMessage(opt::numProc - 1, m_data[i]);
+        i++;
     }
 }
 
