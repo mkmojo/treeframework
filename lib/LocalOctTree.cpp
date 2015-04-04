@@ -312,47 +312,6 @@ void LocalOctTree::sortLocalPoints()
     sort(m_data.begin(), m_data.end(), cmpPoint);
 }
 
-//void LocalOctTree::gatherAllSamples()
-//{
-//    long total  = m_comm.reduce(m_samples.size());
-//    m_all_samples.resize(total);
-//    //All proc gather all samples
-//    for(int i=0;i<opt::numProc && i != opt::rank; i++){
-//        m_comm.sendSampleAddMessage(i, m_samples);
-//    }
-//}
-//
-//void LocalOctTree::chooseLocalSamples()
-//{
-//    int n = m_cells.size();
-//    int p = opt::numProc;
-//    int r = opt::rank;
-//    double step =  (double) n /  sqrt(p);
-//    int offset = (int) (step * ( (double) r / (double) p));
-//    int sampleSize = 0;
-//
-//    cout << "DEBUG: " << r << " n " << n << endl;
-//    cout << "DEBUG: " << r << " p " << p << endl;
-//    cout << "DEBUG: " << r << " r " << r << endl;
-//    cout << "DEBUG: " << r << " step " << step << endl;
-//    cout << "DEBUG: " << r << " offset " << offset << endl;
-//
-//    for(double k = offset; int(k) < n; k += step) ++sampleSize;
-//
-//    m_samples.resize(sampleSize);
-//
-//    int i = 0;
-//    double k;
-//    for(k = offset, i = 0; int(k) < n && i < sampleSize; k += step, ++ i){
-//        m_samples[i] = m_cells[(int)k];
-//        //cout << m_samples[i] << endl;
-//    }
-//
-//    cout << "DEBUG " << r << ": sample.size(): " << m_samples.size()
-//        << " sampleSize :" << sampleSize<< endl;
-//}
-
-
 void LocalOctTree::printCellIds(string sectionName)
 {
     cout <<  "DEBUG " << opt::rank<< ": "<< sectionName << endl;

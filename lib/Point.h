@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
+#include <iostream>
 #include <cstring> // for memcpy
 #define NUM_SLOT 4 // Need to be changed to adjust automatically
 
@@ -25,6 +26,17 @@ class Point
 
         long setCellId(long newCellId);
         long getCellId()const {return m_cell_id;}
+
+        friend bool operator==(const Point &p1, const Point &p2) 
+        {
+            return p1.getCellId() == p2.getCellId();
+        }
+
+        friend std::ostream& operator<<(std::ostream &os, const Point &obj)
+        {
+            os << obj.getCellId();
+            return os;
+        }
 
         static unsigned serialSize() {return NUM_BYTES;}
         //copy data to outgoing buffer to other procs
