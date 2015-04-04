@@ -238,3 +238,35 @@ double CommLayer::reduce( double count, MPI_OP_T op)
     //logger(4) << "left reduce\n";
     return res;
 }
+
+void CommLayer::gather(const long* send, int sendSize, 
+        long* recv, int recvSize)
+{
+    //logger(4) << "entering gather\n";
+    MPI_Gather(send, sendSize, MPI_LONG, recv, recvSize, 
+            MPI_LONG, 0, MPI_COMM_WORLD);
+    //logger(4) << "left gather\n";
+}
+
+void CommLayer::receiveGather(const long* send, int sendSize, 
+        long* recv, int recvSize )
+{
+    //logger(4) << "entering receiveGather\n";
+    MPI_Gather(send, sendSize, MPI_LONG, recv, recvSize, 
+            MPI_LONG, 0, MPI_COMM_WORLD);
+    //logger(4) << "left receiveGather\n";
+}
+
+void CommLayer::bcast(long* send, int sendSize)
+{
+    //logger(4) << "entering broadcast\n";
+    MPI_Bcast(send, sendSize, MPI_LONG, 0, MPI_COMM_WORLD);
+    //logger(4) << "left broadcast\n";
+}
+
+void CommLayer::receiveBcast(long* recv, int recvSize)
+{
+    //logger(4) << "entering receiveBroadcast\n";
+    MPI_Bcast(recv, recvSize, MPI_LONG, 0, MPI_COMM_WORLD);
+    //logger(4) << "left receiveBroadcast\n";
+}

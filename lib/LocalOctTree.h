@@ -36,6 +36,8 @@ class LocalOctTree : public BaseTree
         void sortLocalPoints();
         long setCellId(Point &p);
         void setUpPointIds();
+        void getLocalSample();
+        void setGlobalPivot();
 
         //DEBUG
         NetworkActionState getState(){
@@ -56,9 +58,8 @@ class LocalOctTree : public BaseTree
 
         unsigned m_checkpointSum;
         std::vector<Point> m_data;
-        std::vector<Cell> m_cells;
-        std::vector<Cell> m_samples;
-        std::vector<Cell> m_all_samples;
+        std::vector<long> m_cbuffer;
+        std::vector<long> m_pivotbuffer;
         //TODO
         //delete all these stand alone variable
         //and use a container for them

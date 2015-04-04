@@ -312,13 +312,77 @@ void LocalOctTree::sortLocalPoints()
     sort(m_data.begin(), m_data.end(), cmpPoint);
 }
 
-void LocalOctTree::printCellIds(string sectionName)
+//void LocalOctTree::printCellIds(string sectionName)
+//{
+//    cout <<  "DEBUG " << opt::rank<< ": "<< sectionName << endl;
+//    for(unsigned int i=0; i<m_cells.size();i++){
+//        cout << m_cells[i] << " ";
+//    }
+//    cout << endl;
+//}
+
+void LocalOctTree::getLocalSample()
 {
-    cout <<  "DEBUG " << opt::rank<< ": "<< sectionName << endl;
-    for(unsigned int i=0; i<m_cells.size();i++){
-        cout << m_cells[i] << " ";
+    //sample local data points
+    for(int i=0;i<opt::numProc; i++)
+    {
+        long id = m_data[int(1.0*i*m_data.size()/opt::numProc)].getCellId();
+        m_cbuffer.push_back(id);
     }
-    cout << endl;
+   // cout<< "DEBUG " << opt::rank << ": " << m_cbuffer.size() <<endl; 
+   // for(unsigned int i=0;i<m_cbuffer.size();i++)
+   // {
+   //     cout << m_cbuffer[i] << " ";
+   // }
+   // cout <<endl;
+}
+
+void LocalOctTree::setGlobalPivot()
+{
+    unsigned int numGlobalSample= opt::numProc * opt::numProc;
+    m_pivotbuffer.resize(numGlobalSample);
+    if(opt::rank == 0){
+        m_comm.gather(&m_cbuffer[0], m_cbuffer.size(), 
+                &m_pivotbuffer[0], opt::numProc);
+        sort(m_pivotbuffer.begin(), m_pivotbuffer.end());
+
+        //DEBUG
+        cout << "DEBUG " << opt::rank << ": " << m_pivotbuffer.size()<<endl;
+        for(unsigned int i=0; i<m_pivotbuffer.size(); i++) {
+            cout << m_pivotbuffer[i] << " ";
+        }
+        cout << endl;
+    }
+    else{
+        m_comm.receiveGather(&m_cbuffer[0], m_cbuffer.size(), 
+                &m_pivotbuffer[0], opt::numProc);
+    }
+
+    //Sample global pivots
+    if(opt::rank == 0){
+        for(int i=0;i<opt::numProc; i++) {
+            long id = m_pivotbuffer[int(1.0*i*m_pivotbuffer.size()/opt::numProc)];
+            m_cbuffer[i] = id;
+        }
+    }
+
+    //Bcast pivots to all procs
+    if(opt::rank == 0) {
+        m_comm.bcast(&m_cbuffer[0], opt::numProc);
+        cout << "DEBUG " << opt::rank << ": " << m_cbuffer.size()<<endl;
+        for(unsigned int i=0; i<m_cbuffer.size(); i++) {
+            cout << m_cbuffer[i] << " ";
+        }
+        cout << endl;
+    }
+    else{
+        m_comm.receiveBcast(&m_cbuffer[0], opt::numProc);
+        cout << "DEBUG " << opt::rank << ": " << m_cbuffer.size()<<endl;
+        for(unsigned int i=0; i<m_cbuffer.size(); i++) {
+            cout << m_cbuffer[i] << " ";
+        }
+        cout << endl;
+    }
 }
 
 //
@@ -355,6 +419,8 @@ void LocalOctTree::runControl()
                     setUpGlobalMinMax();
                     setUpPointIds();
                     sortLocalPoints();
+                    getLocalSample();
+                    setGlobalPivot();
                     SetState(NAS_DONE);
                     break;
                 }
@@ -395,6 +461,8 @@ void LocalOctTree::run()
                     setUpGlobalMinMax();
                     setUpPointIds();
                     sortLocalPoints();
+                    getLocalSample();
+                    setGlobalPivot();
                     SetState(NAS_DONE);
                     break;
                 }
