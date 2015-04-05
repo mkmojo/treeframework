@@ -52,6 +52,9 @@ void CommLayer::receiveBufferedMessage(MessagePtrVector& outmessages)
             case MT_ADD:
                 pNewMessage = new SeqAddMessage();
                 break;
+            case MT_SORT:
+                pNewMessage = new SeqSortMessage();
+                break;
             default:
                 assert(false);
                 break;

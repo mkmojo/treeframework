@@ -22,6 +22,11 @@ void LocalOctTree::handle(int, const SeqAddMessage& message)
     m_data.push_back(message.m_point);
 }
 
+void LocalOctTree::handle(int, const SeqSortMessage& message)
+{
+    m_sort_buffer.push_back(message.m_point);
+}
+
 bool LocalOctTree::isLocal(const Point& p) const
 {
     return computeProcID(p) == opt::rank;
@@ -369,43 +374,51 @@ void LocalOctTree::setGlobalPivot()
     //Bcast pivots to all procs
     if(opt::rank == 0) {
         m_comm.bcast(&m_cbuffer[0], opt::numProc);
-        cout << "DEBUG " << opt::rank << ": " << m_cbuffer.size()<<endl;
-        for(unsigned int i=0; i<m_cbuffer.size(); i++) {
-            cout << m_cbuffer[i] << " ";
-        }
-        cout << endl;
+        m_cbuffer.resize(opt::numProc);
+//        cout << "DEBUG " << opt::rank << ": " << m_cbuffer.size()<<endl;
+//        for(unsigned int i=0; i<m_cbuffer.size(); i++) {
+//            cout << m_cbuffer[i] << " ";
+//        }
+//        cout << endl;
     }
     else{
         m_comm.receiveBcast(&m_cbuffer[0], opt::numProc);
-        cout << "DEBUG " << opt::rank << ": " << m_cbuffer.size()<<endl;
-        for(unsigned int i=0; i<m_cbuffer.size(); i++) {
-            cout << m_cbuffer[i] << " ";
-        }
-        cout << endl;
+        m_cbuffer.resize(opt::numProc);
+//        cout << "DEBUG " << opt::rank << ": " << m_cbuffer.size()<<endl;
+//        for(unsigned int i=0; i<m_cbuffer.size(); i++) {
+//            cout << m_cbuffer[i] << " ";
+//        }
+//        cout << endl;
     }
 }
 
-LocalOctTree::distributePoints()
+void LocalOctTree::distributePoints()
 {
     unsigned int i = 0;
-    for(unsigned int j=0;i<m_cbuffer.size()-1;j++){
+    //cout << "DEBUG " << opt::rank <<": cbuff_size" << m_cbuffer.size()<<endl;
+    for(unsigned int j=0;j<m_cbuffer.size()-1;j++){
         long left = m_cbuffer[j];
         long right = m_cbuffer[j+1];
         
-        while(i < m_data.size()){
+        cout << "DEBUG " << opt::rank <<": " << left << " " <<right<<endl;
+        while(true){
             long cntId = m_data[i].getCellId();
             if(cntId < right && cntId >= left){
                 //TODO do I need to create a new message 
                 //for different buffer?
-                m_comm.sendSeqAddMessage(j, m_data[i]);
+                //cout <<"sent "<<m_data[i].getCellId() << endl;
+                m_comm.sendSeqSortMessage(j, m_data[i]);
+                i++;
+            }else {
+                break;
             }
-            i++;
         }
     }
 
     //send the rest to the very last proce
+    cout << "DEBUG " << opt::rank <<": " << m_data.size() <<endl;
     while(i<m_data.size()){
-        m_comm.sendSeqAddMessage(opt::numProc - 1, m_data[i]);
+        m_comm.sendSeqSortMessage(opt::numProc - 1, m_data[i]);
         i++;
     }
 }
@@ -446,6 +459,10 @@ void LocalOctTree::runControl()
                     sortLocalPoints();
                     getLocalSample();
                     setGlobalPivot();
+                    m_comm.barrier();
+                    distributePoints();
+                    pumpNetwork();
+                    m_comm.barrier();
                     SetState(NAS_DONE);
                     break;
                 }
@@ -488,6 +505,10 @@ void LocalOctTree::run()
                     sortLocalPoints();
                     getLocalSample();
                     setGlobalPivot();
+                    m_comm.barrier();
+                    distributePoints();
+                    pumpNetwork();
+                    m_comm.barrier();
                     SetState(NAS_DONE);
                     break;
                 }

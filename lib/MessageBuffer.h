@@ -44,6 +44,9 @@ class MessageBuffer : public CommLayer
         void sendSeqAddMessage(int procID, 
                 const Point& p);
 
+        void sendSeqSortMessage(int procID,
+                const Point& P);
+
         bool transmitBufferEmpty() const;
 
         void flush();
@@ -55,7 +58,7 @@ class MessageBuffer : public CommLayer
 
         void checkQueueForSend(int procID, SendMode mode);
     private:
-        static const size_t MAX_MESSAGES = 10;
+        static const size_t MAX_MESSAGES = 100;
         MessageQueues m_msgQueues;
 };
 

@@ -31,6 +31,7 @@ class LocalOctTree : public BaseTree
         bool isLocal(const Point& p) const;
         int computeProcID(const Point& p) const;
         void handle(int senderID, const SeqAddMessage& message);
+        void handle(int senderID, const SeqSortMessage& message);
         void setUpGlobalMinMax();
         void printGlobalMinMax();
         void sortLocalPoints();
@@ -38,6 +39,7 @@ class LocalOctTree : public BaseTree
         void setUpPointIds();
         void getLocalSample();
         void setGlobalPivot();
+        void distributePoints();
 
         //DEBUG
         NetworkActionState getState(){

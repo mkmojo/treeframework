@@ -50,6 +50,11 @@ void MessageBuffer::sendSeqAddMessage(int procID, const Point& p)
     queueMessage(procID, new SeqAddMessage(p), SM_BUFFERED);
 }
 
+void MessageBuffer::sendSeqSortMessage(int procID, const Point& p)
+{
+    queueMessage(procID, new SeqSortMessage(p), SM_BUFFERED);
+}
+
 
 void MessageBuffer::clearQueue(int procID)
 {

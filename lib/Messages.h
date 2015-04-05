@@ -11,7 +11,8 @@ class LocalOctTree;
 enum MessageType
 {
     MT_VOID,
-    MT_ADD
+    MT_ADD,
+    MT_SORT
 };
 
 class Message
@@ -45,5 +46,17 @@ class SeqAddMessage : public Message
         size_t serialize(char* buffer);
 
         static const MessageType TYPE = MT_ADD;
+};
+
+class SeqSortMessage : public Message
+{
+    public:
+        SeqSortMessage() { }
+        SeqSortMessage(const Point& p) : Message(p){ }
+        
+        void handle(int senderID, LocalOctTree& handler);
+        size_t serialize(char* buffer);
+
+        static const MessageType TYPE = MT_SORT;
 };
 #endif

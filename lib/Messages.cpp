@@ -15,6 +15,20 @@ size_t SeqAddMessage::serialize(char* buffer)
     return offset;
 }
 
+void SeqSortMessage::handle(int senderID,
+        LocalOctTree& handler)
+{
+    handler.handle(senderID, *this);
+}
+
+size_t SeqSortMessage::serialize(char* buffer)
+{
+    size_t offset = 0;
+    buffer[offset++] = TYPE;
+    offset += m_point.serialize(buffer + offset);
+    return offset;
+}
+
 MessageType Message::readMessageType(char* buffer)
 {
     return (MessageType)*(uint8_t*)buffer;
