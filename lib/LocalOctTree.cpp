@@ -511,7 +511,6 @@ void LocalOctTree::distributePoints()
     setUpLengthsArray(lengths, m_data, m_cbuffer);
     setUpStartsArray(starts, lengths);
 
-
     //all_gather lengths 
     //recved lengths will be placed in rank order
     m_alllengths.resize(opt::numProc * opt::numProc);
@@ -538,9 +537,9 @@ void LocalOctTree::distributePoints()
 
     //getting the right number of bytes
     scale(lengths); //<--length for local
-    //scale(starts);  //<--starts for local
+    scale(starts);  //<--starts for local
     scale(rLengths);//<--from all proc
-    //scale(rStarts); //<--from all proc
+    scale(rStarts); //<--from all proc
 
     printVector(m_data, "m_data");
 

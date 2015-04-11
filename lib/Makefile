@@ -42,7 +42,7 @@ SRCS = Point.cpp Messages.cpp CommLayer.cpp MessageBuffer.cpp \
 OBJS = $(SRCS:.cpp=.o)
 
 # define the executable file 
-MAIN = ParallelFMM
+MAIN = ParallelFMM.out
 
 #
 # The following part of the makefile is generic; it can be used to 
