@@ -14,7 +14,7 @@ class Point
     public:
         double x, y, z;
         double mass;
-        Point () {}
+        Point ():x(0), y(0), z(0), mass(0), m_cell_id(0) {}
         explicit Point(double x, 
                 double y, double z, double mass)
             :x(x), y(y), z(z), mass(mass){
@@ -34,7 +34,10 @@ class Point
 
         friend std::ostream& operator<<(std::ostream &os, const Point &obj)
         {
-            os << obj.getCellId();
+            os << obj.getCellId()<<"(" << obj.x <<" "
+                << obj.y <<" "
+                << obj.z <<" " 
+                << ")\n";
             return os;
         }
 

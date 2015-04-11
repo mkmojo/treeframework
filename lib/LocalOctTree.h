@@ -40,8 +40,8 @@ class LocalOctTree : public BaseTree
         void getLocalSample();
         void setGlobalPivot();
         void distributePoints();
-        void print_m_lengthbuffer() const;
-        void print_m_startbuffer() const;
+        void print_m_alllengths() const;
+        void print_m_allstarts() const;
 
         //DEBUG
         NetworkActionState getState(){
@@ -68,9 +68,9 @@ class LocalOctTree : public BaseTree
         //global pivots
         std::vector<long> m_pivotbuffer;
         //all start point
-        std::vector<int> m_startbuffer;
+        std::vector<int> m_allstarts;
         //all lengths 
-        std::vector<int> m_lengthbuffer;
+        std::vector<int> m_alllengths;
         //local results of sort
         std::vector<Point> m_sort_buffer;
         

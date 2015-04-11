@@ -310,7 +310,7 @@ void LocalOctTree::sortLocalPoints()
     long numTotal = 0;
     numTotal = m_comm.reduce((long)m_data.size());
     if(opt::rank == 0) 
-        cout<< "DEBUG: total input points " << numTotal <<endl;
+        cout<< "DEBUG: " << numTotal<<" int total."  <<endl;
 
     //TODO: extend this to user defined data type
     //So customized iterator/cmp function etc.
@@ -426,26 +426,26 @@ static void setUpLengthsArray(vector<int> &lengths,
     }
 }
 
-void LocalOctTree::print_m_lengthbuffer() const
+void LocalOctTree::print_m_alllengths() const
 {
-    assert(m_lengthbuffer.size() == 
+    assert(m_alllengths.size() == 
             (unsigned int)opt::numProc *(unsigned int) opt::numProc);
 
-    cout << "DEBUG "<< opt::rank << ": size: "  << m_lengthbuffer.size() <<endl;
-    for(size_t i = 0; i < m_lengthbuffer.size(); i++){
-        cout << m_lengthbuffer[i] << " ";
+    cout << "DEBUG "<< opt::rank << ": size: "  << m_alllengths.size() <<endl;
+    for(size_t i = 0; i < m_alllengths.size(); i++){
+        cout << m_alllengths[i] << " ";
     }
     cout << endl;
 }
 
-void LocalOctTree::print_m_startbuffer() const
+void LocalOctTree::print_m_allstarts() const
 {
-    assert(m_startbuffer.size() == 
+    assert(m_allstarts.size() == 
             (unsigned int)opt::numProc *(unsigned int) opt::numProc);
 
-    cout << "DEBUG "<< opt::rank << ": size: "  << m_startbuffer.size() <<endl;
-    for(size_t i = 0; i < m_startbuffer.size(); i++){
-        cout << m_startbuffer[i] << " ";
+    cout << "DEBUG "<< opt::rank << ": size: "  << m_allstarts.size() <<endl;
+    for(size_t i = 0; i < m_allstarts.size(); i++){
+        cout << m_allstarts[i] << " ";
     }
     cout << endl;
 }
@@ -457,28 +457,18 @@ static void setUpStartsArray(vector<int> &starts, const vector<int> &lengths)
    }
 }
 
-
 static void setUpRecvLengths(const vector<int> &allLengths, vector<int> & rLengths)
 {
     int step = opt::numProc;
-    for(int j=0; j<opt::numProc; j++){
-        long sum = 0;
-        for(size_t i=0; i<allLengths.size(); i+=step){
-            sum += allLengths[i+j];
-        }
-        rLengths[j] = sum;
+    for(int i=0; i<opt::numProc; i++){
+        rLengths[i] = allLengths[step*i + opt::rank];
     }
 }
 
-static void setUpRecvStarts(const vector<int> &allStarts, vector<int> & rStarts)
+static void setUpRecvStarts(const vector<int> &rLengths, vector<int> & rStarts)
 {
-    int step = opt::numProc;
-    for(int j=0; j<opt::numProc; j++){
-        long sum = 0;
-        for(size_t i=0; i<allStarts.size(); i+=step){
-            sum += allStarts[i+j];
-        }
-        rStarts[j] = sum;
+    for(size_t i=1;i<rLengths.size();i++){
+       rStarts[i] = rStarts[i-1] + rLengths[i-1];
     }
 }
 
@@ -503,8 +493,8 @@ static long totalLength(const vector<T> lengths) {
 
 template<typename T>
 static void printVector(const vector<T> vec, string info){
-    cout << info << endl;
     cout << "DEBUG " << opt::rank << ": ";
+    cout << info << endl;
     for(size_t i=0;i<vec.size();i++){
         cout << vec[i] << " ";
     }
@@ -521,61 +511,47 @@ void LocalOctTree::distributePoints()
     setUpLengthsArray(lengths, m_data, m_cbuffer);
     setUpStartsArray(starts, lengths);
 
-   // cout << "DEBUG " << opt::rank << ": "<<endl;
-   // unsigned int sum = 0;
-   // for(size_t i=0;i < lengths.size();i++){
-   //     cout << lengths[i] << " ";
-   //     sum += lengths[i];
-   // }
 
-   // if(sum == m_data.size()) 
-   //     cout << "Pass" << endl;
-   // else
-   //     cout << "Fail" << endl;
-    
     //all_gather lengths 
-    m_lengthbuffer.resize(opt::numProc * opt::numProc);
     //recved lengths will be placed in rank order
+    m_alllengths.resize(opt::numProc * opt::numProc);
     MPI_Allgather(&lengths[0], lengths.size(), MPI_INT, 
-            &m_lengthbuffer[0], lengths.size(), MPI_INT, 
+            &m_alllengths[0], lengths.size(), MPI_INT, 
             MPI_COMM_WORLD);
     //print_m_lengthbuffer();
 
-    m_startbuffer.resize(opt::numProc * opt::numProc);
+    m_allstarts.resize(opt::numProc * opt::numProc);
     MPI_Allgather(&starts[0], starts.size(), MPI_INT, 
-            &m_startbuffer[0], starts.size(), MPI_INT, 
+            &m_allstarts[0], starts.size(), MPI_INT, 
             MPI_COMM_WORLD);
-    //print_m_startbuffer();
-    
+    //print_m_allstarts();
 
-    setUpRecvLengths(m_lengthbuffer, rLengths);
-    setUpRecvStarts(m_startbuffer, rStarts);
+    setUpRecvLengths(m_alllengths, rLengths);
+    setUpRecvStarts(rLengths, rStarts);
 
-    if(opt::rank == 0){
-        printVector(m_lengthbuffer, "m_lengthbuffer");
-        printVector(rLengths, "rLengths");
-        printVector(m_startbuffer, "m_startbuffer");
-        printVector(rStarts, "rStarts");
-    }
+    printVector(rLengths, "rLengths");
+    printVector(rStarts, "rStarts");
+    printVector(lengths, "lengths");
+    printVector(starts,"starts");
 
-    cout << "DEBUG size of Point : " << sizeof(Point)<< endl;
+    m_sort_buffer.resize(totalLength(rLengths));
 
     //getting the right number of bytes
-    scale(lengths);
-    scale(starts);
-    scale(rLengths);
-    scale(rStarts);
+    scale(lengths); //<--length for local
+    //scale(starts);  //<--starts for local
+    scale(rLengths);//<--from all proc
+    //scale(rStarts); //<--from all proc
 
-    //cout << "DEBUG" << " totallength" << totalLength(m_lengthbuffer) <<endl;
-    
-    m_sort_buffer.resize(totalLength(m_lengthbuffer));
-    
-    //have to use int type
-    MPI_Alltoallv(&m_data[0], &lengths[0], &starts[0], MPI_BYTE,
-            &m_sort_buffer[0], &rLengths[0], &rStarts[0], MPI_BYTE, 
-            MPI_COMM_WORLD);
+    printVector(m_data, "m_data");
+
+    for(int i=0;i<opt::numProc;i++) {
+        MPI_Scatterv(&m_data[0], &lengths[0], &starts[0], MPI_BYTE,
+                &m_sort_buffer[0 + rStarts[i]], rLengths[i], MPI_BYTE,
+                i, MPI_COMM_WORLD);
+    }
+    sort(m_sort_buffer.begin(), m_sort_buffer.end(), cmpPoint);
+    printVector(m_sort_buffer, "m_sort_buffer");
 }
-
 
 //
 // Run master process state machine
