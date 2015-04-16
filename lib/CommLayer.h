@@ -48,8 +48,8 @@ class CommLayer
         double reduce( double count, MPI_OP_T op=SUM);
         long reduce( long count, MPI_OP_T op=SUM);
         void reduce(long *dest, long *recv, long size);
-        void gather(const long *send, int sendSize, long *recv, int recvSize);
-        void receiveGather(const long *send, int sendSize, long *recv, int recvSize);
+        void gather(long *send, int sendSize, long *recv, int recvSize);
+        void receiveGather(long *send, int sendSize, long *recv, int recvSize);
         void bcast(long* send, int sendSize); 
         void receiveBcast(long* recv, int recvSize);
         void barrier();

@@ -473,7 +473,7 @@ static void setUpRecvStarts(const vector<int> &rLengths, vector<int> & rStarts)
 }
 
 template <typename T>
-static void scale(vector<T> vec)
+static void scale(vector<T>& vec)
 {
     for(size_t i=0;i<vec.size();i++) {
         vec[i] *= sizeof(Point);
@@ -543,11 +543,12 @@ void LocalOctTree::distributePoints()
 
     printVector(m_data, "m_data");
 
-    for(int i=0;i<opt::numProc;i++) {
-        MPI_Scatterv(&m_data[0], &lengths[0], &starts[0], MPI_BYTE,
-                &m_sort_buffer[0 + rStarts[i]], rLengths[i], MPI_BYTE,
-                i, MPI_COMM_WORLD);
-    }
+    MPI_Alltoallv(&m_data[0], &lengths[0], &starts[0], MPI_BYTE, &m_sort_buffer[0], &rLengths[0], &rStarts[0], MPI_BYTE, MPI_COMM_WORLD);
+//    for(int i=0;i<opt::numProc;i++) {
+//        MPI_Scatterv(&m_data[0], &lengths[0], &starts[0], MPI_BYTE,
+//                &(m_sort_buffer[0 + rStarts[i]]), rLengths[i], MPI_BYTE,
+//                i, MPI_COMM_WORLD);
+//    }
     sort(m_sort_buffer.begin(), m_sort_buffer.end(), cmpPoint);
     printVector(m_sort_buffer, "m_sort_buffer");
 }

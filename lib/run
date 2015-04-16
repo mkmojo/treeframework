@@ -1,1 +1,1 @@
-mpirun -np 8 ./ParallelFMM $1 
+mpirun -np 2 ./ParallelFMM $1 

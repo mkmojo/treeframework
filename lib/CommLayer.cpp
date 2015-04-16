@@ -242,7 +242,7 @@ double CommLayer::reduce( double count, MPI_OP_T op)
     return res;
 }
 
-void CommLayer::gather(const long* send, int sendSize, 
+void CommLayer::gather(long* send, int sendSize,
         long* recv, int recvSize)
 {
     //logger(4) << "entering gather\n";
@@ -251,7 +251,7 @@ void CommLayer::gather(const long* send, int sendSize,
     //logger(4) << "left gather\n";
 }
 
-void CommLayer::receiveGather(const long* send, int sendSize, 
+void CommLayer::receiveGather(long* send, int sendSize,
         long* recv, int recvSize )
 {
     //logger(4) << "entering receiveGather\n";
