@@ -1,1 +1,1 @@
-mpirun -np 2 ./ParallelFMM $1 
+mpirun -n 4 -x DISPLAY=:0.0 xterm -hold -e ./ParallelFMM $1 
