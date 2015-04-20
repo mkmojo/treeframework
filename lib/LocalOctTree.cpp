@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <time.h> 
 #include <iostream>
+#include <set>
+#include <math.h>
 using namespace std;
 
 const long NOT_INIT = -1;
@@ -203,6 +205,16 @@ void LocalOctTree::printGlobalMinMax()
 }
 
 
+template<typename T>
+static void printVector(const vector<T> vec, string info){
+    cout << "DEBUG " << opt::rank << ": ";
+    cout << info << endl;
+    for(size_t i=0;i<vec.size();i++){
+        cout << vec[i] << " ";
+    }
+    cout << endl;
+}
+
 void LocalOctTree::printPoints()
 {
     //simple MPI critical section
@@ -329,17 +341,29 @@ void LocalOctTree::sortLocalPoints()
 void LocalOctTree::getLocalSample()
 {
     //sample local data points
-    for(int i=0;i<opt::numProc; i++)
+
+	double step = 1.0*m_data.size()/opt::numProc;
+	int start = round((step-1) * (1.0 * opt::rank / (opt::numProc-1)));
+//	cout<<"step="<<step<<" data size = "<<m_data.size()<<" start="<<start<<endl;
+    for(unsigned int i=0;i<opt::numProc; i++)
     {
-        long id = m_data[int(1.0*i*m_data.size()/opt::numProc)].getCellId();
+		int index = int(start + i * step);
+        long id = m_data[index].getCellId();
         m_cbuffer.push_back(id);
     }
+//    printVector(m_cbuffer, "local samples");
     // cout<< "DEBUG " << opt::rank << ": " << m_cbuffer.size() <<endl; 
     // for(unsigned int i=0;i<m_cbuffer.size();i++)
     // {
     //     cout << m_cbuffer[i] << " ";
     // }
     // cout <<endl;
+}
+
+template<typename T>
+void removeDuplicates(vector<T>& nodeIds){
+	set<int> s( nodeIds.begin(), nodeIds.end() );
+	nodeIds.assign(s.begin(), s.end());
 }
 
 void LocalOctTree::setGlobalPivot()
@@ -349,6 +373,7 @@ void LocalOctTree::setGlobalPivot()
     if(opt::rank == 0){
         m_comm.gather(&m_cbuffer[0], m_cbuffer.size(), 
                 &m_pivotbuffer[0], opt::numProc);
+        removeDuplicates(m_pivotbuffer);
         sort(m_pivotbuffer.begin(), m_pivotbuffer.end());
 
         //DEBUG
@@ -365,10 +390,13 @@ void LocalOctTree::setGlobalPivot()
 
     //Sample global pivots
     if(opt::rank == 0){
+//    	printVector(m_pivotbuffer, "Sorted samples");
+    	double step = 1.0*m_pivotbuffer.size()/opt::numProc;
         for(int i=0;i<opt::numProc; i++) {
-            long id = m_pivotbuffer[int(1.0*i*m_pivotbuffer.size()/opt::numProc)];
+            long id = m_pivotbuffer[int(i*step)];
             m_cbuffer[i] = id;
         }
+//        printVector(m_cbuffer, "boundaries");
     }
 
     //Bcast pivots to all procs
@@ -491,16 +519,6 @@ static long totalLength(const vector<T> lengths) {
     return total;
 }
 
-template<typename T>
-static void printVector(const vector<T> vec, string info){
-    cout << "DEBUG " << opt::rank << ": ";
-    cout << info << endl;
-    for(size_t i=0;i<vec.size();i++){
-        cout << vec[i] << " ";
-    }
-    cout << endl;
-}
-
 void LocalOctTree::distributePoints()
 {
     vector<int> lengths(opt::numProc, 0);
@@ -528,10 +546,10 @@ void LocalOctTree::distributePoints()
     setUpRecvLengths(m_alllengths, rLengths);
     setUpRecvStarts(rLengths, rStarts);
 
-    printVector(rLengths, "rLengths");
-    printVector(rStarts, "rStarts");
-    printVector(lengths, "lengths");
-    printVector(starts,"starts");
+//    printVector(rLengths, "rLengths");
+//    printVector(rStarts, "rStarts");
+//    printVector(lengths, "lengths");
+//    printVector(starts,"starts");
 
     m_sort_buffer.resize(totalLength(rLengths));
 
