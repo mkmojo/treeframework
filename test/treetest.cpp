@@ -1,4 +1,4 @@
-#include "../lib/treedef.hpp"
+#include "../lib/TreeDef.hpp"
 #include "gtest/gtest.h"
 
 namespace {

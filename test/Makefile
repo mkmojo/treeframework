@@ -72,7 +72,7 @@ gtest_main.a : gtest-all.o gtest_main.o
 # gtest_main.a, depending on whether it defines its own main()
 # function.
 
-treetest.o : $(USER_TEST)/treetest.cpp $(USER_LIB)/treedef.hpp $(GTEST_HEADERS)
+treetest.o : $(USER_TEST)/treetest.cpp $(USER_LIB)/TreeDef.hpp $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_TEST)/treetest.cpp
 
 $(TESTS) : treetest.o gtest_main.a

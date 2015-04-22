@@ -1,4 +1,4 @@
-#include "../lib/treedef.hpp"
+#include "../lib/TreeDef.hpp"
 
 struct Data{
     double x, y, z, mass;

@@ -10,7 +10,7 @@ CTAGS =     ctags
 BIN = run
 CFILES =   main.cpp
 OBJECTS =  main.o
-HFILES = ../lib/treedef.hpp
+HFILES = ../lib/TreeDef.hpp
 OTHERSOURCES =  
 SOURCES =   $(HFILES) $(CFILES) $(OTHERSOURCES)
 
