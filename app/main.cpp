@@ -1,4 +1,4 @@
-#include "treedef.hpp"
+#include "../lib/treedef.hpp"
 
 struct Data{
     double x, y, z, mass;
@@ -51,8 +51,14 @@ int MyLocate(const Data& d, int depth){
 }
 
 int main(){
-    Tree <Data, double> MyTree(Verbose);
+    Tree <Data, double> MyTree;
     MyTree.assign(MyGenerate, MyPredicate, MyCombine, MyEvolve, MyLocate);
     MyTree.build("mytestdata.dat");
     MyTree.compute();
+    std::cout << "calling clear" << std::endl;
+    MyTree.clear();
+    std::cout << "finished clear" << std::endl;
+    std::cout << MyTree.getLinearTree() << std::endl;
+    std::cout << MyTree.getLocalTree() << std::endl;
+
 }
