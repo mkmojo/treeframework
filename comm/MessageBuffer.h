@@ -7,59 +7,49 @@ class MessageBuffer;
 #include <vector>
 #include <assert.h>
 
-typedef std::vector<Message*> MsgBuffer;
-typedef std::vector<MsgBuffer> MessageQueues;
-
 enum SendMode
 {
     SM_BUFFERED,
     SM_IMMEDIATE
 };
 
-class MessageBuffer : public CommLayer
-{
-    public:
-        MessageBuffer();
+template<typename T> class MessageBuffer : public CommLayer{
+    static const size_t MAX_MESSAGES = 100;
+    vector<queue<Message<T>* > > m_msgQueues;
+public:
+    MessageBuffer();
 
-        void sendCheckPointMessage(int argument = 0)
-        {
-            assert(transmitBufferEmpty());
-            CommLayer::sendCheckPointMessage(argument);
-        }
+    void sendCheckPointMessage(int argument = 0){
+        assert(transmitBufferEmpty());
+        CommLayer::sendCheckPointMessage(argument);
+    }
 
-        void sendControlMessage(APControl command, int argument = 0)
-        {
-            assert(transmitBufferEmpty());
-            CommLayer::sendControlMessage(command, argument);
-        }
+    void sendControlMessage(APControl command, int argument = 0){
+        assert(transmitBufferEmpty());
+        CommLayer::sendControlMessage(command, argument);
+    }
 
-        void sendControlMessageToNode(int dest,
-                APControl command, int argument = 0)
-        {
-            assert(transmitBufferEmpty());
-            CommLayer::sendControlMessageToNode
-                (dest, command, argument);
-        }
+    void sendControlMessageToNode(int dest, APControl command, int argument = 0){
+        assert(transmitBufferEmpty());
+        CommLayer::sendControlMessageToNode
+            (dest, command, argument);
+    }
 
-        void sendSeqAddMessage(int procID, 
-                const Point& p);
+    void sendSeqAddMessage(int procID, const Point& p);
 
-        void sendSeqSortMessage(int procID,
-                const Point& P);
+    void sendSeqSortMessage(int procID, const Point& P);
 
-        bool transmitBufferEmpty() const;
+    bool transmitBufferEmpty() const;
 
-        void flush();
-        void clearQueue(int procID);
-        void queueMessage
-            (int nodeID, Message* message, SendMode mode);
+    void flush();
+    void clearQueue(int procID);
+    void queueMessage(int nodeID, Message<T>* message, SendMode mode){
+        for (unsigned i = 0; i < m_msgQueues.size(); i++)
+            m_msgQueues[i].reserve(MAX_MESSAGES);
+    }
 
-        //APMessage checkMessage(int senderID);
-
-        void checkQueueForSend(int procID, SendMode mode);
-    private:
-        static const size_t MAX_MESSAGES = 100;
-        MessageQueues m_msgQueues;
+    //APMessage checkMessage(int senderID);
+    void checkQueueForSend(int procID, SendMode mode);
 };
 
 #endif
