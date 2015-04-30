@@ -28,7 +28,6 @@ template<typename T> class CommLayer{
         return msg.id;
     }
 
-
 public:
     CommLayer() : m_msgID(0){m_rxBuffer(new uint8_t[RX_BUFSIZE]), m_request(MPI_REQUEST_NULL), m_rxPackets(0), m_rxMessages(0), m_rxBytes(0), m_txPackets(0), m_txMessages(0), m_txBytes(0){
         assert(m_request == MPI_REQUEST_NULL);
@@ -67,7 +66,6 @@ public:
             if (i != opt::rank) // Don't send the message to myself.
                 _sendControlMessageToNode(i, m, argument);
     }
-
 
 
     // Receive a control message

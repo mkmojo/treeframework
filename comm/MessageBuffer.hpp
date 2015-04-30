@@ -28,8 +28,7 @@ public:
 
     bool transmitBufferEmpty() const{
         bool isEmpty = true;
-        for (MessageQueues::const_iterator it = msgQueues.begin();
-                it != msgQueues.end(); ++it) {
+        for (auto it = msgQueues.begin(); it != msgQueues.end(); ++it) {
             if (!it->empty()) {
                 cerr << opt::rank << ": error: tx buffer should be empty: "
                     << it->size() << " messages from "
@@ -42,7 +41,7 @@ public:
     }
 
     void flush(){
-        for(size_t id=0; id < msgQueues.size(); id++){
+        for(auto id=0; id < msgQueues.size(); id++){
             // force the queue to send any pending messages
             checkQueueForSend(id, SIMMEDIATE);
         }
@@ -50,7 +49,7 @@ public:
 
     void clearQueue(int procID){
         size_t numMsgs = msgQueues[procID].size();
-        for(size_t i = 0; i < numMsgs; i++){
+        for(auto i = 0; i < numMsgs; i++){
             // Delete the messages
             delete msgQueues[procID][i];
             msgQueues[procID][i] = 0;
@@ -65,7 +64,7 @@ public:
         if((numMsgs == MAX_MESSAGES || mode == SIMMEDIATE) && numMsgs > 0){
             // Calculate the total size of the message
             size_t totalSize = 0;
-            for(size_t i = 0; i < numMsgs; i++){
+            for(auto i = 0; i < numMsgs; i++){
                 totalSize += msgQueues[procID][i]->getNetworkSize();
             }
 
@@ -74,7 +73,7 @@ public:
 
             //Copy the messages into the buffer
             size_t offset = 0;
-            for(size_t i = 0; i < numMsgs; i++)
+            for(auto i = 0; i < numMsgs; i++)
                 offset += msgQueues[procID][i]->serialize(buffer + offset);
 
             assert(offset == totalSize);
@@ -91,7 +90,7 @@ public:
 
     void clearQueue(int procID){
         size_t numMsgs = msgQueues[procID].size();
-        for(size_t i = 0; i < numMsgs; i++){
+        for(auto i = 0; i < numMsgs; i++){
             // Delete the messages
             delete msgQueues[procID][i];
             msgQueues[procID][i] = 0;
