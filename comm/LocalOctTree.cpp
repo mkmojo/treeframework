@@ -12,20 +12,17 @@ using namespace std;
 
 const long NOT_INIT = -1;
 
-int LocalOctTree::computeProcID(const Point& p) const
-{
+int LocalOctTree::computeProcID(const Point& p) const{
     return p.getCode() % (unsigned) opt::numProc;
 }
 
-void LocalOctTree::handle(int, const SeqAddMessage& message)
-{
+void LocalOctTree::handle(int, const SeqAddMessage& message){
     assert(isLocal(message.m_point));
     //need to use the local structure to put content in message to local m_data
     m_data.push_back(message.m_point);
 }
 
-void LocalOctTree::handle(int, const SeqSortMessage& message)
-{
+void LocalOctTree::handle(int, const SeqSortMessage& message){
     m_sort_buffer.push_back(message.m_point);
 }
 

@@ -14,10 +14,9 @@ enum SendMode
 };
 
 template<typename T> class MessageBuffer : public CommLayer{
-    static const size_t MAX_MESSAGES = 100;
     vector<queue<Message<T>* > > m_msgQueues;
 public:
-    MessageBuffer();
+    MessageBuffer() : m_msgQueues(opt::numProc){ }
 
     void sendCheckPointMessage(int argument = 0){
         assert(transmitBufferEmpty());
@@ -35,21 +34,51 @@ public:
             (dest, command, argument);
     }
 
-    void sendSeqAddMessage(int procID, const Point& p);
-
-    void sendSeqSortMessage(int procID, const Point& P);
+    void sendMessage(int procID, Message<T>* pMessage){
+        m_msgQueues[procID].push_back(message);
+        checkQueueForSend(procID, mode);
+    }
 
     bool transmitBufferEmpty() const;
 
-    void flush();
-    void clearQueue(int procID);
-    void queueMessage(int nodeID, Message<T>* message, SendMode mode){
-        for (unsigned i = 0; i < m_msgQueues.size(); i++)
-            m_msgQueues[i].reserve(MAX_MESSAGES);
+    void flush(){
+        for(auto&& it : m_msgQueues)
+            checkQueueForSend(it, SM_IMMEDIATE);
     }
 
+    void clearQueue(int procID);
+
     //APMessage checkMessage(int senderID);
-    void checkQueueForSend(int procID, SendMode mode);
+    void checkQueueForSend(int procID, SendMode mode){
+        size_t numMsgs = m_msgQueues[procID].size();
+        // check if message should be sent
+        if((numMsgs == MAX_MESSAGES || mode == SM_IMMEDIATE) && numMsgs > 0){
+            // Calculate the total size of the message
+            size_t totalSize = 0;
+            for(size_t i = 0; i < numMsgs; i++){
+                totalSize += m_msgQueues[procID][i]->getNetworkSize();
+            }
+
+            //Generate a buffer for all themessages;
+            char* buffer = new char[totalSize];
+
+            //Copy the messages into the buffer
+            size_t offset = 0;
+            for(size_t i = 0; i < numMsgs; i++)
+                offset += m_msgQueues[procID][i]->serialize(
+                        buffer + offset);
+
+            assert(offset == totalSize);
+            sendBufferedMessage(procID, buffer, totalSize);
+
+            delete [] buffer;
+            clearQueue(procID);
+
+            m_txPackets++;
+            m_txMessages += numMsgs;
+            m_txBytes += totalSize;
+        }
+    }
 };
 
 #endif
