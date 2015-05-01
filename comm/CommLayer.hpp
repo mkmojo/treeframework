@@ -46,17 +46,16 @@ public:
         return flag ? (APMessage)status.MPI_TAG : APM_NONE;
     }
 
-    //sl15: what is this?
-    std::vector<long unsigned> reduce(const std::vector<long unsigned>& v);
-
     //sl15: Qiyuan: please modify these functions such that the template parameter is used
     double reduce( double count, MPI_OP_T op=SUM);
     long reduce( long count, MPI_OP_T op=SUM);
-    void reduce(long *dest, long *recv, long size);
+
+    //sl15: these need to be looked at
     void gather(long *send, int sendSize, long *recv, int recvSize);
     void receiveGather(long *send, int sendSize, long *recv, int recvSize);
     void bcast(long* send, int sendSize); 
     void receiveBcast(long* recv, int recvSize);
+
     void barrier();
 
 

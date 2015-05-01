@@ -14,6 +14,7 @@ template<typename T> class Tree : protected Messager<T> {
     vector<T> private_data;
 
 public:
+    
     void printData() const {
         cout << " ";
         for(auto&& it : private_data) cout << it << " ";
