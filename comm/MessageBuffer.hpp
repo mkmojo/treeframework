@@ -7,7 +7,7 @@ template<typename T> class MessageBuffer{
 
 public:
     MessageBuffer() : msgQueues(opt::numProc){ 
-        for (unsigned i = 0; i < msgQueues.size(); i++)
+        for (auto i = 0; i < msgQueues.size(); i++)
             msgQueues[i].reserve(MAX_MESSAGES);
     }
 
@@ -21,8 +21,8 @@ public:
         msgBufferLayer.sendControlMessage(command, argument);
     }
 
-    void sendMessage(int procID, Message<T>* pMessage){
-        msgQueues[procID].push_back(message);
+    void queueMessage(int procID, Message<T>* pMessage){
+        msgQueues[procID].push(pMessage);
         checkQueueForSend(procID, mode);
     }
 
