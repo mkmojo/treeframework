@@ -16,7 +16,9 @@ template<typename T> class CommLayer{
     uint64_t m_txMessages;
     uint64_t m_txBytes;
 
-    uint64_t _sendControlMessageToNode(int nodeID, APControl command, int argument = 0){
+    uint64_t _sendControlMessageToNode(int nodeID, APControl command, 
+            int argument = 0){
+
         assert(opt::rank == 0);
         ControlMessage msg;
         msg.id = m_msgID++;
@@ -29,9 +31,13 @@ template<typename T> class CommLayer{
     }
 
 public:
-    CommLayer() : m_msgID(0){m_rxBuffer(new uint8_t[RX_BUFSIZE]), m_request(MPI_REQUEST_NULL), m_rxPackets(0), m_rxMessages(0), m_rxBytes(0), m_txPackets(0), m_txMessages(0), m_txBytes(0){
+    CommLayer() : m_msgID(0){m_rxBuffer(new uint8_t[RX_BUFSIZE]), 
+        m_request(MPI_REQUEST_NULL), m_rxPackets(0), m_rxMessages(0), 
+        m_rxBytes(0), m_txPackets(0), m_txMessages(0), m_txBytes(0){
+
         assert(m_request == MPI_REQUEST_NULL);
-        MPI_Irecv(m_rxBuffer, RX_BUFSIZE, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &m_request);
+        MPI_Irecv(m_rxBuffer, RX_BUFSIZE, MPI_BYTE, MPI_ANY_SOURCE, 
+                MPI_ANY_TAG, MPI_COMM_WORLD, &m_request);
     }
 
     ~CommLayer(){
@@ -81,7 +87,8 @@ public:
         assert(count == sizeof msg);
         memcpy(&msg, m_rxBuffer, sizeof msg);
         assert(m_request == MPI_REQUEST_NULL);
-        MPI_Irecv(m_rxBuffer, RX_BUFSIZE, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &m_request);
+        MPI_Irecv(m_rxBuffer, RX_BUFSIZE, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, 
+                MPI_COMM_WORLD, &m_request);
         return msg;
     }
 
@@ -100,7 +107,9 @@ public:
 
 
     // Send a buffered message
-    inline void sendBufferedMessage(int destID, char* msg, size_t size){ MPI_Send(msg, size, MPI_BYTE, destID, APM_BUFFERED, MPI_COMM_WORLD); }
+    inline void sendBufferedMessage(int destID, char* msg, size_t size){ 
+        MPI_Send(msg, size, MPI_BYTE, destID, APM_BUFFERED, MPI_COMM_WORLD); 
+    }
 
     void receiveBufferedMessage(MessagePtrVector& outmessages){
         assert(outmessages.empty());
