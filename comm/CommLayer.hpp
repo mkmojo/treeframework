@@ -2,7 +2,6 @@
 #include "CommUtils.hpp"
 #include <mpi.h>
 
-//sl15: needs to modify reduce, gather, etc to have template parameter
 template<typename T> class CommLayer{
     uint64_t m_msgID;
     uint8_t* m_rxBuffer;
@@ -46,26 +45,12 @@ public:
         return flag ? (APMessage)status.MPI_TAG : APM_NONE;
     }
 
-    //sl15: Qiyuan: please modify these functions such that the template parameter is used
-    double reduce( double count, MPI_OP_T op=SUM);
-    long reduce( long count, MPI_OP_T op=SUM);
-
-    //sl15: these need to be looked at
-    void gather(long *send, int sendSize, long *recv, int recvSize);
-    void receiveGather(long *send, int sendSize, long *recv, int recvSize);
-    void bcast(long* send, int sendSize); 
-    void receiveBcast(long* recv, int recvSize);
-
-    void barrier();
-
-
     // Send a control message
     void sendControlMessage(APControl m, int argument = 0 ){
         for (int i = 0; i < opt::numProc; i++)
             if (i != opt::rank) // Don't send the message to myself.
                 _sendControlMessageToNode(i, m, argument);
     }
-
 
     // Receive a control message
     ControlMessage receiveControlMessage(){

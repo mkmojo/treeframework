@@ -73,84 +73,10 @@ protected:
 
 
 public:
-    virtual void run(){
-        SetState(NAS_LOADING);
-        while(m_state != NAS_DONE){
-            switch (m_state){
-                case NAS_LOADING:{
-                    loadPoints();
-                    EndState();
-                    SetState(NAS_WAITING);
-                    msgBuffer.sendCheckPointMessage();
-                    break;
-                }
-                case NAS_LOAD_COMPLETE:{
-                    msgBuffer.barrier();
-                    pumpNetwork();
-                    SetState(NAS_SORT);
-                    break;
-                }
-                case NAS_SORT:{
-                    msgBuffer.barrier();
-                    setUpGlobalMinMax();
-                    setUpPointIds();
-                    sortLocalPoints();
-                    getLocalSample();
-                    setGlobalPivot();
-                    msgBuffer.barrier();
-                    distributePoints();
-
-                    SetState(NAS_DONE);
-                    break;
-                }
-                case NAS_WAITING:
-                    pumpNetwork();
-                    break;
-                case NAS_DONE:
-                    break;
-            }
-        }
+    virtual void run(){ 
     }
 
     virtual void runControl(){
-        SetState(NAS_LOADING);
-        while(m_state != NAS_DONE){
-            switch(m_state){
-                case NAS_LOADING:{
-                    loadPoints();
-                    EndState();
-                    m_numReachedCheckpoint++;
-                    while(!checkpointReached())
-                        pumpNetwork();
-                    //Load complete
-                    SetState(NAS_LOAD_COMPLETE);
-                    msgBuffer.sendControlMessage(APC_SET_STATE,
-                            NAS_LOAD_COMPLETE);
-                    msgBuffer.barrier();
-                    //printPoints();
-
-                    pumpNetwork();
-                    SetState(NAS_SORT);
-                    break;
-                }
-                case NAS_SORT:{
-                    msgBuffer.sendControlMessage(APC_SET_STATE, NAS_SORT);
-                    msgBuffer.barrier();
-                    setUpGlobalMinMax();
-                    setUpPointIds();
-                    sortLocalPoints();
-                    getLocalSample();
-                    setGlobalPivot();
-                    msgBuffer.barrier();
-                    distributePoints();
-
-                    SetState(NAS_DONE);
-                    break;
-                }
-                case NAS_DONE:
-                    break;
-            }
-        }
     }
 
     //sl15: this method needs to be overriden by the subclasses
