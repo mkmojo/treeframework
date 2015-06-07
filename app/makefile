@@ -2,15 +2,15 @@
 
 .SUFFIXES: .o .cpp
 
-CC = g++ -D x86
+CC = mpicxx -D x86
 CFLAGS = -g -O3 -D_REENTRANT -std=c++0x
 LFLAGS = -lm
 
-CTAGS =     ctags
+CTAGS = ctags
 BIN = run
-CFILES =   main.cpp
-OBJECTS =  main.o
-HFILES = ../lib/TreeDef.hpp
+CFILES = main.cpp
+OBJECTS = main.o
+HFILES = ../comm/CommLayer.hpp ../comm/Message.hpp ../comm/MessageBuffer.hpp ../comm/Messager.hpp ../lib/Tree.hpp
 OTHERSOURCES =  
 SOURCES =   $(HFILES) $(CFILES) $(OTHERSOURCES)
 

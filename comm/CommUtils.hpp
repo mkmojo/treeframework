@@ -2,14 +2,23 @@
 #include <iostream>
 
 extern const unsigned RX_BUFSIZE = 16*1024;
+extern const unsigned MAX_MESSAGES = 1024;
+extern const unsigned numProc = 64; //sl15: this can be parsed from the command line
+extern int procRank = 0; //sl15: this is determined by calling mpi_rank
+
+enum APControl{
+    APC_SET_STATE,
+    APC_CHECKPOINT,
+    APC_WAIT,
+    APC_BARRIER,
+};
+
 
 struct ControlMessage{
     int64_t id;
     APControl msgType;
     int argument;
 };
-
-typedef std::vector<Message*> MessagePtrVector;
 
 enum NetworkActionState{
     NAS_LOADING, // loading points
@@ -23,13 +32,6 @@ enum APMessage{
     APM_NONE,
     APM_CONTROL,
     APM_BUFFERED,
-};
-
-enum APControl{
-    APC_SET_STATE,
-    APC_CHECKPOINT,
-    APC_WAIT,
-    APC_BARRIER,
 };
 
 //For reduce operation type
