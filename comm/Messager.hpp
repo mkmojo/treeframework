@@ -45,7 +45,7 @@ protected:
                 }
                 case APM_BUFFERED:{
                     //Deal all message here until done
-                    std::vector<Message<T>*> msgs;
+                    std::vector<Message<T>*> msgs; //sl15: we should use a queue
                     msgBuffer.msgBufferLayer.receiveBufferedMessage(msgs);
                     for(auto iter = msgs.begin(); iter != msgs.end(); iter++){
                         //handle message based on its type
@@ -94,13 +94,13 @@ public:
                     break;
                 case NAS_SORT:
                     msgBuffer.msgBufferLayer.barrier();
-                    //setUpGlobalMinMax(); //sl15
-                    //setUpPointIds(); //sl15
-                    //sortLocalPoints();
-                    //getLocalSample();
-                    //setGlobalPivot();
-                    msgBuffer.msgBufferLayer.barrier();
-                    //distributePoints();
+                    //setUpGlobalMinMax(); //sl15: write an interface and let the user decide how to get the coordinates
+                    //setUpPointIds(); //sl15: we have a default implementation 
+                    //sortLocalPoints(); //sl15: should bring back
+                    //getLocalSample(); //sl15: should bring back
+                    //setGlobalPivot(); //sl15: should bring back
+                    msgBuffer.msgBufferLayer.barrier(); 
+                    //distributePoints(); //sl15: should bring back
                     _setState(NAS_DONE);
                     break;
                 case NAS_WAITING:
@@ -119,7 +119,7 @@ public:
             switch(state){
                 //sl15: the calls commented out in this block needs a different interface
                 case NAS_LOADING:
-                    //loadPoints();
+                    //loadPoints(); //sl15: use the thing in TreeDef.cpp
                     _endState();
                     numReachedCheckpoint++;
 

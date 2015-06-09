@@ -1,7 +1,7 @@
 #include "CommLayer.hpp"
 
 template<typename T> class MessageBuffer{
-    std::vector<std::vector<Message<T>* > > msgQueues; //sl15: this is better changed to a vector of queues for efficiency. 
+    std::vector<std::vector<Message<T>* > > msgQueues;
 
     //APMessage checkMessage(int senderID);
     void _checkQueueForSend(int procID, SendMode mode){
@@ -10,17 +10,14 @@ template<typename T> class MessageBuffer{
         if((numMsgs == MAX_MESSAGES || mode == SM_IMMEDIATE) && numMsgs > 0){
             // Calculate the total size of the message
             size_t totalSize = 0;
-            for(auto i = 0; i < numMsgs; i++){
-                totalSize += msgQueues[procID][i]->getNetworkSize();
-            }
+            for(auto i = 0; i < numMsgs; i++) totalSize += msgQueues[procID][i]->getNetworkSize();
 
             //Generate a buffer for all themessages;
             char* buffer = new char[totalSize];
 
             //Copy the messages into the buffer
             size_t offset = 0;
-            for(auto i = 0; i < numMsgs; i++)
-                offset += msgQueues[procID][i]->serialize(buffer + offset);
+            for(auto i = 0; i < numMsgs; i++) offset += msgQueues[procID][i]->serialize(buffer + offset);
 
             assert(offset == totalSize);
             msgBufferLayer.sendBufferedMessage(procID, buffer, totalSize);

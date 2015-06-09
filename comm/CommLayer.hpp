@@ -119,6 +119,7 @@ public:
         int offset = 0;
         while(offset < size){
             //sl15 this needs a rework as add, sort should not go into commlayer
+            //sl15: this should be moved to somewhere else
             /*
             MessageType type = Message::readMessageType((char*)m_rxBuffer + offset);
 
@@ -131,7 +132,7 @@ public:
                     pNewMessage = new SeqSortMessage();
                     break;
                 default:
-                    assert(false); //sl15: bad coding. This does not generate any useful message
+                    assert(false); //sl15: print a message and exit
                     break;
             }
 
