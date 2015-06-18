@@ -111,7 +111,7 @@ public:
         MPI_Send(msg, size, MPI_BYTE, destID, APM_BUFFERED, MPI_COMM_WORLD); 
     }
 
-    void receiveBufferedMessage(MessagePtrVector& outmessages){
+    void receiveBufferedMessage(MessagePtrQueue& outmessages){
         assert(outmessages.empty());
         int flag;
         MPI_Status status;
@@ -132,9 +132,6 @@ public:
                 case MT_ADD:
                     pNewMessage = new SeqAddMessage();
                     break;
-                case MT_SORT:
-                    pNewMessage = new SeqSortMessage();
-                    break;
                 default:
                     assert(false);
                     break;
@@ -145,7 +142,7 @@ public:
 
             // Construted message will be deleted in the 
             // LocalOctTree calling function.
-            outmessages.push_back(pNewMessage);
+            outmessages.push(pNewMessage);
         }
         assert(offset == size);
 

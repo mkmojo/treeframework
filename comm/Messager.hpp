@@ -44,15 +44,12 @@ protected:
                 }
                 case APM_BUFFERED:{
                     //Deal all message here until done
-                    MessagePtrVector msgs;
+                    MessagePtrQueue msgs;
                     msgBuffer.receiveBufferedMessage(msgs);
-                    for(MessagePtrVector::iterator 
-                            iter = msgs.begin();
-                            iter != msgs.end(); iter++){
-                        //handle message based on its type
-                        (*iter)->handle(senderID, *this);
-                        delete (*iter);
-                        *iter = 0;
+                    while(!msgs.empty()){
+                        Message* p = msgs.top();
+                        msgs.pop();
+                        p->handle(senderID, *this);
                     }
                     break;
                 }

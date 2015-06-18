@@ -1,4 +1,5 @@
 #include <vector>
+#include <queue>
 #include <iostream>
 
 extern const unsigned RX_BUFSIZE = 16*1024;
@@ -9,7 +10,7 @@ struct ControlMessage{
     int argument;
 };
 
-typedef std::vector<Message*> MessagePtrVector;
+typedef std::queue<Message*> MessagePtrQueue;
 
 enum NetworkActionState{
     NAS_LOADING, // loading points
