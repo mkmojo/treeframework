@@ -1,28 +1,23 @@
 #include "CommLayer.hpp"
-#include <queue>
 
 template<typename T> class MessageBuffer{
-    CommLayer<T> msgBufferLayer;
-    vector<queue<Message<T>* > > msgQueues;
+    std::vector<std::vector<Message<T>* > > msgQueues;
 
     //APMessage checkMessage(int senderID);
     void _checkQueueForSend(int procID, SendMode mode){
         size_t numMsgs = msgQueues[procID].size();
         // check if message should be sent
-        if((numMsgs == MAX_MESSAGES || mode == SIMMEDIATE) && numMsgs > 0){
+        if((numMsgs == MAX_MESSAGES || mode == SM_IMMEDIATE) && numMsgs > 0){
             // Calculate the total size of the message
             size_t totalSize = 0;
-            for(auto i = 0; i < numMsgs; i++){
-                totalSize += msgQueues[procID][i]->getNetworkSize();
-            }
+            for(auto i = 0; i < numMsgs; i++) totalSize += msgQueues[procID][i]->getNetworkSize();
 
             //Generate a buffer for all themessages;
             char* buffer = new char[totalSize];
 
             //Copy the messages into the buffer
             size_t offset = 0;
-            for(auto i = 0; i < numMsgs; i++)
-                offset += msgQueues[procID][i]->serialize(buffer + offset);
+            for(auto i = 0; i < numMsgs; i++) offset += msgQueues[procID][i]->serialize(buffer + offset);
 
             assert(offset == totalSize);
             msgBufferLayer.sendBufferedMessage(procID, buffer, totalSize);
@@ -30,9 +25,9 @@ template<typename T> class MessageBuffer{
             delete [] buffer;
             _clearQueue(procID);
 
-            txPackets++;
-            txMessages += numMsgs;
-            txBytes += totalSize;
+            msgBufferLayer.txPackets++;
+            msgBufferLayer.txMessages += numMsgs;
+            msgBufferLayer.txBytes += totalSize;
         }
     }
 
@@ -47,7 +42,8 @@ template<typename T> class MessageBuffer{
     }
 
 public:
-    MessageBuffer() : msgQueues(opt::numProc){ 
+    CommLayer<T> msgBufferLayer;
+    MessageBuffer() : msgQueues(numProc){ 
         for (auto i = 0; i < msgQueues.size(); i++)
             msgQueues[i].reserve(MAX_MESSAGES);
     }
@@ -62,8 +58,8 @@ public:
         msgBufferLayer.sendControlMessage(command, argument);
     }
 
-    void queueMessage(int procID, Message<T>* pMessage){
-        msgQueues[procID].push(pMessage);
+    void queueMessage(int procID, Message<T>* pMessage, SendMode mode = SM_BUFFERED){
+        msgQueues[procID].push_back(pMessage);
         _checkQueueForSend(procID, mode);
     }
 
@@ -71,9 +67,9 @@ public:
         bool isEmpty = true;
         for (auto it = msgQueues.begin(); it != msgQueues.end(); ++it) {
             if (!it->empty()) {
-                cerr << opt::rank << ": error: tx buffer should be empty: "
+                std::cerr << procRank << ": error: tx buffer should be empty: "
                     << it->size() << " messages from "
-                    << opt::rank << " to " << it - msgQueues.begin()
+                    << procRank << " to " << it - msgQueues.begin()
                     << '\n';
                 isEmpty = false;
             }
@@ -84,7 +80,7 @@ public:
     void flush(){
         for(auto id=0; id < msgQueues.size(); id++){
             // force the queue to send any pending messages
-            _checkQueueForSend(id, SIMMEDIATE);
+            _checkQueueForSend(id, SM_IMMEDIATE);
         }
     }
 

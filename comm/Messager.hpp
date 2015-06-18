@@ -1,49 +1,49 @@
 #include "MessageBuffer.hpp"
-#include "Message.hpp"
 
 template<typename T> class Messager {
 protected:
     //messages stored in a list of queues
-    MessageBuffer msgBuffer;
+    MessageBuffer<T> msgBuffer;
+    
+    unsigned numReachedCheckpoint, checkpointSum; 
+    NetworkActionState state;
 
-    inline bool checkpointReached() const{ return m_numReachedCheckpoint == (unsigned) opt::numProc; }
+    inline bool _checkpointReached() const{ return numReachedCheckpoint == numProc; }
 
-    virtual void parseControl(int source){
-        //sl15: control message type
-        ControlMessage controlMsg = msgBuffer.receiveControlMessage();
+    virtual void _parseControlMessage(int source){
+        ControlMessage controlMsg = msgBuffer.msgBufferLayer.receiveControlMessage();
         switch(controlMsg.msgType){
             case APC_SET_STATE:
-                SetState(NetworkActionState(controlMsg.argument));
+                _setState(NetworkActionState(controlMsg.argument));
                 break;
             case APC_CHECKPOINT:
-                m_numReachedCheckpoint++;
-                m_checkpointSum += controlMsg.argument;
+                numReachedCheckpoint++;
+                checkpointSum += controlMsg.argument;
                 break;
             case APC_WAIT:
-                SetState(NAS_WAITING);
-                msgBuffer.barrier();
+                _setState(NAS_WAITING);
+                msgBuffer.msgBufferLayer.barrier();
                 break;
             case APC_BARRIER:
-                assert(m_state == NAS_WAITING);
-                msgBuffer.barrier();
+                assert(state == NAS_WAITING);
+                msgBuffer.msgBufferLayer.barrier();
                 break;
             //sl15: need default case
         }
     }
 
-    virtual size_t pumpNetwork(){
+    virtual size_t _pumpNetwork(){
         for( size_t count = 0; ;count++){
             int senderID;
-            APMessage msg = msgBuffer.checkMessage(senderID);
+            APMessage msg = msgBuffer.msgBufferLayer.checkMessage(senderID);
             switch(msg){
                 case APM_CONTROL:{
-                    parseControlMessage(senderID);
+                    _parseControlMessage(senderID);
                     //deal with control message before 
                     //any other type of message
                     return ++count;
                 }
                 case APM_BUFFERED:{
-                    //Deal all message here until done
                     MessagePtrQueue msgs;
                     msgBuffer.receiveBufferedMessage(msgs);
                     while(!msgs.empty()){
@@ -59,91 +59,91 @@ protected:
         }
     }
 
-    virtual void SetState(NetworkActionState newState){
+    virtual void _setState(NetworkActionState newState){
         assert(msgBuffer.transmitBufferEmpty());
-        m_state = newState;
+        state = newState;
 
         // Reset the checkpoint counter
-        m_numReachedCheckpoint = 0;
-        m_checkpointSum = 0;
+        numReachedCheckpoint = 0;
+        checkpointSum = 0;
     }
+
+    inline virtual void _endState(){ msgBuffer.flush(); }
 
 
 public:
-    virtual void run(){
-        SetState(NAS_LOADING);
-        while(m_state != NAS_DONE){
-            switch (m_state){
-                case NAS_LOADING:{
-                    loadPoints();
-                    EndState();
-                    SetState(NAS_WAITING);
+    Messager() : numReachedCheckpoint(0), checkpointSum(0), state(NAS_WAITING){ };
+
+    virtual void run(){ 
+        _setState(NAS_LOADING);
+        while(state != NAS_DONE){
+            switch (state){ 
+                //sl15: the calls commented out in this block needs a different interface
+                case NAS_LOADING:
+                    //loadPoints();
+                    _endState();
+                    _setState(NAS_WAITING);
                     msgBuffer.sendCheckPointMessage();
                     break;
-                }
-                case NAS_LOAD_COMPLETE:{
-                    msgBuffer.barrier();
-                    pumpNetwork();
-                    SetState(NAS_SORT);
+                case NAS_LOAD_COMPLETE:
+                    msgBuffer.msgBufferLayer.barrier();
+                    _pumpNetwork();
+                    _setState(NAS_SORT);
                     break;
-                }
-                case NAS_SORT:{
-                    msgBuffer.barrier();
-                    setUpGlobalMinMax();
-                    setUpPointIds();
-                    sortLocalPoints();
-                    getLocalSample();
-                    setGlobalPivot();
-                    msgBuffer.barrier();
-                    distributePoints();
-
-                    SetState(NAS_DONE);
+                case NAS_SORT:
+                    msgBuffer.msgBufferLayer.barrier();
+                    //setUpGlobalMinMax(); //sl15: write an interface and let the user decide how to get the coordinates
+                    //setUpPointIds(); //sl15: we have a default implementation 
+                    //sortLocalPoints(); //sl15: should bring back
+                    //getLocalSample(); //sl15: should bring back
+                    //setGlobalPivot(); //sl15: should bring back
+                    msgBuffer.msgBufferLayer.barrier(); 
+                    //distributePoints(); //sl15: should bring back
+                    _setState(NAS_DONE);
                     break;
-                }
                 case NAS_WAITING:
-                    pumpNetwork();
+                    _pumpNetwork();
                     break;
                 case NAS_DONE:
                     break;
             }
         }
+
     }
 
     virtual void runControl(){
-        SetState(NAS_LOADING);
-        while(m_state != NAS_DONE){
-            switch(m_state){
-                case NAS_LOADING:{
-                    loadPoints();
-                    EndState();
-                    m_numReachedCheckpoint++;
-                    while(!checkpointReached())
-                        pumpNetwork();
+        _setState(NAS_LOADING);
+        while(state != NAS_DONE){
+            switch(state){
+                //sl15: the calls commented out in this block needs a different interface
+                case NAS_LOADING:
+                    //loadPoints(); //sl15: use the thing in TreeDef.cpp
+                    _endState();
+                    numReachedCheckpoint++;
+
+                    while(!_checkpointReached())
+                        _pumpNetwork();
+
                     //Load complete
-                    SetState(NAS_LOAD_COMPLETE);
-                    msgBuffer.sendControlMessage(APC_SET_STATE,
-                            NAS_LOAD_COMPLETE);
-                    msgBuffer.barrier();
+                    _setState(NAS_LOAD_COMPLETE);
+                    msgBuffer.sendControlMessage(APC_SET_STATE, NAS_LOAD_COMPLETE);
+                    msgBuffer.msgBufferLayer.barrier();
                     //printPoints();
-
-                    pumpNetwork();
-                    SetState(NAS_SORT);
+                    _pumpNetwork();
+                    _setState(NAS_SORT);
                     break;
-                }
-                case NAS_SORT:{
+                case NAS_SORT:
                     msgBuffer.sendControlMessage(APC_SET_STATE, NAS_SORT);
-                    msgBuffer.barrier();
-                    setUpGlobalMinMax();
-                    setUpPointIds();
-                    sortLocalPoints();
-                    getLocalSample();
-                    setGlobalPivot();
-                    msgBuffer.barrier();
-                    distributePoints();
-
-                    SetState(NAS_DONE);
+                    msgBuffer.msgBufferLayer.barrier();
+                    //setUpGlobalMinMax();
+                    //setUpPointIds();
+                    //sortLocalPoints();
+                    //getLocalSample();
+                    //setGlobalPivot();
+                    msgBuffer.msgBufferLayer.barrier();
+                    //distributePoints();
+                    _setState(NAS_DONE);
                     break;
-                }
                 case NAS_DONE:
                     break;
             }
@@ -151,12 +151,12 @@ public:
     }
 
     //sl15: this method needs to be overriden by the subclasses
-    virtual int computeProcID() = 0;
+    //virtual int computeProcID() = 0;
 
-    //sl15: this queue needs to be modified to use MessageBuffer instead
     //sl15: the way procID is computed should be attached to the user defined data structure
-    virtual void addMessage(int Message<T>* newmessage){
-        msgBuffer.queueMessage(computeProcID(), newmessage);
+    virtual void addMessage(Message<T>* newmessage){
+        //msgBuffer.queueMessage(computeProcID(), newmessage);
+        msgBuffer.queueMessage(0, newmessage);
     }
 
     //sl15: this queue needs to be modified to use MessageBuffer instead

@@ -1,12 +1,43 @@
-#include "../lib/TreeDef.hpp"
+#include "../lib/Tree.hpp"
+#include <sstream>
 
 struct Data{
     double x, y, z, mass;
+    char m_point[64]; //sl15: this needs to be changed. there should be an intermediate data type to hold the serialized version of Data
+
     Data(std::istringstream& ss){
         ss >> x >> y >> z >> mass;
     }
-};
 
+    size_t serialize(void* dest){ //sl15: void pointer?
+        std::memcpy(dest, m_point, sizeof m_point);
+        //DEBUG: copy things received to data member
+        std::memcpy(&x, m_point, sizeof x);
+        std::memcpy(&y, m_point + sizeof(double), sizeof y);
+        std::memcpy(&z, m_point + sizeof(double)*2, sizeof z);
+        std::memcpy(&mass, m_point + sizeof(double)*3, sizeof mass);
+        return sizeof m_point;
+    }
+
+    //copy data from incoming buffer to Point
+    //roll things into struct
+    size_t unserialize(const void* src)
+    {
+        //This is now ugly, should be done through a function
+        //I may want to change it to vector and use vector to hold 
+        //things together
+        //sl15: I agree with the above comment. seralized data should not reside in data itself
+        memcpy(m_point, src, sizeof m_point);
+
+        memcpy(&x, m_point, sizeof x);
+        memcpy(&y, m_point + sizeof(double), sizeof y);
+        memcpy(&z, m_point + sizeof(double) * 2, sizeof z);
+        memcpy(&mass, m_point + sizeof(double) * 3, sizeof mass);
+
+        return sizeof m_point;
+    }
+};
+/*
 NodeSet MyGenerate(const Node<Data, double>& mynode){
     NodeSet myset;
     std::cout << "calling my generate" << std::endl;
@@ -49,9 +80,14 @@ int MyLocate(const Data& d, int depth){
     }
     return tmp;
 }
+*/
 
-int main(){
-    Tree <Data, double> MyTree;
+int main(int argc, char *argv[]){
+    MPI_Init(&argc, &argv);
+    Tree<Data> MyTree;
+    MPI_Finalize();
+    return 0;
+    /*
     MyTree.assign(MyGenerate, MyPredicate, MyCombine, MyEvolve, MyLocate);
     MyTree.build("mytestdata.dat");
     MyTree.compute();
@@ -60,5 +96,5 @@ int main(){
     std::cout << "finished clear" << std::endl;
     std::cout << MyTree.getLinearTree() << std::endl;
     std::cout << MyTree.getLocalTree() << std::endl;
-
+    */
 }
