@@ -45,8 +45,10 @@ protected:
                 }
                 case APM_BUFFERED:{
                     //Deal all message here until done
-                    std::vector<Message<T>*> msgs; //sl15: we should use a queue
+                    std::queue<Message<T>*> msgs; //sl15: we should use a queue
+
                     msgBuffer.msgBufferLayer.receiveBufferedMessage(msgs);
+
                     for(auto iter = msgs.begin(); iter != msgs.end(); iter++){
                         //handle message based on its type
                         (*iter)->HandleMessage(senderID, this);

@@ -44,7 +44,6 @@ template<typename T> class CommLayer{
 public:
     uint64_t txPackets, txMessages, txBytes;
     CommLayer() : m_msgID(0), m_rxBuffer(new uint8_t[RX_BUFSIZE]), m_request(MPI_REQUEST_NULL), m_rxPackets(0), m_rxMessages(0), m_rxBytes(0), m_txPackets(0), m_txMessages(0), m_txBytes(0){
-        //std::assert(m_request == MPI_REQUEST_NULL); //sl15: what is the point of this assert since m_request is assigned just above
         MPI_Comm_rank(MPI_COMM_WORLD, &procRank);
         MPI_Irecv(m_rxBuffer, RX_BUFSIZE, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &m_request);
     }
