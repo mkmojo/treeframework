@@ -1,4 +1,5 @@
 #include <vector>
+#include <queue>
 #include <iostream>
 
 extern const unsigned RX_BUFSIZE = 16*1024;

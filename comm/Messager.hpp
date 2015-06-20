@@ -44,16 +44,12 @@ protected:
                     return ++count;
                 }
                 case APM_BUFFERED:{
-                    //Deal all message here until done
                     std::queue<Message<T>*> msgs; //sl15: we should use a queue
-
                     msgBuffer.msgBufferLayer.receiveBufferedMessage(msgs);
-
-                    for(auto iter = msgs.begin(); iter != msgs.end(); iter++){
-                        //handle message based on its type
-                        (*iter)->HandleMessage(senderID, this);
-                        delete (*iter); //sl15: bad coding. this is trying to use vector as a deque. changing to use a queue should solve this
-                        *iter = 0;
+                    while(!msgs.empty()){
+                        Message<T>* p = msgs.front();
+                        msgs.pop();
+                        p->HandleMessage(senderID, this);
                     }
                     break;
                 }

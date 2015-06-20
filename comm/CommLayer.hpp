@@ -83,7 +83,8 @@ public:
         assert(count == sizeof msg);
         std::memcpy(&msg, m_rxBuffer, sizeof msg);
         assert(m_request == MPI_REQUEST_NULL);
-        MPI_Irecv(m_rxBuffer, RX_BUFSIZE, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &m_request);
+        MPI_Irecv(m_rxBuffer, RX_BUFSIZE, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, 
+                MPI_COMM_WORLD, &m_request);
         return msg;
     }
 
@@ -102,9 +103,11 @@ public:
 
 
     // Send a buffered message
-    inline void sendBufferedMessage(int destID, char* msg, size_t size){ MPI_Send(msg, size, MPI_BYTE, destID, APM_BUFFERED, MPI_COMM_WORLD); }
+    inline void sendBufferedMessage(int destID, char* msg, size_t size){ 
+        MPI_Send(msg, size, MPI_BYTE, destID, APM_BUFFERED, MPI_COMM_WORLD); 
+    }
 
-    void receiveBufferedMessage(std::vector<Message<T>*>& outmessages){
+    void receiveBufferedMessage(std::queue<Message<T>*>& outmessages){
         assert(outmessages.empty());
         int flag;
         MPI_Status status;
@@ -127,9 +130,6 @@ public:
                 case MT_ADD:
                     pNewMessage = new SeqAddMessage();
                     break;
-                case MT_SORT:
-                    pNewMessage = new SeqSortMessage();
-                    break;
                 default:
                     assert(false); //sl15: print a message and exit
                     break;
@@ -140,7 +140,7 @@ public:
 
             // Construted message will be deleted in the 
             // LocalOctTree calling function.
-            outmessages.push_back(pNewMessage);
+            outmessages.push(pNewMessage);
             */
         }
         assert(offset == size);
