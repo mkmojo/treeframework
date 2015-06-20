@@ -127,6 +127,7 @@ public:
                     _setState(NAS_LOAD_COMPLETE);
                     msgBuffer.sendControlMessage(APC_SET_STATE, NAS_LOAD_COMPLETE);
                     msgBuffer.msgBufferLayer.barrier();
+
                     //printPoints();
                     _pumpNetwork();
                     _setState(NAS_SORT);
