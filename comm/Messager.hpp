@@ -151,7 +151,7 @@ public:
     }
 
     //sl15: this method needs to be overriden by the subclasses
-    //virtual int computeProcID() = 0;
+    virtual int computeProcID() = 0;
 
     //sl15: the way procID is computed should be attached to the user defined data structure
     virtual void addMessage(Message<T>* newmessage){
