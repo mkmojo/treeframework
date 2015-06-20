@@ -44,7 +44,7 @@ protected:
                     return ++count;
                 }
                 case APM_BUFFERED:{
-                    std::queue<Message<T>*> msgs; //sl15: we should use a queue
+                    std::queue<Message<T>*> msgs;
                     msgBuffer.msgBufferLayer.receiveBufferedMessage(msgs);
                     while(!msgs.empty()){
                         Message<T>* p = msgs.front();
@@ -121,8 +121,7 @@ public:
                     _endState();
                     numReachedCheckpoint++;
 
-                    while(!_checkpointReached())
-                        _pumpNetwork();
+                    while(!_checkpointReached()) _pumpNetwork();
 
                     //Load complete
                     _setState(NAS_LOAD_COMPLETE);
