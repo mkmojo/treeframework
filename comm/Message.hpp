@@ -1,25 +1,30 @@
 template<typename T> class Messager;
 
 template<typename T> class Message {
-    T MessageData;
 public:
-    Message(T* pDataIn){ MessageData = *pDataIn; }
+    T Data; //accessible through the public interface
 
-    virtual size_t getNetworkSize() const{
+    Message(){}
+    Message(const T& DataIn) : Data(DataIn){}
+
+    //allow copy construction
+    Message(const Message<T>& rhs){
+        Data = rhs.getData();
+    }
+
+    size_t getNetworkSize() const{
         return sizeof(uint8_t) + sizeof(T);
     }
 
-    virtual size_t serialize(char* buffer){
+    size_t serialize(char* buffer){
         size_t offset = 0;
-        buffer[offset++] = TYPE;
-        offset += pMessageData->serialize(buffer + offset);
+        offset += Data.serialize(buffer + offset);
         return offset;
     }
     
-    virtual size_t unserialize(const char* buffer){
+    size_t unserialize(const char* buffer){
         size_t offset = 0;
-        offset++; //Message Type
-        offset += pMessageData->unserialize(buffer + offset);
+        offset += Data.unserialize(buffer + offset);
         return offset;
     }
 };

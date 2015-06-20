@@ -31,6 +31,11 @@ template<typename T> class MessageBuffer{
         }
     }
 
+    void queueMessage(int procID, Message<T>* pMessage, SendMode mode = SM_BUFFERED){
+        msgQueues[procID].push_back(pMessage);
+        _checkQueueForSend(procID, mode);
+    }
+
     void _clearQueue(int procID){
         size_t numMsgs = msgQueues[procID].size();
         for(auto i = 0; i < numMsgs; i++){
@@ -58,9 +63,9 @@ public:
         msgBufferLayer.sendControlMessage(command, argument);
     }
 
-    void queueMessage(int procID, Message<T>* pMessage, SendMode mode = SM_BUFFERED){
-        msgQueues[procID].push_back(pMessage);
-        _checkQueueForSend(procID, mode);
+    //sl15: this will be called by the load point method
+    void addMessage(int procID, const T& data_in){
+        _queueMessage(procID, new Message<T>(data_in)); //sl15: we use default sm_buffered, but is there any other case?
     }
 
     bool transmitBufferEmpty() const{

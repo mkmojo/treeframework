@@ -4,6 +4,7 @@ template<typename T> class Messager {
 protected:
     //messages stored in a list of queues
     MessageBuffer<T> msgBuffer;
+    std::vector<T> localBuffer;
     
     unsigned numReachedCheckpoint, checkpointSum; 
     NetworkActionState state;
@@ -49,7 +50,8 @@ protected:
                     while(!msgs.empty()){
                         Message<T>* p = msgs.front();
                         msgs.pop();
-                        p->HandleMessage(senderID, this);
+                        //sl15: need to assert that the point is local
+                        localBuffer.push_back(p->Data); //push into the local buffer
                     }
                     break;
                 }
@@ -151,25 +153,7 @@ public:
     }
 
     //sl15: this method needs to be overriden by the subclasses
-    virtual int computeProcID() = 0;
-
-    //sl15: the way procID is computed should be attached to the user defined data structure
-    virtual void addMessage(Message<T>* newmessage){
-        //msgBuffer.queueMessage(computeProcID(), newmessage);
-        msgBuffer.queueMessage(0, newmessage);
+    virtual int computeProcID() {
+        return 0;
     }
-
-    //sl15: this queue needs to be modified to use MessageBuffer instead
-    void processMessages(){
-        //pop the queue, and handle the message
-        while(!messagequeue.empty()){
-            Message<T>* pMessage = messagequeue.front();
-            messagequeue.pop();
-            pMessage->HandleMessage(this); //handle message should call te correct subclasses of Handler
-            //cout << " Now the tree looks like: " << endl;
-            //printData();
-            //cout << endl;
-        }
-    }
- 
 };

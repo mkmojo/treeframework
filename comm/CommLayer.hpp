@@ -120,20 +120,8 @@ public:
 
         int offset = 0;
         while(offset < size){
-            //sl15 this needs a rework as add, sort should not go into commlayer
-            //sl15: this should be moved to somewhere else
-            /*
-            MessageType type = Message::readMessageType((char*)m_rxBuffer + offset);
-
-            Message<T>* pNewMessage;
-            switch(type){
-                case MT_ADD:
-                    pNewMessage = new SeqAddMessage();
-                    break;
-                default:
-                    assert(false); //sl15: print a message and exit
-                    break;
-            }
+            //create empty new message
+            Message<T>* pNewMessage = new Message<T>();
 
             // Unserialize the new message from the buffer
             offset += pNewMessage->unserialize((char*)m_rxBuffer + offset);
@@ -141,7 +129,6 @@ public:
             // Construted message will be deleted in the 
             // LocalOctTree calling function.
             outmessages.push(pNewMessage);
-            */
         }
         assert(offset == size);
 

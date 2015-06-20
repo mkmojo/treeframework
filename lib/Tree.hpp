@@ -5,9 +5,6 @@
 #include "../comm/Messager.hpp"
 
 template<typename T> class Tree : protected Messager<T> {
-    friend class addToQueueHandler<T>;
-    friend class sortQueueHandler<T>;
-
     //buffer array that stores private data
     std::vector<T> private_data;
 

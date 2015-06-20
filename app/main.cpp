@@ -5,6 +5,7 @@ struct Data{
     double x, y, z, mass;
     char m_point[64]; //sl15: this needs to be changed. there should be an intermediate data type to hold the serialized version of Data
 
+    Data():x(0.0),y(0.0),z(0.0),mass(0.0){}
     Data(std::istringstream& ss){
         ss >> x >> y >> z >> mass;
     }
