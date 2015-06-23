@@ -12,6 +12,6 @@ public:
     void printData() const {
         std::cout << " ";
         for(auto&& it : private_data) std::cout << it << " ";
-        std::cout << endl;
+        std::cout << std::endl;
     }
 };
