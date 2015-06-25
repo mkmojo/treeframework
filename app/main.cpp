@@ -85,7 +85,7 @@ int MyLocate(const Data& d, int depth){
 
 int main(int argc, char *argv[]){
     MPI_Init(&argc, &argv);
-    Tree<Data> MyTree;
+    Tree<Data> MyTree("");
     MPI_Finalize();
     return 0;
     /*

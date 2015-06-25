@@ -33,6 +33,7 @@ protected:
         }
     }
 
+    //sl15: currently the return value is not used, but might be later.
     virtual size_t _pumpNetwork(){
         for( size_t count = 0; ;count++){
             int senderID;
@@ -72,9 +73,18 @@ protected:
 
     inline virtual void _endState(){ msgBuffer.flush(); }
 
+    virtual void _sort() = 0;
+
+    virtual void _load() = 0;
 
 public:
     Messager() : numReachedCheckpoint(0), checkpointSum(0), state(NAS_WAITING){ };
+
+    void add(const T& data){
+        int data_id = computeProcID(data); //sl15: computeProcID should be implemented by the user
+        if(data_id == procRank) localBuffer.push_back(data);
+        else msgBuffer.addMessage(data_id, data);
+    }
 
     virtual void run(){ 
         _setState(NAS_LOADING);
@@ -82,24 +92,23 @@ public:
             switch (state){ 
                 //sl15: the calls commented out in this block needs a different interface
                 case NAS_LOADING:
-                    //loadPoints();
                     _endState();
                     _setState(NAS_WAITING);
                     msgBuffer.sendCheckPointMessage();
                     break;
                 case NAS_LOAD_COMPLETE:
                     msgBuffer.msgBufferLayer.barrier();
-                    _pumpNetwork();
+                    _pumpNetwork(); //sl15: double check, this may not be needed
                     _setState(NAS_SORT);
                     break;
                 case NAS_SORT:
                     msgBuffer.msgBufferLayer.barrier();
-                    //setUpGlobalMinMax(); //sl15: write an interface and let the user decide how to get the coordinates
-                    //setUpPointIds(); //sl15: we have a default implementation 
+                    _sort(); //sl15: should be overriden by the subclasses
+                    //setUpGlobalMinMax(); //sl15: should be in subclass _sort() such as octtree.hpp etc
+                    //setUpPointIds(); //sl15: should be in subclass _sort() such as octtree.hpp
                     //sortLocalPoints(); //sl15: should bring back
                     //getLocalSample(); //sl15: should bring back
                     //setGlobalPivot(); //sl15: should bring back
-                    msgBuffer.msgBufferLayer.barrier(); 
                     //distributePoints(); //sl15: should bring back
                     _setState(NAS_DONE);
                     break;
@@ -119,7 +128,7 @@ public:
             switch(state){
                 //sl15: the calls commented out in this block needs a different interface
                 case NAS_LOADING:
-                    //loadPoints(); //sl15: use the thing in TreeDef.cpp
+                    _load();
                     _endState();
                     numReachedCheckpoint++;
 
@@ -131,18 +140,18 @@ public:
                     msgBuffer.msgBufferLayer.barrier();
 
                     //printPoints();
-                    _pumpNetwork();
+                    _pumpNetwork(); //sl15: this might not be necessary
                     _setState(NAS_SORT);
                     break;
                 case NAS_SORT:
                     msgBuffer.sendControlMessage(APC_SET_STATE, NAS_SORT);
                     msgBuffer.msgBufferLayer.barrier();
+                    _sort();
                     //setUpGlobalMinMax();
                     //setUpPointIds();
                     //sortLocalPoints();
                     //getLocalSample();
                     //setGlobalPivot();
-                    msgBuffer.msgBufferLayer.barrier();
                     //distributePoints();
                     _setState(NAS_DONE);
                     break;
