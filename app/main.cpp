@@ -38,18 +38,18 @@ struct Data{
         return sizeof m_point;
     }
 };
-/*
-NodeSet MyGenerate(const Node<Data, double>& mynode){
+
+NodeSet MyGenerate(const Node<Data>& mynode){
     NodeSet myset;
     std::cout << "calling my generate" << std::endl;
     return myset;
 }
 
-void MyCombine(double& comValIn, std::vector<Data>& dataIn){
+void MyCombine(std::vector<Data>& dataIn){
     std::cout << "calling my combine" << std::endl;
 }
 
-void MyEvolve(std::vector<Data>& dataIn, double& comValIn){
+void MyEvolve(std::vector<Data>& dataIn){
     std::cout << "calling my evolve" << std::endl;
 }
 
@@ -81,16 +81,13 @@ int MyLocate(const Data& d, int depth){
     }
     return tmp;
 }
-*/
 
 int main(int argc, char *argv[]){
     MPI_Init(&argc, &argv);
-    Tree<Data> MyTree("");
-    MPI_Finalize();
-    return 0;
-    /*
+    Tree<Data> MyTree;
     MyTree.assign(MyGenerate, MyPredicate, MyCombine, MyEvolve, MyLocate);
     MyTree.build("mytestdata.dat");
+    /*
     MyTree.compute();
     std::cout << "calling clear" << std::endl;
     MyTree.clear();
@@ -98,4 +95,5 @@ int main(int argc, char *argv[]){
     std::cout << MyTree.getLinearTree() << std::endl;
     std::cout << MyTree.getLocalTree() << std::endl;
     */
+    MPI_Finalize();
 }

@@ -1,12 +1,32 @@
 #include "MessageBuffer.hpp"
+#include "Node.hpp"
+#include <map>
+#include <unordered_map>
+#include <functional>
 
 template<typename T> class Messager {
 protected:
+    typedef std::function<bool (const std::vector<T>&)> predicate_functional;
+    typedef std::function<NodeSet (const Node<T>&)> generate_functional;
+    typedef std::function<void (std::vector<T>&)> combine_functional;
+    typedef std::function<void (std::vector<T>&)> evolve_functional;
+    typedef std::function<int (const T&, int)> locate_functional;
+
     //messages stored in a list of queues
     MessageBuffer<T> msgBuffer;
     std::vector<T> localBuffer;
+    std::vector<Node<T> > localArr;
+    std::vector<int> localStruct;
+    std::unordered_map<int, int> nodeTable;
+
+    //> user implementation 
+    predicate_functional user_predicate;
+    generate_functional user_generate;
+    combine_functional user_combine;
+    evolve_functional user_evolve;
+    locate_functional user_locate;
     
-    unsigned numReachedCheckpoint, checkpointSum; 
+    unsigned numReachedCheckpoint, checkpointSum, maxLevel; 
     NetworkActionState state;
 
     inline bool _checkpointReached() const{ return numReachedCheckpoint == numProc; }
@@ -73,17 +93,49 @@ protected:
 
     inline virtual void _endState(){ msgBuffer.flush(); }
 
+    void _flush_buffer(){
+        for(auto it : localBuffer){
+            int tmp = user_locate(it, maxLevel); 
+            auto itt = nodeTable.find(tmp);
+            if(itt != nodeTable.end()) localArr[(*itt).second]._insert(it);
+            else{
+                localArr.push_back(Node<T>(it, tmp)); //sl15: add localArr
+                nodeTable[tmp] = localArr.size()-1;
+            }
+        }
+        localBuffer.clear();
+    }
+        
     virtual void _sort() = 0;
 
     virtual void _load() = 0;
 
-public:
-    Messager() : numReachedCheckpoint(0), checkpointSum(0), state(NAS_WAITING){ };
+    virtual void _assemble() = 0;
 
+public:
+    //maxLevel needs to be read in from user input in loadPoint function
+    Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), state(NAS_WAITING){ };
+
+    inline bool isEmpty() const { return localBuffer->empty() && localArr->empty() && localTree.empty(); }
+
+    //sl15: this function seems to be unnecessary since loading and sorting are all done in run()
     void add(const T& data){
         int data_id = computeProcID(data); //sl15: computeProcID should be implemented by the user
         if(data_id == procRank) localBuffer.push_back(data);
         else msgBuffer.addMessage(data_id, data);
+    }
+
+    void assign(generate_functional generate_in
+        , predicate_functional predicate_in
+        , combine_functional combine_in
+        , evolve_functional evolve_in
+        , locate_functional locate_in){
+
+        user_generate = generate_in;
+        user_predicate = predicate_in;
+        user_combine = combine_in;
+        user_evolve = evolve_in;
+        user_locate = locate_in;
     }
 
     virtual void run(){ 
@@ -122,7 +174,7 @@ public:
 
     }
 
-    virtual void runControl(){
+    virtual void runControl(std::string filename){
         _setState(NAS_LOADING);
         while(state != NAS_DONE){
             switch(state){
@@ -164,5 +216,12 @@ public:
     //sl15: this method needs to be overriden by the subclasses
     virtual int computeProcID() {
         return 0;
+    }
+
+    virtual void build(std::string filename){
+        if(!procRank) runControl(filename);
+        else run();
+        _flush_buffer();
+        _assemble();
     }
 };
