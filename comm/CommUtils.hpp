@@ -4,7 +4,7 @@
 
 extern const unsigned RX_BUFSIZE = 16*1024;
 extern const unsigned MAX_MESSAGES = 1024;
-extern const unsigned numProc = 64; //sl15: this can be parsed from the command line
+extern int numProc = 64; //sl15: this can be parsed from the command line
 extern int procRank = 0; //sl15: this is determined by calling mpi_rank
 
 enum APControl{
@@ -36,7 +36,7 @@ enum APMessage{
 };
 
 //For reduce operation type
-enum MPI_OP_T{
+enum REDUCE_OP{
     SUM, MIN, MAX,
 };
 

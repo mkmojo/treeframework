@@ -65,7 +65,7 @@ public:
 
     //sl15: this will be called by the load point method
     void addMessage(int procID, const T& data_in){
-        _queueMessage(procID, new Message<T>(data_in)); //sl15: we use default sm_buffered, but is there any other case?
+        queueMessage(procID, new Message<T>(data_in)); //sl15: we use default sm_buffered, but is there any other case?
     }
 
     bool transmitBufferEmpty() const{

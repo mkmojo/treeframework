@@ -11,7 +11,7 @@ protected:
     typedef std::function<void (std::vector<T>&)> combine_functional;
     typedef std::function<void (std::vector<T>&)> evolve_functional;
     typedef std::function<int (const T&, int)> locate_functional;
-
+    std::string filename;
     //messages stored in a list of queues
     MessageBuffer<T> msgBuffer;
     std::vector<T> localBuffer;
@@ -116,11 +116,16 @@ public:
     //maxLevel needs to be read in from user input in loadPoint function
     Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), state(NAS_WAITING){ };
 
-    inline bool isEmpty() const { return localBuffer->empty() && localArr->empty() && localTree.empty(); }
+    inline bool isEmpty() const { return localBuffer->empty() && localArr->empty() && localStruct.empty(); }
+
+    //sl15: this method needs to be overridden by the subclasses
+    virtual int computeProcID(){
+        return 0;
+    }
 
     //sl15: this function seems to be unnecessary since loading and sorting are all done in run()
     void add(const T& data){
-        int data_id = computeProcID(data); //sl15: computeProcID should be implemented by the user
+        int data_id = computeProcID(); //sl15: computeProcID should be implemented by the user
         if(data_id == procRank) localBuffer.push_back(data);
         else msgBuffer.addMessage(data_id, data);
     }
@@ -175,6 +180,7 @@ public:
     }
 
     virtual void runControl(std::string filename){
+    	this->filename=filename;
         _setState(NAS_LOADING);
         while(state != NAS_DONE){
             switch(state){
@@ -211,11 +217,6 @@ public:
                     break;
             }
         }
-    }
-
-    //sl15: this method needs to be overriden by the subclasses
-    virtual int computeProcID() {
-        return 0;
     }
 
     virtual void build(std::string filename){
