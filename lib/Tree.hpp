@@ -194,6 +194,10 @@ private:
      {
          unsigned int numGlobalSample= numProc * numProc;
          m_pivotbuffer.resize(numGlobalSample);
+//         Messager<T>::msgBuffer.msgBufferLayer.gatherAll(&m_cbuffer[0], m_cbuffer.size(),&m_pivotbuffer[0]);
+//	     removeDuplicates(m_pivotbuffer);
+//	     std::sort(m_pivotbuffer.begin(), m_pivotbuffer.end());
+
          if(Messager<T>::msgBuffer.msgBufferLayer.isMaster()){
         	 Messager<T>::msgBuffer.msgBufferLayer.gather(&m_cbuffer[0], m_cbuffer.size(),
                      &m_pivotbuffer[0], numProc);
@@ -224,6 +228,114 @@ private:
              m_cbuffer.resize(numProc);
          }
      }
+
+     void setUpLengthsArray(std::vector<int> &lengths, const std::vector<T> &data, const std::vector<long> &splitter)
+     {
+         size_t i = 0;
+         for(size_t j=0;j<splitter.size()-1;j++){
+             long left = splitter[j];
+             long right = splitter[j+1];
+
+             //cout << "DEBUG " << opt::rank <<": " << left << " " <<right<<endl;
+             while(true){
+                 long cntId = data[i].cellId;
+                 if(cntId < right && cntId >= left){
+                     //TODO do I need to create a new message
+                     //for different buffer?
+                     //cout <<"sent "<<data[i].getCellId() << endl;
+                     //m_comm.sendSeqSortMessage(j, data[i]);
+                     i++;
+                     lengths[j]++;
+                 }else {
+                     break;
+                 }
+             }
+         }
+     }
+	 void setUpStartsArray(std::vector<int> &starts, const std::vector<int> &lengths)
+	 {
+		for(size_t i=1;i<lengths.size();i++) {
+			starts[i] = starts[i-1] + lengths[i-1];
+		}
+	 }
+
+	 void setUpRecvLengths(const std::vector<int> &allLengths, std::vector<int> & rLengths)
+	 {
+	     int step = numProc;
+	     for(int i=0; i<numProc; i++){
+	         rLengths[i] = allLengths[step*i + procRank];
+	     }
+	 }
+
+	 void setUpRecvStarts(const std::vector<int> &rLengths, std::vector<int> & rStarts)
+	 {
+	     for(size_t i=1;i<rLengths.size();i++){
+	        rStarts[i] = rStarts[i-1] + rLengths[i-1];
+	     }
+	 }
+
+	 void scale(std::vector<T>& vec)
+	 {
+	     for(size_t i=0;i<vec.size();i++) {
+	         vec[i] *= sizeof(OctreePoint);
+	     }
+	 }
+	 long totalLength(const std::vector<T> lengths) {
+
+	     long total = 0;
+	     for(size_t i=0; i<lengths.size(); i++){
+	         total += lengths[i];
+	     }
+
+	     return total;
+	 }
+     void distributePoints()
+	 {
+		 std::vector<int> lengths(numProc, 0);
+		 std::vector<int> starts(numProc, 0);
+		 std::vector<int> rLengths(numProc, 0);
+		 std::vector<int> rStarts(numProc, 0);
+
+		 setUpLengthsArray(lengths, Messager<T>::localBuffer, m_cbuffer);
+		 setUpStartsArray(starts, lengths);
+
+		 //all_gather lengths
+		 //recved lengths will be placed in rank order
+		 m_alllengths.resize(numProc * numProc);
+		 Messager<T>::msgBuffer.msgBufferLayer.gatherAll(&lengths[0], lengths.size(),&m_alllengths[0]);
+//		 MPI_Allgather(&lengths[0], lengths.size(), MPI_INT,
+//				 &m_alllengths[0], lengths.size(), MPI_INT,
+//				 MPI_COMM_WORLD);
+//		 //print_m_lengthbuffer();
+//
+		 m_allstarts.resize(numProc * numProc);
+//		 MPI_Allgather(&starts[0], starts.size(), MPI_INT,
+//				 &m_allstarts[0], starts.size(), MPI_INT,
+//				 MPI_COMM_WORLD);
+//		 //print_m_allstarts();
+//
+		 setUpRecvLengths(m_alllengths, rLengths);
+		 setUpRecvStarts(rLengths, rStarts);
+//
+//	 //    printVector(rLengths, "rLengths");
+//	 //    printVector(rStarts, "rStarts");
+//	 //    printVector(lengths, "lengths");
+//	 //    printVector(starts,"starts");
+//
+		 m_sort_buffer.resize(totalLength(rLengths));
+//
+		 //getting the right number of bytes
+		 scale(lengths); //<--length for local
+		 scale(starts);  //<--starts for local
+		 scale(rLengths);//<--from all proc
+		 scale(rStarts); //<--from all proc
+//
+//		 printVector(m_data, "m_data");
+//
+//		 MPI_Alltoallv(&m_data[0], &lengths[0], &starts[0], MPI_BYTE, &m_sort_buffer[0], &rLengths[0], &rStarts[0], MPI_BYTE, MPI_COMM_WORLD);
+//		 std::sort(m_sort_buffer.begin(), m_sort_buffer.end(), cmpPoint);
+//		 printVector(m_sort_buffer, "m_sort_buffer");
+	 }
 
 protected:
     //buffer array that stores private data
@@ -256,7 +368,7 @@ protected:
     }
     
     void _sort(){
-    	setUpGlobalMinMax();
+//    	setUpGlobalMinMax();
 		setUpPointIds();
 		sortLocalPoints();
 		getLocalSample();
