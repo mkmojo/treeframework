@@ -10,91 +10,74 @@
 
 #include "../comm/Messager.hpp"
 
-struct OctreePoint{
+struct OctreePoint {
 	double x, y, z;
 	long cellId;
-	OctreePoint():x(0.0),y(0.0),z(0.0),cellId(0){}
+	OctreePoint() :
+			x(0.0), y(0.0), z(0.0), cellId(0) {
+	}
 };
 
-bool cmpPoint(const OctreePoint &p1, const OctreePoint &p2)
-{
-    return  p1.cellId < p2.cellId;
+bool cmpPoint(const OctreePoint &p1, const OctreePoint &p2) {
+	return p1.cellId < p2.cellId;
 }
 
-template<typename T> class Tree : public Messager<T> {
+template<typename T> class Tree: public Messager<T> {
 private:
-   int ndim, maxlevel;
-   double localMinX, localMaxX;
-   double localMinY, localMaxY;
-   double localMinZ, localMaxZ;
-   double globalMinX, globalMaxX;
-   double globalMinY, globalMaxY;
-   double globalMinZ, globalMaxZ;
-   std::vector<long> m_cbuffer;
-   std::vector<long> m_pivotbuffer;
-   //all start point
-   std::vector<int> m_allstarts;
-   //all lengths
-   std::vector<int> m_alllengths;
-   //local results of sort
-   std::vector<T> m_sort_buffer;
+	CommLayer<T> comm; //reference variable for the ComLayer defined in parent class
 
-   //Find local min and max for each dimension
-    //Find global min and max through MPI ALLreduce
-    //distribute the result
-    void setUpGlobalMinMax()
-    {
-        //TODO: what do we do with a processor that does not
-        //have any data?
-        assert(Messager<T>::localBuffer.size() > 0);
-        OctreePoint cntPoint = (OctreePoint) Messager<T>::localBuffer[0];
-        double minX(cntPoint.x), maxX(cntPoint.x);
-        double minY(cntPoint.y), maxY(cntPoint.y);
-        double minZ(cntPoint.z), maxZ(cntPoint.z);
+	int ndim=3, maxlevel=21;
+	double globalMinX=0, globalMaxX=0;
+	double globalMinY=0, globalMaxY=0;
+	double globalMinZ=0, globalMaxZ=0;
 
-        for(unsigned i=1;i<Messager<T>::localBuffer.size();i++){
-        	OctreePoint cntPoint = Messager<T>::localBuffer[i];
-            //For current smallest cord
-            if(cntPoint.x < minX){
-                minX = cntPoint.x;
-            }
-            if(cntPoint.y < minY){
-                minY = cntPoint.y;
-            }
-            if(cntPoint.z < minZ){
-                minZ = cntPoint.z;
-            }
+	//Find local min and max for each dimension
+	//Find global min and max through MPI ALLreduce
+	//distribute the result
+	void setUpGlobalMinMax() {
+		//TODO: what do we do with a processor that does not
+		//have any data?
+		assert(Messager<T>::localBuffer.size() > 0);
+		OctreePoint cntPoint = (OctreePoint) Messager<T>::localBuffer[0];
+		double minX(cntPoint.x), maxX(cntPoint.x);
+		double minY(cntPoint.y), maxY(cntPoint.y);
+		double minZ(cntPoint.z), maxZ(cntPoint.z);
 
-            //For current lareges cord
-            if(cntPoint.x > maxX){
-                maxX = cntPoint.x;
-            }
-            if(cntPoint.y > maxY){
-                maxY = cntPoint.y;
-            }
-            if(cntPoint.z > maxZ){
-                maxZ = cntPoint.z;
-            }
-        }
+		for (unsigned i = 1; i < Messager<T>::localBuffer.size(); i++) {
+			OctreePoint cntPoint = Messager<T>::localBuffer[i];
+			//For current smallest cord
+			if (cntPoint.x < minX) {
+				minX = cntPoint.x;
+			}
+			if (cntPoint.y < minY) {
+				minY = cntPoint.y;
+			}
+			if (cntPoint.z < minZ) {
+				minZ = cntPoint.z;
+			}
 
-        localMinX = minX;
-        localMinY = minY;
-        localMinZ = minZ;
-        localMaxX = maxX;
-        localMaxY = maxY;
-        localMaxZ = maxZ;
+			//For current largest cord
+			if (cntPoint.x > maxX) {
+				maxX = cntPoint.x;
+			}
+			if (cntPoint.y > maxY) {
+				maxY = cntPoint.y;
+			}
+			if (cntPoint.z > maxZ) {
+				maxZ = cntPoint.z;
+			}
+		}
 
-        //set global dimension
-        globalMinX = Messager<T>::msgBuffer.msgBufferLayer.reduce(minX, MIN);
-        globalMinY = Messager<T>::msgBuffer.msgBufferLayer.reduce(minY, MIN);
-        globalMinZ = Messager<T>::msgBuffer.msgBufferLayer.reduce(minZ, MIN);
-        //set global dimension
-        globalMaxX = Messager<T>::msgBuffer.msgBufferLayer.reduce(maxX, MAX);
-        globalMaxY = Messager<T>::msgBuffer.msgBufferLayer.reduce(maxY, MAX);
-        globalMaxZ = Messager<T>::msgBuffer.msgBufferLayer.reduce(maxZ, MAX);
-    }
-    long computeKey( unsigned int x, unsigned int y, unsigned z)
-	{
+		//set global dimension
+		globalMinX = comm.reduce(minX, MIN);
+		globalMinY = comm.reduce(minY, MIN);
+		globalMinZ = comm.reduce(minZ, MIN);
+		globalMaxX = comm.reduce(maxX, MAX);
+		globalMaxY = comm.reduce(maxY, MAX);
+		globalMaxZ = comm.reduce(maxZ, MAX);
+	}
+
+	long computeKey(unsigned int x, unsigned int y, unsigned z) {
 		// number of bits required for each x, y and z = height of the
 		// tree = level_ - 1
 		// therefore, height of more than 21 is not supported
@@ -107,351 +90,322 @@ private:
 		long mask = 1;
 		mask = mask << 63; // leftmost bit is 1, rest 0
 
-		for(unsigned int i = 0; i < height; ++i) {
+		for (unsigned int i = 0; i < height; ++i) {
 			key = key << 1;
-			if(x_64 & mask) key = key | 1;
+			if (x_64 & mask)
+				key = key | 1;
 			x_64 = x_64 << 1;
 
 			key = key << 1;
-			if(y_64 & mask) key = key | 1;
+			if (y_64 & mask)
+				key = key | 1;
 			y_64 = y_64 << 1;
 
 			key = key << 1;
-			if(z_64 & mask) key = key | 1;
+			if (z_64 & mask)
+				key = key | 1;
 			z_64 = z_64 << 1;
 		} // for
 
 		return key;
 	}
 
-    long getCellId(OctreePoint &p)
-    {
-        //return the cell id for a point;
-        //r stands for range
-        double x = p.x - localMinX;
-        double y = p.y - localMinY;
-        double z = p.z - localMinZ;
-        double rx = localMaxX - localMinX;
-        double ry = localMaxY - localMinY;
-        double rz = localMaxZ - localMinZ;
+	long getCellId(OctreePoint &p) {
+		//return the cell id for a point;
+		//r stands for range
+		double x = p.x - globalMinX;
+		double y = p.y - globalMinY;
+		double z = p.z - globalMinZ;
+		double rx = globalMaxX - globalMinX;
+		double ry = globalMaxY - globalMinY;
+		double rz = globalMaxZ - globalMinZ;
 
-        double domain = (rx > ry && rx > rz) ?
-            rx :
-            ((ry > rz) ? ry : rz);
+		double domain = (rx > ry && rx > rz) ? rx : ((ry > rz) ? ry : rz);
 
-        unsigned int numCells = 1 << (maxlevel - 1);
-        double cellSize = domain / numCells;
-        int xKey = (unsigned int) (x / cellSize);
-        int yKey = (unsigned int) (y / cellSize);
-        int zKey = (unsigned int) (z / cellSize);
+		unsigned int numCells = 1 << (maxlevel - 1);
+		double cellSize = domain / numCells;
+		int xKey = (unsigned int) (x / cellSize);
+		int yKey = (unsigned int) (y / cellSize);
+		int zKey = (unsigned int) (z / cellSize);
 
-        return computeKey(xKey, yKey, zKey);
-    }
+		return computeKey(xKey, yKey, zKey);
+	}
 
-    void setUpPointIds()
-     {
-         for(unsigned i=0; i < Messager<T>::localBuffer.size(); i++) {
-         	OctreePoint p=(OctreePoint)Messager<T>::localBuffer[i];
-         	p.cellId=getCellId(p);
-         }
-     }
-
-//     bool wayToSort(int i, int j) { return i > j; }
-     void sortLocalPoints()
-     {
-         long numTotal = 0;
-         numTotal = Messager<T>::msgBuffer.msgBufferLayer.reduce((long)Messager<T>::localBuffer.size(),SUM);
-         if(Messager<T>::msgBuffer.msgBufferLayer.isMaster())
-             std::cout<< "DEBUG: " << numTotal<<" int total."  <<std::endl;
-
-         //TODO: extend this to user defined data type
-         //So customized iterator/cmp function etc.
-//         std::vector<int> intVec = {56, 32, -43, 23, 12, 93, 132, -154};
-//         std::sort(intVec.begin(), intVec.end(), wayToSort);
-         std::sort((Messager<T>::localBuffer).begin(), (Messager<T>::localBuffer).end(), cmpPoint);
-     }
-
-     void getLocalSample()
-     {
-         //sample local data points
-
-     	double step = 1.0*Messager<T>::localBuffer.size()/numProc;
-     	int start = round((step-1) * (1.0 * procRank / (numProc-1)));
-     //	cout<<"step="<<step<<" data size = "<<m_data.size()<<" start="<<start<<endl;
-         for(unsigned int i=0;i<numProc; i++)
-         {
-     		int index = int(start + i * step);
-             long id = ((OctreePoint)Messager<T>::localBuffer[index]).cellId;
-             m_cbuffer.push_back(id);
-         }
-     }
-     void removeDuplicates(std::vector<long>& nodeIds){
-     	std::set<int> s(nodeIds.begin(), nodeIds.end());
-     	nodeIds.assign(s.begin(), s.end());
-     }
-
-     void setGlobalPivot()
-     {
-         unsigned int numGlobalSample= numProc * numProc;
-         m_pivotbuffer.resize(numGlobalSample);
-//         Messager<T>::msgBuffer.msgBufferLayer.gatherAll(&m_cbuffer[0], m_cbuffer.size(),&m_pivotbuffer[0]);
-//	     removeDuplicates(m_pivotbuffer);
-//	     std::sort(m_pivotbuffer.begin(), m_pivotbuffer.end());
-
-         if(Messager<T>::msgBuffer.msgBufferLayer.isMaster()){
-        	 Messager<T>::msgBuffer.msgBufferLayer.gather(&m_cbuffer[0], m_cbuffer.size(),
-                     &m_pivotbuffer[0], numProc);
-             removeDuplicates(m_pivotbuffer);
-             std::sort(m_pivotbuffer.begin(), m_pivotbuffer.end());
-         }
-         else{
-        	 Messager<T>::msgBuffer.msgBufferLayer.receiveGather(&m_cbuffer[0], m_cbuffer.size(),
-                     &m_pivotbuffer[0], numProc);
-         }
-
-         //Sample global pivots
-         if(Messager<T>::msgBuffer.msgBufferLayer.isMaster()){
-         	double step = 1.0*m_pivotbuffer.size()/numProc;
-             for(int i=0;i<numProc; i++) {
-                 long id = m_pivotbuffer[int(i*step)];
-                 m_cbuffer[i] = id;
-             }
-         }
-
-         //Bcast pivots to all procs
-         if(Messager<T>::msgBuffer.msgBufferLayer.isMaster()) {
-        	 Messager<T>::msgBuffer.msgBufferLayer.bcast(&m_cbuffer[0], numProc);
-             m_cbuffer.resize(numProc);
-         }
-         else{
-        	 Messager<T>::msgBuffer.msgBufferLayer.receiveBcast(&m_cbuffer[0], numProc);
-             m_cbuffer.resize(numProc);
-         }
-     }
-
-     void setUpLengthsArray(std::vector<int> &lengths, const std::vector<T> &data, const std::vector<long> &splitter)
-     {
-         size_t i = 0;
-         for(size_t j=0;j<splitter.size()-1;j++){
-             long left = splitter[j];
-             long right = splitter[j+1];
-
-             //cout << "DEBUG " << opt::rank <<": " << left << " " <<right<<endl;
-             while(true){
-                 long cntId = data[i].cellId;
-                 if(cntId < right && cntId >= left){
-                     //TODO do I need to create a new message
-                     //for different buffer?
-                     //cout <<"sent "<<data[i].getCellId() << endl;
-                     //m_comm.sendSeqSortMessage(j, data[i]);
-                     i++;
-                     lengths[j]++;
-                 }else {
-                     break;
-                 }
-             }
-         }
-     }
-	 void setUpStartsArray(std::vector<int> &starts, const std::vector<int> &lengths)
-	 {
-		for(size_t i=1;i<lengths.size();i++) {
-			starts[i] = starts[i-1] + lengths[i-1];
+	void setUpPointIds() {
+		setUpGlobalMinMax();
+		for (unsigned i = 0; i < Messager<T>::localBuffer.size(); i++) {
+			OctreePoint p = (OctreePoint) Messager<T>::localBuffer[i];
+			p.cellId = getCellId(p);
 		}
-	 }
+	}
 
-	 void setUpRecvLengths(const std::vector<int> &allLengths, std::vector<int> & rLengths)
-	 {
-	     int step = numProc;
-	     for(int i=0; i<numProc; i++){
-	         rLengths[i] = allLengths[step*i + procRank];
-	     }
-	 }
+	std::vector<long> getLocalSample() {
+		//Sort the points based on their cell ids
+		std::sort((Messager<T>::localBuffer).begin(),(Messager<T>::localBuffer).end(), cmpPoint);
 
-	 void setUpRecvStarts(const std::vector<int> &rLengths, std::vector<int> & rStarts)
-	 {
-	     for(size_t i=1;i<rLengths.size();i++){
-	        rStarts[i] = rStarts[i-1] + rLengths[i-1];
-	     }
-	 }
+		//Store the pivot locations for sample sort
+		std::vector<long> m_cbuffer;
+		//sample local data points
+		double step = 1.0 * Messager<T>::localBuffer.size() / numProc;
+		int start = round((step - 1) * (1.0 * procRank / (numProc - 1)));
+		for (unsigned int i = 0; i < numProc; i++) {
+			int index = int(start + i * step);
+			long id = ((OctreePoint) Messager<T>::localBuffer[index]).cellId;
+			m_cbuffer.push_back(id);
+		}
+		return m_cbuffer;
+	}
 
-	 void scale(std::vector<T>& vec)
-	 {
-	     for(size_t i=0;i<vec.size();i++) {
-	         vec[i] *= sizeof(OctreePoint);
-	     }
-	 }
-	 long totalLength(const std::vector<T> lengths) {
+	int removeDuplicates(long* nodeIds, int size) {
+		std::set<int> s(nodeIds, nodeIds + size);
+		int i = 0;
+		for (std::set<int>::iterator it = s.begin(); it != s.end(); ++it) {
+			nodeIds[i] = *it;
+			i++;
+		}
+		return s.size();
+	}
 
-	     long total = 0;
-	     for(size_t i=0; i<lengths.size(); i++){
-	         total += lengths[i];
-	     }
+	std::vector<long> performSampleSort(std::vector<long> m_cbuffer) {
+		long* m_pivotbuffer;
+		unsigned int numGlobalSample = numProc * numProc;
+		comm.gatherAll(&m_cbuffer[0],m_cbuffer.size(), m_pivotbuffer);
+		int size = removeDuplicates(m_pivotbuffer, m_cbuffer.size());
+		std::sort(m_pivotbuffer, m_pivotbuffer + size);
 
-	     return total;
-	 }
-     void distributePoints()
-	 {
-		 std::vector<int> lengths(numProc, 0);
-		 std::vector<int> starts(numProc, 0);
-		 std::vector<int> rLengths(numProc, 0);
-		 std::vector<int> rStarts(numProc, 0);
+		//Sample global pivots
+		double step = 1.0 * size / numProc;
+		for (int i = 0; i < numProc; i++) {
+			long id = m_pivotbuffer[int(i * step)];
+			m_cbuffer[i] = id;
+		}
+		return m_cbuffer;
+	}
 
-		 setUpLengthsArray(lengths, Messager<T>::localBuffer, m_cbuffer);
-		 setUpStartsArray(starts, lengths);
+	void setUpLengthsArray(std::vector<int> &lengths,
+			const std::vector<T> &data, const std::vector<long> &splitter) {
+		size_t i = 0;
+		for (size_t j = 0; j < splitter.size() - 1; j++) {
+			long left = splitter[j];
+			long right = splitter[j + 1];
 
-		 //all_gather lengths
-		 //recved lengths will be placed in rank order
-		 m_alllengths.resize(numProc * numProc);
-		 Messager<T>::msgBuffer.msgBufferLayer.gatherAll(&lengths[0], lengths.size(),&m_alllengths[0]);
-//		 MPI_Allgather(&lengths[0], lengths.size(), MPI_INT,
-//				 &m_alllengths[0], lengths.size(), MPI_INT,
-//				 MPI_COMM_WORLD);
-//		 //print_m_lengthbuffer();
-//
-		 m_allstarts.resize(numProc * numProc);
-//		 MPI_Allgather(&starts[0], starts.size(), MPI_INT,
-//				 &m_allstarts[0], starts.size(), MPI_INT,
-//				 MPI_COMM_WORLD);
-//		 //print_m_allstarts();
-//
-		 setUpRecvLengths(m_alllengths, rLengths);
-		 setUpRecvStarts(rLengths, rStarts);
-//
-//	 //    printVector(rLengths, "rLengths");
-//	 //    printVector(rStarts, "rStarts");
-//	 //    printVector(lengths, "lengths");
-//	 //    printVector(starts,"starts");
-//
-		 m_sort_buffer.resize(totalLength(rLengths));
-//
-		 //getting the right number of bytes
-		 scale(lengths); //<--length for local
-		 scale(starts);  //<--starts for local
-		 scale(rLengths);//<--from all proc
-		 scale(rStarts); //<--from all proc
-//
-//		 printVector(m_data, "m_data");
-//
-//		 MPI_Alltoallv(&m_data[0], &lengths[0], &starts[0], MPI_BYTE, &m_sort_buffer[0], &rLengths[0], &rStarts[0], MPI_BYTE, MPI_COMM_WORLD);
-//		 std::sort(m_sort_buffer.begin(), m_sort_buffer.end(), cmpPoint);
-//		 printVector(m_sort_buffer, "m_sort_buffer");
-	 }
+			while (true) {
+				long cntId = data[i].cellId;
+				if (cntId < right && cntId >= left) {
+					//TODO do I need to create a new message
+					//for different buffer?
+					i++;
+					lengths[j]++;
+				} else {
+					break;
+				}
+			}
+		}
+	}
+	void setUpStartsArray(std::vector<int> &starts,
+			const std::vector<int> &lengths) {
+		for (size_t i = 1; i < lengths.size(); i++) {
+			starts[i] = starts[i - 1] + lengths[i - 1];
+		}
+	}
+
+	void setUpRecvLengths(const int* allLengths, std::vector<int> & rLengths) {
+		int step = numProc;
+		for (int i = 0; i < numProc; i++) {
+			rLengths[i] = allLengths[step * i + procRank];
+		}
+	}
+
+	void setUpRecvStarts(const std::vector<int> &rLengths,
+			std::vector<int> & rStarts) {
+		for (size_t i = 1; i < rLengths.size(); i++) {
+			rStarts[i] = rStarts[i - 1] + rLengths[i - 1];
+		}
+	}
+
+	void scale(std::vector<int>& vec) {
+		for (size_t i = 0; i < vec.size(); i++) {
+			vec[i] *= sizeof(OctreePoint);
+		}
+	}
+	long totalLength(const std::vector<int> lengths) {
+
+		long total = 0;
+		for (size_t i = 0; i < lengths.size(); i++) {
+			total += lengths[i];
+		}
+
+		return total;
+	}
+	void distributePoints(std::vector<long> m_cbuffer) {
+		//all start point
+		int* m_allstarts;
+		//all lengths
+		int* m_alllengths;
+		//local results of sort
+		char* m_sort_buffer;
+
+		std::vector<int> lengths(numProc, 0);
+		std::vector<int> starts(numProc, 0);
+		std::vector<int> rLengths(numProc, 0);
+		std::vector<int> rStarts(numProc, 0);
+
+		setUpLengthsArray(lengths, Messager<T>::localBuffer, m_cbuffer);
+		setUpStartsArray(starts, lengths);
+
+		//all_gather lengths
+		//recved lengths will be placed in rank order
+		comm.gatherAll(&lengths[0],
+				lengths.size(), m_alllengths);
+
+		comm.gatherAll(&starts[0],
+				starts.size(), m_allstarts);
+
+		setUpRecvLengths(m_alllengths, rLengths);
+		setUpRecvStarts(rLengths, rStarts);
+
+		//getting the right number of bytes
+		scale(lengths); //<--length for local
+		scale(starts);  //<--starts for local
+		scale(rLengths);  //<--from all proc
+		scale(rStarts); //<--from all proc
+		char* serializedData; //TODO
+		comm.redistribute(serializedData,
+				&lengths[0], &starts[0], m_sort_buffer, &rLengths[0],
+				&rStarts[0]);
+
+		//TODO m_sort_buffer back to localBuffer
+
+		std::sort(Messager<T>::localBuffer.begin(), Messager<T>::localBuffer.end(), cmpPoint);
+	}
 
 protected:
-    //buffer array that stores private data
-    std::vector<T> private_data;
+	//buffer array that stores private data
+	std::vector<T> private_data;
 
-    //sl15: required to be implemented by the implementer
-    void _load(){
-		if (Messager<T>::msgBuffer.msgBufferLayer.isMaster()) {
+	//sl15: required to be implemented by the implementer
+	void _load() {
+		if (comm.isMaster()) {
 			std::ifstream fs(Messager<T>::filename.c_str());
 			std::string line;
 			bool datastart = false;
 
-			while(std::getline(fs, line)){
+			while (std::getline(fs, line)) {
 				std::istringstream iss(line);
 				std::string params;
-				if(!datastart){
+				if (!datastart) {
 					iss >> params;
-					if(params == "NDIM" && !ndim) iss >> ndim;
-					if(params == "MAX_LEVEL" && !maxlevel) iss >> maxlevel;
-					if(params == "DATA_TABLE"){
+					if (params == "NDIM" && !ndim)
+						iss >> ndim;
+					if (params == "MAX_LEVEL" && !maxlevel)
+						iss >> maxlevel;
+					if (params == "DATA_TABLE") {
 						datastart = true;
 						continue;
 					}
-				}else{
+				} else {
 					Messager<T>::add(T(iss));
 				}
 			}
-//			if(verbosity == Verbose) std::cout << "preload done! " << std::endl;
 		}
-    }
-    
-    void _sort(){
-//    	setUpGlobalMinMax();
+	}
+
+	void _sort() {
+		//set labels for each point (node ids)
 		setUpPointIds();
-		sortLocalPoints();
-		getLocalSample();
-		setGlobalPivot();
-//		distributePoints();
-    }
 
-    void _assemble(){
-        //assert(local_arr->size() <= ndata);
-        std::set<int> aux;
-        int old_last = -1;
+		//get a sample of node ids from the local processor
+		std::vector<long> localSamples = getLocalSample();
 
-        //define a reference to base class local array to get around the templated protected member non-accessible problem
-        std::vector<Node<T> >& localArr = Messager<T>::localArr;
-        int new_last = localArr.size()-1;
+		//perform sample sort on the local node set and get the global pivots
+		std::vector<long> globalPivots = performSampleSort(localSamples);
 
-        while(new_last - old_last > 1){ 
-            for(int i = old_last+1; i <= new_last; i++)
-                aux.insert(localArr[i].id >> 3);
-            old_last = localArr.size()-1;
+		//redistribute the points based on the global pivots
+		distributePoints(globalPivots);
+	}
 
-            for(auto it : aux){
-                localArr.push_back(Node<T>(it));
-                for(int i = 0; i < localArr.size()-1; i++){
-                    if((localArr[i].id) >> 3 == it){
-                        localArr.back().childset.insert(std::make_pair(i, localArr[i].id));
-                        localArr[i].parent = localArr.size()-1;
-                    }
-                }
-            }
-            aux.clear();
-            new_last = localArr.size()-1;
-        }
+	void _assemble() {
+		std::set<int> aux;
+		int old_last = -1;
 
-        localArr.back().parent = -1;
-        for(auto&& it : localArr){
-            if(it.childset.empty())
-                it.childset.insert(std::make_pair(-1,-1));
-        }
+		//define a reference to base class local array to get around the templated protected member non-accessible problem
+		std::vector<Node<T> >& localArr = Messager<T>::localArr;
+		int new_last = localArr.size() - 1;
 
-        _post_order_walk(&Tree::_add_to_tree);
-    }
+		while (new_last - old_last > 1) {
+			for (int i = old_last + 1; i <= new_last; i++)
+				aux.insert(localArr[i].id >> 3);
+			old_last = localArr.size() - 1;
 
-    //additional implementations by the implementer
-    inline void _add_to_tree(int a){ Messager<T>::localStruct.push_back(a); }
+			for (auto it : aux) {
+				localArr.push_back(Node<T>(it));
+				for (int i = 0; i < localArr.size() - 1; i++) {
+					if ((localArr[i].id) >> 3 == it) {
+						localArr.back().childset.insert(
+								std::make_pair(i, localArr[i].id));
+						localArr[i].parent = localArr.size() - 1;
+					}
+				}
+			}
+			aux.clear();
+			new_last = localArr.size() - 1;
+		}
 
-    void _post_order_walk(void (Tree::*fun)(int)){
-        std::stack<int> aux;
-        auto track = new std::vector<NodeOrderSet::iterator>;
-        std::vector<Node<T> >& localArr = Messager<T>::localArr;
+		localArr.back().parent = -1;
+		for (auto&& it : localArr) {
+			if (it.childset.empty())
+				it.childset.insert(std::make_pair(-1, -1));
+		}
 
-        for(auto&& it : localArr)
-            track->push_back(it.childset.begin());
+		_post_order_walk(&Tree::_add_to_tree);
+	}
 
-        int last_visited = -1;
-        int current = localArr.size()-1;
-        int peek = 0;
-        while(!aux.empty() || current != -1){
-            if(current != -1){
-                aux.push(current);
-                current = (*track)[current]->first;
-            }else{
-                peek = aux.top();
-                ++(*track)[peek];
-                if((*track)[peek] != localArr[peek].childset.end() && last_visited != ((*track)[peek])->first){
-                    current = (*track)[peek]->first;
-                }else{
-                    (this->*fun)(peek);
-                    last_visited = aux.top();
-                    aux.pop();
-                }
-            }
-        }
-        delete track;
-    }
+	//additional implementations by the implementer
+	inline void _add_to_tree(int a) {
+		Messager<T>::localStruct.push_back(a);
+	}
 
-    //sl15: this method needs to be overriden by the subclasses
+	void _post_order_walk(void (Tree::*fun)(int)) {
+		std::stack<int> aux;
+		auto track = new std::vector<NodeOrderSet::iterator>;
+		std::vector<Node<T> >& localArr = Messager<T>::localArr;
+
+		for (auto&& it : localArr)
+			track->push_back(it.childset.begin());
+
+		int last_visited = -1;
+		int current = localArr.size() - 1;
+		int peek = 0;
+		while (!aux.empty() || current != -1) {
+			if (current != -1) {
+				aux.push(current);
+				current = (*track)[current]->first;
+			} else {
+				peek = aux.top();
+				++(*track)[peek];
+				if ((*track)[peek] != localArr[peek].childset.end()
+						&& last_visited != ((*track)[peek])->first) {
+					current = (*track)[peek]->first;
+				} else {
+					(this->*fun)(peek);
+					last_visited = aux.top();
+					aux.pop();
+				}
+			}
+		}
+		delete track;
+	}
+
+	//sl15: this method needs to be overriden by the subclasses
 public:
-    Tree() : Messager<T>() { }
-    
-    void printData() const {
-        std::cout << " ";
-        for(auto&& it : private_data) std::cout << it << " ";
-        std::cout << std::endl;
-    }
+	Tree() :Messager<T>() {
+		comm=Messager<T>::msgBuffer.msgBufferLayer;
+	}
+
+	void printData() const {
+		std::cout << " ";
+		for (auto&& it : private_data)
+			std::cout << it << " ";
+		std::cout << std::endl;
+	}
 };
