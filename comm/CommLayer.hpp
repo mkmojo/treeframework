@@ -258,14 +258,16 @@ public:
         //logger(4) << "left receiveBroadcast\n";
     }
 
-    void redistribute(char* send, int* sendCounts, int* sendDisplacements,
+    size_t redistribute(char* send, int* sendCounts, int* sendDisplacements,
     		char* &recv, int* recvCount, int* recvDisplacements){
     	int total = 0;
 		for (size_t i = 0; i < numProc; i++) {
 			total += recvCount[i];
 		}
-    	recv = (char*)malloc(total*sizeof(char));
+		std::size_t size = total * sizeof(char);
+		recv = (char*) malloc(size);
     	MPI_Alltoallv(send, sendCounts, sendDisplacements, MPI_BYTE, recv, recvCount, recvDisplacements, MPI_BYTE, MPI_COMM_WORLD);
+    	return size;
     }
 
 

@@ -1,4 +1,5 @@
 #include "../lib/Tree.hpp"
+#include "../lib/DataUtils.hpp"
 #include <sstream>
 
 struct Data : OctreePoint{
@@ -10,36 +11,18 @@ struct Data : OctreePoint{
         ss >> x >> y >> z >> mass;
     }
 
-    size_t serialize(void* dest){ //sl15: void pointer?
-        std::memcpy(dest, m_point, sizeof m_point);
-        //DEBUG: copy things received to data member
-        std::memcpy(&x, m_point, sizeof x);
-        std::memcpy(&y, m_point + sizeof(double), sizeof y);
-        std::memcpy(&z, m_point + sizeof(double)*2, sizeof z);
-        std::memcpy(&mass, m_point + sizeof(double)*3, sizeof mass);
-        return sizeof m_point;
+    size_t save(void* dest){ //sl15: void pointer?
+    	return data_utils::copyData(dest, &mass, sizeof(mass));
     }
 
     //copy data from incoming buffer to Point
     //roll things into struct
-    size_t unserialize(const void* src)
-    {
-        //This is now ugly, should be done through a function
-        //I may want to change it to vector and use vector to hold 
-        //things together
-        //sl15: I agree with the above comment. seralized data should not reside in data itself
-        memcpy(m_point, src, sizeof m_point);
-
-        memcpy(&x, m_point, sizeof x);
-        memcpy(&y, m_point + sizeof(double), sizeof y);
-        memcpy(&z, m_point + sizeof(double) * 2, sizeof z);
-        memcpy(&mass, m_point + sizeof(double) * 3, sizeof mass);
-
-        return sizeof m_point;
+    size_t load(const void* src){
+    	return data_utils::copyData(&mass, src, sizeof(mass));
     }
 
-    size_t getSize(){
-    	return 0;
+    size_t size(){
+    	return sizeof(mass);
     }
 };
 

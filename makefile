@@ -10,7 +10,7 @@ CTAGS = ctags
 BIN = bin/xps
 CFILES = app/main.cpp
 OBJECTS = app/main.o
-HFILES = comm/CommLayer.hpp comm/Message.hpp comm/Node.hpp comm/MessageBuffer.hpp comm/Messager.hpp lib/Tree.hpp
+HFILES = comm/CommLayer.hpp comm/Message.hpp comm/Node.hpp comm/MessageBuffer.hpp comm/Messager.hpp lib/Tree.hpp lib/DataUtils.hpp
 OTHERSOURCES =  
 SOURCES =   $(HFILES) $(CFILES) $(OTHERSOURCES)
 
