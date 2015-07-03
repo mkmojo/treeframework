@@ -37,6 +37,10 @@ struct Data : OctreePoint{
 
         return sizeof m_point;
     }
+
+    size_t getSize(){
+    	return 0;
+    }
 };
 
 NodeSet MyGenerate(const Node<Data>& mynode){

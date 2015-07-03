@@ -219,18 +219,20 @@ public:
         //logger(4) << "left gather\n";
     }
 
-    void gatherAll(long* send, int sendSize, long* &recv) {
-    	recv = (long*)malloc(sendSize*numProc*sizeof(long));
+    int gatherAll(long* send, int sendSize, long* &recv) {
+		int size = sendSize * numProc;
+		recv = (long*) malloc(size * sizeof(long));
         //logger(4) << "entering gather\n";
-        MPI_Allgather(send, sendSize, MPI_LONG, recv, sendSize,
-                MPI_LONG, MPI_COMM_WORLD);
+        MPI_Allgather(send, sendSize, MPI_LONG, recv, sendSize, MPI_LONG, MPI_COMM_WORLD);
+        return size;
     }
 
-    void gatherAll(int* send, int sendSize, int* &recv) {
-    	recv = (int*)malloc(sendSize*numProc*sizeof(int));
+    int gatherAll(int* send, int sendSize, int* &recv) {
+		int size = sendSize * numProc;
+		recv = (int*) malloc(size * sizeof(int));
         //logger(4) << "entering gather\n";
-        MPI_Allgather(send, sendSize, MPI_INT, recv, sendSize,
-                MPI_INT, MPI_COMM_WORLD);
+        MPI_Allgather(send, sendSize, MPI_INT, recv, sendSize, MPI_INT, MPI_COMM_WORLD);
+        return size;
     }
 
     void receiveGather(long* send, int sendSize,

@@ -10,12 +10,14 @@
 
 #include "../comm/Messager.hpp"
 
+
 struct OctreePoint {
-	double x, y, z;
+	double x,y,z;
 	long cellId;
-	OctreePoint() :
-			x(0.0), y(0.0), z(0.0), cellId(0) {
-	}
+
+	virtual size_t serialize(void*)=0;
+	virtual size_t unserialize(const void*)=0;
+	virtual size_t getSize()=0;
 };
 
 bool cmpPoint(const OctreePoint &p1, const OctreePoint &p2) {
@@ -38,13 +40,13 @@ private:
 		//TODO: what do we do with a processor that does not
 		//have any data?
 		assert(Messager<T>::localBuffer.size() > 0);
-		OctreePoint cntPoint = (OctreePoint) Messager<T>::localBuffer[0];
+		OctreePoint &cntPoint = Messager<T>::localBuffer[0];
 		double minX(cntPoint.x), maxX(cntPoint.x);
 		double minY(cntPoint.y), maxY(cntPoint.y);
 		double minZ(cntPoint.z), maxZ(cntPoint.z);
 
 		for (unsigned i = 1; i < Messager<T>::localBuffer.size(); i++) {
-			OctreePoint cntPoint = Messager<T>::localBuffer[i];
+			OctreePoint &cntPoint = Messager<T>::localBuffer[i];
 			//For current smallest cord
 			if (cntPoint.x < minX) {
 				minX = cntPoint.x;
@@ -134,7 +136,7 @@ private:
 	void setUpPointIds() {
 		setUpGlobalMinMax();
 		for (unsigned i = 0; i < Messager<T>::localBuffer.size(); i++) {
-			OctreePoint p = (OctreePoint) Messager<T>::localBuffer[i];
+			OctreePoint &p = Messager<T>::localBuffer[i];
 			p.cellId = getCellId(p);
 		}
 	}
@@ -150,63 +152,58 @@ private:
 		int start = round((step - 1) * (1.0 * procRank / (numProc - 1)));
 		for (unsigned int i = 0; i < numProc; i++) {
 			int index = int(start + i * step);
-			long id = ((OctreePoint) Messager<T>::localBuffer[index]).cellId;
+			long id = (Messager<T>::localBuffer[index]).cellId;
 			m_cbuffer.push_back(id);
 		}
 		return m_cbuffer;
 	}
 
-	int removeDuplicates(long* nodeIds, int size) {
+	int removeDuplicatesAndSort(long* nodeIds, int size) {
 		std::set<int> s(nodeIds, nodeIds + size);
 		int i = 0;
-		for (std::set<int>::iterator it = s.begin(); it != s.end(); ++it) {
-			nodeIds[i] = *it;
-			i++;
-		}
+		for(auto&& it:s) nodeIds[i++] = it;
+		
+		//TODO check if we need to sort again		
+		//std::sort(m_nodeIds, m_nodeIds + s.size());
 		return s.size();
 	}
 
 	std::vector<long> performSampleSort(std::vector<long> m_cbuffer) {
 		long* m_pivotbuffer;
-		unsigned int numGlobalSample = numProc * numProc;
-		comm.gatherAll(&m_cbuffer[0],m_cbuffer.size(), m_pivotbuffer);
-		int size = removeDuplicates(m_pivotbuffer, m_cbuffer.size());
-		std::sort(m_pivotbuffer, m_pivotbuffer + size);
+		//unsigned int numGlobalSample = numProc * numProc;
+		int size=comm.gatherAll(&m_cbuffer[0],m_cbuffer.size(), m_pivotbuffer);
+		size = removeDuplicatesAndSort(m_pivotbuffer, size);
 
 		//Sample global pivots
 		double step = 1.0 * size / numProc;
-		for (int i = 0; i < numProc; i++) {
-			long id = m_pivotbuffer[int(i * step)];
-			m_cbuffer[i] = id;
-		}
+		m_cbuffer.clear();
+		//TODO remove int casting and see if it works
+		for (int i = 0; i < numProc; i++) m_cbuffer.push_back(m_pivotbuffer[int(i * step)]);
+
 		return m_cbuffer;
 	}
 
-	void setUpLengthsArray(std::vector<int> &lengths,
-			const std::vector<T> &data, const std::vector<long> &splitter) {
+	std::vector<int> getLengthsArray(const std::vector<T> &data, const std::vector<long> &splitter) {
+		std::vector<int> lengths(numProc, 0);
 		size_t i = 0;
 		for (size_t j = 0; j < splitter.size() - 1; j++) {
 			long left = splitter[j];
 			long right = splitter[j + 1];
 
-			while (true) {
-				long cntId = data[i].cellId;
-				if (cntId < right && cntId >= left) {
-					//TODO do I need to create a new message
-					//for different buffer?
+			while (data[i].cellId < right && data[i].cellId >= left) {
 					i++;
 					lengths[j]++;
-				} else {
-					break;
-				}
 			}
 		}
+		return lengths;
 	}
-	void setUpStartsArray(std::vector<int> &starts,
-			const std::vector<int> &lengths) {
+
+	std::vector<int> getStartsArray(const std::vector<int> &lengths) {
+		std::vector<int> starts(numProc, 0);
 		for (size_t i = 1; i < lengths.size(); i++) {
 			starts[i] = starts[i - 1] + lengths[i - 1];
 		}
+		return starts;
 	}
 
 	void setUpRecvLengths(const int* allLengths, std::vector<int> & rLengths) {
@@ -245,21 +242,19 @@ private:
 		//local results of sort
 		char* m_sort_buffer;
 
-		std::vector<int> lengths(numProc, 0);
-		std::vector<int> starts(numProc, 0);
+
+		
 		std::vector<int> rLengths(numProc, 0);
 		std::vector<int> rStarts(numProc, 0);
 
-		setUpLengthsArray(lengths, Messager<T>::localBuffer, m_cbuffer);
-		setUpStartsArray(starts, lengths);
+		std::vector<int> lengths = getLengthsArray(Messager<T>::localBuffer, m_cbuffer);
+		std::vector<int> starts = getStartsArray(lengths);
 
 		//all_gather lengths
 		//recved lengths will be placed in rank order
-		comm.gatherAll(&lengths[0],
-				lengths.size(), m_alllengths);
+		comm.gatherAll(&lengths[0],lengths.size(), m_alllengths);
 
-		comm.gatherAll(&starts[0],
-				starts.size(), m_allstarts);
+		comm.gatherAll(&starts[0],starts.size(), m_allstarts);
 
 		setUpRecvLengths(m_alllengths, rLengths);
 		setUpRecvStarts(rLengths, rStarts);
