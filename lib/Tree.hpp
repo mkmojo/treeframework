@@ -16,28 +16,26 @@ struct OctreePoint {
 	double x,y,z;
 	long cellId;
 
-	virtual size_t save(void* dest)=0;
-	virtual size_t load(const void* src)=0;
+	virtual void save(void* dest)=0;
+	virtual void load(const void* src)=0;
 	virtual size_t size()=0;
 
-    virtual size_t serialize(char* dest){
+    virtual void serialize(char* dest){
     	size_t total=0;
     	total+=data_utils::copyData(dest+total, &x, sizeof(x));
     	total+=data_utils::copyData(dest+total, &y, sizeof(y));
     	total+=data_utils::copyData(dest+total, &z, sizeof(z));
     	total+=data_utils::copyData(dest+total, &cellId, sizeof(cellId));
-    	total+=save(dest+total);
-    	return total;
+    	save(dest+total);
     }
 
-    virtual size_t unserialize(const char* src){
+    virtual void unserialize(const char* src){
     	int total=0;
     	total+=data_utils::copyData(&x, src+total, sizeof(x));
     	total+=data_utils::copyData(&y, src+total, sizeof(y));
     	total+=data_utils::copyData(&z, src+total, sizeof(z));
     	total+=data_utils::copyData(&cellId, src+total, sizeof(cellId));
-    	total+=load(src+total);
-    	return total;
+    	load(src+total);
     }
 
 	virtual size_t getSize(){
@@ -288,17 +286,20 @@ private:
 		char* serializedData = (char*)malloc(dataSize);
 		size_t total=0;
 		for(auto&& it:this->localBuffer){
-			total+=it.serialize(serializedData+total);
+			it.serialize(serializedData+total);
+			total+=it.getSize();
 		}
 
 		size_t returnSize = comm.redistribute(serializedData,
 				&lengths[0], &starts[0], m_sort_buffer, &rLengths[0],
 				&rStarts[0]);
+
 		this->localBuffer.clear();
 		total=0;
 		while(total<returnSize){
 			T *data = new T;
-			total+=data->unserialize(m_sort_buffer+total);
+			data->unserialize(m_sort_buffer+total);
+			total+=data->getSize();
 			this->localBuffer.push_back(*data);
 		}
 

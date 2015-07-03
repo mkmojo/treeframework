@@ -18,13 +18,15 @@ public:
 
     size_t serialize(char* buffer){
         size_t offset = 0;
-        offset += Data.serialize(buffer + offset);
+        Data.serialize(buffer + offset);
+        offset += Data.getSize();
         return offset;
     }
     
     size_t unserialize(const char* buffer){
         size_t offset = 0;
-        offset += Data.unserialize(buffer + offset);
+        Data.unserialize(buffer + offset);
+        offset += Data.getSize();
         return offset;
     }
 };

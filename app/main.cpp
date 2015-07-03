@@ -11,14 +11,14 @@ struct Data : OctreePoint{
         ss >> x >> y >> z >> mass;
     }
 
-    size_t save(void* dest){ //sl15: void pointer?
-    	return data_utils::copyData(dest, &mass, sizeof(mass));
+    void save(void* dest){ //sl15: void pointer?
+    	data_utils::copyData(dest, &mass, sizeof(mass));
     }
 
     //copy data from incoming buffer to Point
     //roll things into struct
-    size_t load(const void* src){
-    	return data_utils::copyData(&mass, src, sizeof(mass));
+    void load(const void* src){
+    	data_utils::copyData(&mass, src, sizeof(mass));
     }
 
     size_t size(){
