@@ -51,7 +51,7 @@ template<typename T> class Tree: public Messager<T> {
 private:
 	CommLayer<T> comm; //reference variable for the ComLayer defined in parent class
 
-	int ndim=3, maxlevel=21;
+	int ndim=0, maxlevel=0;
 	double globalMinX=0, globalMaxX=0;
 	double globalMinY=0, globalMaxY=0;
 	double globalMinZ=0, globalMaxZ=0;
@@ -144,14 +144,14 @@ private:
 		double rx = globalMaxX - globalMinX;
 		double ry = globalMaxY - globalMinY;
 		double rz = globalMaxZ - globalMinZ;
-
 		double domain = (rx > ry && rx > rz) ? rx : ((ry > rz) ? ry : rz);
 
 		unsigned int numCells = 1 << (maxlevel - 1);
 		double cellSize = domain / numCells;
-		int xKey = (unsigned int) (x / cellSize);
-		int yKey = (unsigned int) (y / cellSize);
-		int zKey = (unsigned int) (z / cellSize);
+
+		int xKey = (x / cellSize);
+		int yKey = (y / cellSize);
+		int zKey = (z / cellSize);
 
 		return computeKey(xKey, yKey, zKey);
 	}
@@ -172,9 +172,9 @@ private:
 		std::vector<long> m_cbuffer;
 		//sample local data points
 		double step = 1.0 * this->localBuffer.size() / numProc;
-		int start = round((step - 1) * (1.0 * procRank / (numProc - 1)));
-		for (unsigned int i = 0; i < numProc; i++) {
-			int index = int(start + i * step);
+		int start = numProc==1? 0: round((step - 1) * (1.0 * procRank / (numProc - 1)));
+		for (int i = 0; i < numProc; i++) {
+			int index = start + i * step;
 			long id = (this->localBuffer[index]).cellId;
 			m_cbuffer.push_back(id);
 		}
@@ -191,15 +191,16 @@ private:
 
 	std::vector<long> performSampleSort(std::vector<long> m_cbuffer) {
 		long* m_pivotbuffer;
-		//unsigned int numGlobalSample = numProc * numProc;
-		int size=comm.gatherAll(&m_cbuffer[0],m_cbuffer.size(), m_pivotbuffer);
-		size = removeDuplicatesAndSort(m_pivotbuffer, size);
 
+		int size=comm.gatherAll(&m_cbuffer[0],m_cbuffer.size(), m_pivotbuffer);
+
+		size = removeDuplicatesAndSort(m_pivotbuffer, size);
 		//Sample global pivots
 		double step = 1.0 * size / numProc;
 		m_cbuffer.clear();
-		for (int i = 0; i < numProc; i++) m_cbuffer.push_back(m_pivotbuffer[int(i * step)]);
-
+		for (int i = 0; i < numProc; i++) {
+			m_cbuffer.push_back(m_pivotbuffer[int(i * step)]);
+		}
 		return m_cbuffer;
 	}
 
@@ -207,14 +208,17 @@ private:
 		std::vector<int> lengths(numProc, 0);
 		size_t i = 0;
 		for (size_t j = 0; j < splitter.size() - 1; j++) {
-			long left = splitter[j];
+			long left = (j==0)?-1:splitter[j];
 			long right = splitter[j + 1];
-
 			while (data[i].cellId < right && data[i].cellId >= left) {
 					i++;
 					lengths[j]++;
 			}
 		}
+	    while(i<data.size()){
+	        i++;
+	        lengths[numProc - 1]++;
+	    }
 		return lengths;
 	}
 
@@ -266,7 +270,6 @@ private:
 
 		std::vector<int> lengths = getLengthsArray(this->localBuffer, m_cbuffer);
 		std::vector<int> starts = getStartsArray(lengths);
-
 		//all_gather lengths
 		//recved lengths will be placed in rank order
 		comm.gatherAll(&lengths[0],lengths.size(), m_alllengths);
@@ -285,22 +288,23 @@ private:
 		char* m_sort_buffer;
 		char* serializedData = (char*)malloc(dataSize);
 		size_t total=0;
+
 		for(auto&& it:this->localBuffer){
 			it.serialize(serializedData+total);
 			total+=it.getSize();
 		}
 
+		this->localBuffer.clear();
 		size_t returnSize = comm.redistribute(serializedData,
 				&lengths[0], &starts[0], m_sort_buffer, &rLengths[0],
 				&rStarts[0]);
-
-		this->localBuffer.clear();
 		total=0;
 		while(total<returnSize){
 			T *data = new T;
 			data->unserialize(m_sort_buffer+total);
 			total+=data->getSize();
 			this->localBuffer.push_back(*data);
+			cout<<procRank<<": retrieved data"<<(*data).cellId<<endl;
 		}
 
 		std::sort(this->localBuffer.begin(), this->localBuffer.end(), cmpPoint);
@@ -309,6 +313,10 @@ private:
 protected:
 	//buffer array that stores private data
 	std::vector<T> private_data;
+
+    virtual void _postLoad(){
+    	comm.bcast(&maxlevel,1);
+    }
 
 	//sl15: required to be implemented by the implementer
 	void _load() {

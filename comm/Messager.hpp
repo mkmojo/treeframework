@@ -3,7 +3,7 @@
 #include <map>
 #include <unordered_map>
 #include <functional>
-
+using namespace std;
 template<typename T> class Messager {
 protected:
     typedef std::function<bool (const std::vector<T>&)> predicate_functional;
@@ -92,7 +92,9 @@ protected:
     }
 
     inline virtual void _endState(){ msgBuffer.flush(); }
-
+    void _clear_localbuffer(){
+    	localBuffer.clear();
+    }
     void _flush_buffer(){
         for(auto it : localBuffer){
             int tmp = user_locate(it, maxLevel); 
@@ -103,15 +105,19 @@ protected:
                 nodeTable[tmp] = localArr.size()-1;
             }
         }
-        localBuffer.clear();
+        _clear_localbuffer();
     }
         
     virtual void _sort() = 0;
 
     virtual void _load() = 0;
 
+    virtual void _postLoad() = 0;
+
     virtual void _assemble() = 0;
 
+private:
+    int count=0;
 public:
     //maxLevel needs to be read in from user input in loadPoint function
     Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), state(NAS_WAITING){ };
@@ -120,7 +126,7 @@ public:
 
     //sl15: this method needs to be overridden by the subclasses
     virtual int computeProcID(){
-        return 0;
+        return count % numProc;
     }
 
     //sl15: this function seems to be unnecessary since loading and sorting are all done in run()
@@ -128,6 +134,7 @@ public:
         int data_id = computeProcID(); //sl15: computeProcID should be implemented by the user
         if(data_id == procRank) localBuffer.push_back(data);
         else msgBuffer.addMessage(data_id, data);
+        count++;
     }
 
     void assign(generate_functional generate_in
@@ -161,12 +168,6 @@ public:
                 case NAS_SORT:
                     msgBuffer.msgBufferLayer.barrier();
                     _sort(); //sl15: should be overriden by the subclasses
-                    //setUpGlobalMinMax(); //sl15: should be in subclass _sort() such as octtree.hpp etc
-                    //setUpPointIds(); //sl15: should be in subclass _sort() such as octtree.hpp
-                    //sortLocalPoints(); //sl15: should bring back
-                    //getLocalSample(); //sl15: should bring back
-                    //setGlobalPivot(); //sl15: should bring back
-                    //distributePoints(); //sl15: should bring back
                     _setState(NAS_DONE);
                     break;
                 case NAS_WAITING:
@@ -199,18 +200,13 @@ public:
 
                     //printPoints();
                     _pumpNetwork(); //sl15: this might not be necessary
+
                     _setState(NAS_SORT);
                     break;
                 case NAS_SORT:
                     msgBuffer.sendControlMessage(APC_SET_STATE, NAS_SORT);
                     msgBuffer.msgBufferLayer.barrier();
                     _sort();
-                    //setUpGlobalMinMax();
-                    //setUpPointIds();
-                    //sortLocalPoints();
-                    //getLocalSample();
-                    //setGlobalPivot();
-                    //distributePoints();
                     _setState(NAS_DONE);
                     break;
                 case NAS_DONE:
@@ -219,9 +215,25 @@ public:
         }
     }
 
+    void runSimple(std::string filename){
+    	this->filename=filename;
+    	if (msgBuffer.msgBufferLayer.isMaster()){
+    		_load();
+    		_endState();
+            msgBuffer.sendControlMessage(APC_SET_STATE, NAS_LOAD_COMPLETE);
+            msgBuffer.msgBufferLayer.barrier();
+    	}else{
+    		msgBuffer.msgBufferLayer.barrier();
+    		_setState(NAS_LOADING);
+			_pumpNetwork();
+    	}
+    	_postLoad();
+    	_sort();
+    }
     virtual void build(std::string filename){
-        if(!procRank) runControl(filename);
-        else run();
+//        if(msgBuffer.msgBufferLayer.isMaster()) runControl(filename);
+//        else run();
+    	runSimple(filename);
         _flush_buffer();
         _assemble();
     }

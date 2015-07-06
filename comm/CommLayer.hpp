@@ -251,6 +251,12 @@ public:
         //logger(4) << "left broadcast\n";
     }
 
+    void bcast(int* send, int sendSize){
+        //logger(4) << "entering broadcast\n";
+        MPI_Bcast(send, sendSize, MPI_INT, 0, MPI_COMM_WORLD);
+        //logger(4) << "left broadcast\n";
+    }
+
     void receiveBcast(long* recv, int recvSize)
     {
         //logger(4) << "entering receiveBroadcast\n";

@@ -9,17 +9,18 @@ template<typename T> class MessageBuffer{
         // check if message should be sent
         if((numMsgs == MAX_MESSAGES || mode == SM_IMMEDIATE) && numMsgs > 0){
             // Calculate the total size of the message
-            size_t totalSize = 0;
-            for(auto i = 0; i < numMsgs; i++) totalSize += msgQueues[procID][i]->getNetworkSize();
+            size_t s=msgQueues[procID][0]->getNetworkSize();
+        	size_t totalSize = s*numMsgs;
+//            for(auto i = 0; i < numMsgs; i++) totalSize += msgQueues[procID][i]->getNetworkSize();
 
             //Generate a buffer for all themessages;
             char* buffer = new char[totalSize];
 
             //Copy the messages into the buffer
-            size_t offset = 0;
-            for(auto i = 0; i < numMsgs; i++) offset += msgQueues[procID][i]->serialize(buffer + offset);
+//            size_t offset = 0;
+            for(auto i = 0; i < numMsgs; i++) msgQueues[procID][i]->serialize(buffer + (i*s));
 
-            assert(offset == totalSize);
+//            assert(offset == totalSize);
             msgBufferLayer.sendBufferedMessage(procID, buffer, totalSize);
 
             delete [] buffer;

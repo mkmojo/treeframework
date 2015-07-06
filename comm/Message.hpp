@@ -13,7 +13,8 @@ public:
     }
 
     size_t getNetworkSize() const{
-        return sizeof(uint8_t) + sizeof(T);
+    	T a;
+        return a.getSize(); //sizeof(uint8_t) + sizeof(T);
     }
 
     size_t serialize(char* buffer){
