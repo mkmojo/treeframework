@@ -73,7 +73,7 @@ int main(int argc, char *argv[]){
     MPI_Init(&argc, &argv);
     Tree<Data> *MyTree=new Tree<Data>();
     MyTree->assign(MyGenerate, MyPredicate, MyCombine, MyEvolve, MyLocate);
-    MyTree->build("mytestdata.dat");
+    MyTree->build(argv[1]);
     /*
     MyTree.compute();
     std::cout << "calling clear" << std::endl;
