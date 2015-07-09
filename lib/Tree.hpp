@@ -43,10 +43,6 @@ struct OctreePoint {
 	};
 };
 
-bool cmpPoint(const OctreePoint &p1, const OctreePoint &p2) {
-	return p1.cellId < p2.cellId;
-}
-
 template<typename T> class Tree: public Messager<T> {
 private:
 	CommLayer<T> comm; //reference variable for the ComLayer defined in parent class
@@ -55,6 +51,12 @@ private:
 	double globalMinX=0, globalMaxX=0;
 	double globalMinY=0, globalMaxY=0;
 	double globalMinZ=0, globalMaxZ=0;
+
+
+	static bool cmpPoint(const OctreePoint &p1, const OctreePoint &p2) {
+		return p1.cellId < p2.cellId;
+	}
+
 
 	//Find local min and max for each dimension
 	//Find global min and max through MPI ALLreduce
@@ -230,11 +232,13 @@ private:
 		return starts;
 	}
 
-	void setUpRecvLengths(const int* allLengths, std::vector<int> & rLengths) {
+	std::vector<int> getRecvLengths(const int* allLengths) {
+		std::vector<int> rLengths(numProc, 0);
 		int step = numProc;
 		for (int i = 0; i < numProc; i++) {
 			rLengths[i] = allLengths[step * i + procRank];
 		}
+		return rLengths;
 	}
 
 	void setUpRecvStarts(const std::vector<int> &rLengths,
@@ -265,9 +269,6 @@ private:
 		int* m_alllengths;
 		//local results of sort
 		
-		std::vector<int> rLengths(numProc, 0);
-		std::vector<int> rStarts(numProc, 0);
-
 		std::vector<int> lengths = getLengthsArray(this->localBuffer, m_cbuffer);
 		std::vector<int> starts = getStartsArray(lengths);
 		//all_gather lengths
@@ -276,8 +277,8 @@ private:
 
 		comm.gatherAll(&starts[0],starts.size(), m_allstarts);
 
-		setUpRecvLengths(m_alllengths, rLengths);
-		setUpRecvStarts(rLengths, rStarts);
+		std::vector<int> rLengths=getRecvLengths(m_alllengths);
+		std::vector<int> rStarts = getStartsArray(rLengths);
 
 		//getting the right number of bytes
 		scale(lengths); //<--length for local
@@ -298,16 +299,17 @@ private:
 		size_t returnSize = comm.redistribute(serializedData,
 				&lengths[0], &starts[0], m_sort_buffer, &rLengths[0],
 				&rStarts[0]);
+		free(serializedData);
 		total=0;
 		while(total<returnSize){
 			T *data = new T;
 			data->unserialize(m_sort_buffer+total);
 			total+=data->getSize();
 			this->localBuffer.push_back(*data);
-			cout<<procRank<<": retrieved data"<<(*data).cellId<<endl;
 		}
-
+		free(m_sort_buffer);
 		std::sort(this->localBuffer.begin(), this->localBuffer.end(), cmpPoint);
+		for(auto&& it:this->localBuffer) cout<<procRank<<": retrieved node "<<it.cellId<<endl;
 	}
 
 protected:

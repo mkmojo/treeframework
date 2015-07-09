@@ -237,4 +237,8 @@ public:
         _flush_buffer();
         _assemble();
     }
+
+    virtual void compute(){
+
+    }
 };
