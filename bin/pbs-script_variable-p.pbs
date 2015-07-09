@@ -1,0 +1,33 @@
+#PBS -lnodes=7:ppn=16:compute,walltime=4:00:00
+
+export PBS_O_WORKDIR=$HOME/samindaw/xps/treeframework/bin
+
+EXE=$PBS_O_WORKDIR/xps
+GEN=$PBS_O_WORKDIR/gen_data.py
+INPUT_DIR=$PBS_O_WORKDIR/input
+
+
+function get_input(){
+  n=$1
+  m=$2
+  filen="$INPUT_DIR/input-$n-$m.txt"
+  if [ ! -f $filen ]; then
+    mkdir -p $INPUT_DIR
+    python $GEN $filen $n $m
+  fi
+  echo $filen
+  }
+cd $PBS_O_WORKDIR
+
+#file="$PBS_O_WORKDIR/inFile-1000000.txt"
+file=$(get_input 100 3)
+#for n in 10000 100000 1000000 2000000 5000000 10000000; do
+#  for p in {2..100}; do
+#    start=`date +%s%N`
+#	  OMPI_MCA_mpi_yield_when_idle=0 mpirun --hostfile $PBS_NODEFILE -np $p $EXE $file
+#    end=`date +%s%N`
+#    let d=end-start
+#  	echo -e "$p\t$d"
+#  done
+#done
+
