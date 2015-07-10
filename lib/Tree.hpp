@@ -235,9 +235,15 @@ private:
 	}
 
 	void distributePoints(std::vector<long> splitters) {
+		//get the lengths each processors gets from the data array
 		std::vector<int> processorBucketSizes = getLengthsArray(this->localBuffer, splitters);
+
+		//distribute the local buffer based on the lengths assigned for each processors
 		comm.redistribute(this->localBuffer, processorBucketSizes);
+
+		//sort the data (not needed perhaps)
 		std::sort(this->localBuffer.begin(), this->localBuffer.end(), cmpPoint);
+
 		for (auto&& it : this->localBuffer)
 			cout << procRank << ": retrieved node " << it.cellId << endl;
 	}
