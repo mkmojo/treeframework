@@ -4,8 +4,11 @@
 
 extern const unsigned RX_BUFSIZE = 16*1024;
 extern const unsigned MAX_MESSAGES = 1024;
-extern int numProc = 64; //sl15: this can be parsed from the command line
-extern int procRank = 0; //sl15: this is determined by calling mpi_rank
+
+static int numProc = 64;
+extern int numProc;
+static int procRank = 0;
+extern int procRank;
 
 enum APControl{
     APC_SET_STATE,

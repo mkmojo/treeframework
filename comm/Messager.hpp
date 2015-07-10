@@ -116,6 +116,9 @@ protected:
 
     virtual void _assemble() = 0;
 
+		//TODO
+		//virtual void cleanup() = 0;
+
 private:
     int count=0;
 public:

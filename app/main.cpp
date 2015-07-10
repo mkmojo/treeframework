@@ -4,11 +4,10 @@
 
 struct Data : OctreePoint{
     double mass;
-    char m_point[64]; //sl15: this needs to be changed. there should be an intermediate data type to hold the serialized version of Data
 
-    Data():OctreePoint(),mass(0.0){}
-    Data(std::istringstream& ss){
-        ss >> x >> y >> z >> mass;
+    Data():mass(0.0){}
+    Data(std::istringstream& ss):OctreePoint(ss){
+        ss >> mass;
     }
 
     void save(void* dest){ //sl15: void pointer?
@@ -17,8 +16,8 @@ struct Data : OctreePoint{
 
     //copy data from incoming buffer to Point
     //roll things into struct
-    void load(const void* src){
-    	data_utils::copyData(&mass, src, sizeof(mass));
+    size_t load(const void* src){
+    	return data_utils::copyData(&mass, src, sizeof(mass));
     }
 
     size_t size(){

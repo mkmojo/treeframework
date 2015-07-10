@@ -17,8 +17,14 @@ struct OctreePoint {
 	long cellId;
 
 	virtual void save(void* dest)=0;
-	virtual void load(const void* src)=0;
+	virtual size_t load(const void* src)=0;
 	virtual size_t size()=0;
+
+	OctreePoint():x(0), y(0), z(0), cellId(0){}
+
+	OctreePoint(std::istringstream& ss):cellId(0){
+		ss >> x >> y >> z;
+	}
 
     virtual void serialize(char* dest){
     	size_t total=0;
@@ -29,18 +35,22 @@ struct OctreePoint {
     	save(dest+total);
     }
 
-    virtual void unserialize(const char* src){
+    virtual size_t unserialize(const char* src){
     	int total=0;
     	total+=data_utils::copyData(&x, src+total, sizeof(x));
     	total+=data_utils::copyData(&y, src+total, sizeof(y));
     	total+=data_utils::copyData(&z, src+total, sizeof(z));
     	total+=data_utils::copyData(&cellId, src+total, sizeof(cellId));
-    	load(src+total);
+    	total+=load(src+total);
+    	return total;
     }
 
-	virtual size_t getSize(){
-    	return 3*sizeof(double)+sizeof(long)+size();
+	virtual size_t getSize() const{
+    	return 3*sizeof(double)+sizeof(long);
 	};
+	virtual void free(){
+		//TODO
+	}
 };
 
 template<typename T> class Tree: public Messager<T> {
@@ -213,103 +223,23 @@ private:
 			long left = (j==0)?-1:splitter[j];
 			long right = splitter[j + 1];
 			while (data[i].cellId < right && data[i].cellId >= left) {
-					i++;
-					lengths[j]++;
+				lengths[j]++;
+				i++;
 			}
 		}
 	    while(i<data.size()){
-	        i++;
 	        lengths[numProc - 1]++;
+	        i++;
 	    }
 		return lengths;
 	}
 
-	std::vector<int> getStartsArray(const std::vector<int> &lengths) {
-		std::vector<int> starts(numProc, 0);
-		for (size_t i = 1; i < lengths.size(); i++) {
-			starts[i] = starts[i - 1] + lengths[i - 1];
-		}
-		return starts;
-	}
-
-	std::vector<int> getRecvLengths(const int* allLengths) {
-		std::vector<int> rLengths(numProc, 0);
-		int step = numProc;
-		for (int i = 0; i < numProc; i++) {
-			rLengths[i] = allLengths[step * i + procRank];
-		}
-		return rLengths;
-	}
-
-	void setUpRecvStarts(const std::vector<int> &rLengths,
-			std::vector<int> & rStarts) {
-		for (size_t i = 1; i < rLengths.size(); i++) {
-			rStarts[i] = rStarts[i - 1] + rLengths[i - 1];
-		}
-	}
-
-	void scale(std::vector<int>& vec) {
-		for (size_t i = 0; i < vec.size(); i++) {
-			vec[i] *= sizeof(OctreePoint);
-		}
-	}
-	long totalLength(const std::vector<int> lengths) {
-
-		long total = 0;
-		for (size_t i = 0; i < lengths.size(); i++) {
-			total += lengths[i];
-		}
-
-		return total;
-	}
-	void distributePoints(std::vector<long> m_cbuffer) {
-		//all start point
-		int* m_allstarts;
-		//all lengths
-		int* m_alllengths;
-		//local results of sort
-		
-		std::vector<int> lengths = getLengthsArray(this->localBuffer, m_cbuffer);
-		std::vector<int> starts = getStartsArray(lengths);
-		//all_gather lengths
-		//recved lengths will be placed in rank order
-		comm.gatherAll(&lengths[0],lengths.size(), m_alllengths);
-
-		comm.gatherAll(&starts[0],starts.size(), m_allstarts);
-
-		std::vector<int> rLengths=getRecvLengths(m_alllengths);
-		std::vector<int> rStarts = getStartsArray(rLengths);
-
-		//getting the right number of bytes
-		scale(lengths); //<--length for local
-		scale(starts);  //<--starts for local
-		scale(rLengths);  //<--from all proc
-		scale(rStarts); //<--from all proc
-		size_t dataSize = this->localBuffer.size()*this->localBuffer[0].getSize();
-		char* m_sort_buffer;
-		char* serializedData = (char*)malloc(dataSize);
-		size_t total=0;
-
-		for(auto&& it:this->localBuffer){
-			it.serialize(serializedData+total);
-			total+=it.getSize();
-		}
-
-		this->localBuffer.clear();
-		size_t returnSize = comm.redistribute(serializedData,
-				&lengths[0], &starts[0], m_sort_buffer, &rLengths[0],
-				&rStarts[0]);
-		free(serializedData);
-		total=0;
-		while(total<returnSize){
-			T *data = new T;
-			data->unserialize(m_sort_buffer+total);
-			total+=data->getSize();
-			this->localBuffer.push_back(*data);
-		}
-		free(m_sort_buffer);
+	void distributePoints(std::vector<long> splitters) {
+		std::vector<int> processorBucketSizes = getLengthsArray(this->localBuffer, splitters);
+		comm.redistribute(this->localBuffer, processorBucketSizes);
 		std::sort(this->localBuffer.begin(), this->localBuffer.end(), cmpPoint);
-		for(auto&& it:this->localBuffer) cout<<procRank<<": retrieved node "<<it.cellId<<endl;
+		for (auto&& it : this->localBuffer)
+			cout << procRank << ": retrieved node " << it.cellId << endl;
 	}
 
 protected:

@@ -276,9 +276,79 @@ public:
     	return size;
     }
 
+	void redistribute(std::vector<T> &data, std::vector<int> processorBucketSizes) {
+		//get the size in bytes for data each processor is getting
+		std::vector<int> lengths = scale(data, processorBucketSizes);
 
+		//exchange among processors how much data it'll be receiving from other processors
+		int* allLengths;
+		gatherAll(&lengths[0], lengths.size(), allLengths);
 
+		//setup displacement and length arrays (in byte size) for exchanging data among processors
+		std::vector<int> rLengths = getRecvLengths(allLengths);
+		std::vector<int> starts = getStartsArray(lengths);
+		std::vector<int> rStarts = getStartsArray(rLengths);
 
+		//Allocate memory for the buffer to serialize the local data and perform serialization
+		size_t dataSize = 0;
+		for (auto&& it : data)
+			dataSize += it.getSize();
+		char* sendingSerializedData = (char*) (malloc(dataSize));
+		size_t total = 0;
+		for (auto&& it : data) {
+			it.serialize(sendingSerializedData + total);
+			total += it.getSize();
+		}
+
+		//clear current data
+		data.clear();
+
+		//exchange data
+		char* retrievedSerializedData;
+		size_t returnSize = redistribute(sendingSerializedData, &lengths[0],
+				&starts[0], retrievedSerializedData, &rLengths[0], &rStarts[0]);
+
+		//deserialize the raw data back to T data structures and add to the data array
+		total = 0;
+		while (total < returnSize) {
+			T* d = new T;
+			d->unserialize(retrievedSerializedData + total);
+			total += d->getSize();
+			data.push_back(*d);
+		}
+
+		free(sendingSerializedData);
+		free(retrievedSerializedData);
+	}
+
+private:
+	std::vector<int> getStartsArray(const std::vector<int> &lengths) {
+		std::vector<int> starts(numProc, 0);
+		for (size_t i = 1; i < lengths.size(); i++) {
+			starts[i] = starts[i - 1] + lengths[i - 1];
+		}
+		return starts;
+	}
+
+	std::vector<int> getRecvLengths(const int* allLengths) {
+		std::vector<int> rLengths(numProc, 0);
+		int step = numProc;
+		for (int i = 0; i < numProc; i++) {
+			rLengths[i] = allLengths[step * i + procRank];
+		}
+		return rLengths;
+	}
+
+	std::vector<int> scale(const std::vector<T> &data, std::vector<int>& vec) {
+		std::vector<int> result(vec.size(),0);
+		int i=0;
+		for (size_t j = 0; j < vec.size(); j++) {
+			for(int k=0;k<vec[j];k++){
+				result[j]+=data[i++].getSize();
+			}
+		}
+		return result;
+	}
 
 
 
