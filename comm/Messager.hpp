@@ -242,6 +242,9 @@ public:
     }
 
     virtual void compute(){
+        for(size_t i=0; i<localArr.size();i++){
+            localArr[i].genset = user_generate(localArr[i]);
+        }
 
     }
 };
