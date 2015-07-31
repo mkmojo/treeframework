@@ -116,8 +116,7 @@ protected:
 
     virtual void _assemble() = 0;
 
-		//TODO
-		//virtual void cleanup() = 0;
+    virtual void free() = 0;
 
 private:
     int count=0;
@@ -242,6 +241,18 @@ public:
     }
 
     virtual void compute(){
+        for(size_t i=0; i<localArr.size(); i++){
+            localArr[i].genset = user_generate(localArr[i]);
+        }
 
+        msgBuffer.msgBufferLayer.barrier(); 
+
+        for(size_t i=0; i<localArr.size(); i++){
+            std::vector<T > genNodes;
+            for(auto iter=localArr[i].genset.begin(); iter != localArr[i].genset.end(); iter++){
+                genNodes.push_back(localArr[*iter].dataArr[0]);
+            }
+            user_combine(genNodes);
+        }
     }
 };

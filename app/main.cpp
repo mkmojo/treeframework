@@ -23,6 +23,10 @@ struct Data : OctreePoint{
     size_t size(){
     	return sizeof(mass);
     }
+
+    void free(){
+    	//nothing to do
+    }
 };
 
 NodeSet MyGenerate(const Node<Data>& mynode){
