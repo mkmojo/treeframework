@@ -74,6 +74,11 @@ public:
     bool isMaster(){
     	return procRank == 0;
     }
+
+    bool isLastProc(){
+		return procRank == (numProc-1);
+	}
+
     // Receive a control message
     ControlMessage receiveControlMessage(){
         int flag;
@@ -349,10 +354,4 @@ private:
 		}
 		return result;
 	}
-
-
-
-
-
-
 };

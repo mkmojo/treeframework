@@ -126,8 +126,12 @@ protected:
 
     virtual void _assemble() = 0;
 
+<<<<<<< HEAD
     //TODO
     //virtual void cleanup() = 0;
+=======
+    virtual void free() = 0;
+>>>>>>> dd67c77b7a5a98af1c56cf232635a77232026d60
 
 private:
     int count = 0;
