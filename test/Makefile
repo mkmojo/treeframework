@@ -14,11 +14,11 @@
 
 # Points to the root of Google Test, relative to where this file is.
 # Remember to tweak this if you move this file.
-GTEST_DIR = /home/shuleli/gtest-1.7.0
+GTEST_DIR = ${HOME}/usr/gtest-1.7.0
 
 # Where to find user code.
-USER_LIB = /home/shuleli/treeframework/lib
-USER_TEST = /home/shuleli/treeframework/test
+USER_LIB = ${HOME}/workspace/treeframework/lib
+USER_TEST = ${HOME}/workspace/treeframework/test
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
