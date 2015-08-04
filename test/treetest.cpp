@@ -1,7 +1,7 @@
 #include "../lib/TreeDef.hpp"
+#include <mpi.h>
 #include "gtest/gtest.h"
 
-namespace {
 struct Data{
     double x, y, z, mass;
     Data(std::istringstream& ss){
@@ -55,17 +55,17 @@ int TestLocate(const Data& d, int depth){
 
 class TreeTest : public :: testing :: Test {
     protected:
-    Tree <Data, double> TestTree_L1;
-    Tree <Data, double> TestTree_L2;
-    Tree <Data, double> TestTree_L3;
-    virtual void SetUp(){
-        TestTree_L1.assign(TestGenerate, TestPredicate, TestCombine, TestEvolve, TestLocate);
-        TestTree_L2.assign(TestGenerate, TestPredicate, TestCombine, TestEvolve, TestLocate);
-        TestTree_L3.assign(TestGenerate, TestPredicate, TestCombine, TestEvolve, TestLocate);
-        TestTree_L1.build("testdata1.dat");
-        TestTree_L2.build("testdata2.dat");
-        TestTree_L3.build("testdata3.dat");
-    }
+        Tree <Data, double> TestTree_L1;
+        Tree <Data, double> TestTree_L2;
+        Tree <Data, double> TestTree_L3;
+        virtual void SetUp(){
+            TestTree_L1.assign(TestGenerate, TestPredicate, TestCombine, TestEvolve, TestLocate);
+            TestTree_L2.assign(TestGenerate, TestPredicate, TestCombine, TestEvolve, TestLocate);
+            TestTree_L3.assign(TestGenerate, TestPredicate, TestCombine, TestEvolve, TestLocate);
+            TestTree_L1.build("testdata1.dat");
+            TestTree_L2.build("testdata2.dat");
+            TestTree_L3.build("testdata3.dat");
+        }
 };
 
 TEST_F(TreeTest, InsertionLevel1Works){
@@ -97,4 +97,14 @@ TEST_F(TreeTest, ClearupWorks){
     ASSERT_TRUE(TestTree_L2.getLocalTree().empty());
     ASSERT_TRUE(TestTree_L3.getLinearTree().empty());
 }
+
+int main(int argc, char* argv[]) {
+    int result = 0;
+
+    ::testing::InitGoogleTest(&argc, argv);
+    MPI_Init(&argc, &argv);
+    result = RUN_ALL_TESTS();
+    MPI_Finalize();
+
+    return result;
 }
