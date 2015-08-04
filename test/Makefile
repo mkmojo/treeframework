@@ -24,6 +24,9 @@ USER_TEST = ${HOME}/workspace/treeframework/test
 # created to the list.
 TESTS = tree_test
 
+# compiler
+CXX=mpic++
+
 # Flags passed to the preprocessor.
 # Set Google Test's header directory as a system directory, such that
 # the compiler doesn't generate warnings in Google Test headers.
