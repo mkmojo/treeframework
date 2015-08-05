@@ -88,6 +88,10 @@ protected:
         }
     }
 
+    inline virtual void _endState() {
+        msgBuffer.flush();
+    }
+
     virtual void _setState(NetworkActionState newState) {
         assert(msgBuffer.transmitBufferEmpty());
         state = newState;
@@ -95,27 +99,6 @@ protected:
         // Reset the checkpoint counter
         numReachedCheckpoint = 0;
         checkpointSum = 0;
-    }
-
-    inline virtual void _endState() {
-        msgBuffer.flush();
-    }
-
-    void _clear_localbuffer() {
-        localBuffer.clear();
-    }
-
-    void _flush_buffer() {
-        for (auto it : localBuffer) {
-            int tmp = user_locate(it, maxLevel);
-            auto itt = nodeTable.find(tmp);
-            if (itt != nodeTable.end()) localArr[(*itt).second]._insert(it);
-            else {
-                localArr.push_back(Node<T>(it, tmp)); //sl15: add localArr
-                nodeTable[tmp] = localArr.size() - 1;
-            }
-        }
-        _clear_localbuffer();
     }
 
     virtual void _sort() = 0;
@@ -172,7 +155,7 @@ public:
         _setState(NAS_LOADING);
         while (state != NAS_DONE) {
             switch (state) {
-                    //sl15: the calls commented out in this block needs a different interface
+                //sl15: the calls commented out in this block needs a different interface
                 case NAS_LOADING:
                     _endState();
                     _setState(NAS_WAITING);
@@ -203,7 +186,7 @@ public:
         _setState(NAS_LOADING);
         while (state != NAS_DONE) {
             switch (state) {
-                    //sl15: the calls commented out in this block needs a different interface
+                //sl15: the calls commented out in this block needs a different interface
                 case NAS_LOADING:
                     _load();
                     _endState();
@@ -233,28 +216,14 @@ public:
         }
     }
 
-    void runSimple(std::string filename) {
-        this->filename = filename;
-        if (msgBuffer.msgBufferLayer.isMaster()) {
-            _load();
-            _endState();
-            msgBuffer.sendControlMessage(APC_SET_STATE, NAS_LOAD_COMPLETE);
-            msgBuffer.msgBufferLayer.barrier();
-        } else {
-            msgBuffer.msgBufferLayer.barrier();
-            _setState(NAS_LOADING);
-            _pumpNetwork();
-        }
-        _postLoad();
-        _sort();
-    }
+
 
     virtual void build(std::string filename) {
         //        if(msgBuffer.msgBufferLayer.isMaster()) runControl(filename);
         //        else run();
-        runSimple(filename);
-        _flush_buffer();
-        _assemble();
+        //runSimple(filename);
+        //_flush_buffer();
+        //_assemble();
     }
 
     virtual void compute() {

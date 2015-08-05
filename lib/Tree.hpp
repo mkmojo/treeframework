@@ -58,7 +58,9 @@ template<typename T> class Tree: public Messager<T> {
         CommLayer<T> comm; //reference variable for the ComLayer defined in parent class
         map< int ,NodeIndex> parentIndexMap;
 
-        
+
+        std::vector<Node<T> > localArr;
+        std::unordered_map<int, int> nodeTable;
 
         int ndim=0, maxlevel=0;
         double globalMinX=0, globalMaxX=0;
@@ -500,8 +502,8 @@ template<typename T> class Tree: public Messager<T> {
 
 
     protected:
-        inline Node<T>& _local(int a) const { return localArr[a]; }
-        
+        inline Node<T>& _local(int a) { return this->localArr[a]; }
+
         //buffer array that stores private data
         std::vector<T> private_data;
 
@@ -549,6 +551,25 @@ template<typename T> class Tree: public Messager<T> {
             //redistribute the points based on the global pivots
             distributePoints(globalPivots);
         }
+
+        void _clear_localbuffer() {
+            this->localBuffer.clear();
+        }
+
+        void _flush_buffer() {
+            for (auto it : this->localBuffer) {
+                int cellId = this->user_locate(it, /**/3);
+                auto itt = nodeTable.find(cellId);
+                if (itt != nodeTable.end()) localArr[(*itt).second]._insert(it);
+                else {
+                    localArr.push_back(Node<T>(it, cellId)); 
+                    nodeTable[cellId] = localArr.size() - 1;
+                }
+            }
+            _clear_localbuffer();
+        }
+
+
 
         void _assemble() {
             std::set<int> aux;
@@ -623,7 +644,26 @@ template<typename T> class Tree: public Messager<T> {
             //TODO free allocated memory
         }
 
-        //sl15: this method needs to be overriden by the subclasses
+        inline void _endState() {
+            this->msgBuffer.flush();
+        }
+
+        void runSimple(std::string filename) {
+            this->filename = filename;
+            if (this->msgBuffer.msgBufferLayer.isMaster()) {
+                _load();
+                _endState();
+                //this->msgBuffer.sendControlMessage(APC_SET_STATE, NAS_LOAD_COMPLETE);
+                this->msgBuffer.msgBufferLayer.barrier();
+            } else {
+                this->msgBuffer.msgBufferLayer.barrier();
+                //_setState(NAS_LOADING);
+                this->_pumpNetwork();
+            }
+            _postLoad();
+            _sort();
+        }
+
     public:
         Tree() :Messager<T>() {
             comm=this->msgBuffer.msgBufferLayer;
@@ -634,5 +674,11 @@ template<typename T> class Tree: public Messager<T> {
             for (auto&& it : private_data)
                 std::cout << it << " ";
             std::cout << std::endl;
+        }
+
+        void build(std::string filename) {
+            runSimple(filename);
+            _flush_buffer();
+            _assemble();
         }
 };
