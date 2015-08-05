@@ -2,7 +2,7 @@
 
 .SUFFIXES: .o .cpp
 
-CC = mpicxx -D x86
+CC = mpic++ -D x86
 CFLAGS = -g -O3 -D_REENTRANT -std=c++0x
 LFLAGS = -lm
 
