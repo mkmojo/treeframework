@@ -58,7 +58,7 @@ template<typename T> class Tree: public Messager<T> {
         CommLayer<T> comm; //reference variable for the ComLayer defined in parent class
         map< int ,NodeIndex> parentIndexMap;
 
-        
+
 
         int ndim=0, maxlevel=0;
         double globalMinX=0, globalMaxX=0;
@@ -330,81 +330,6 @@ template<typename T> class Tree: public Messager<T> {
             return small_cell;
         } // compute_small_cell()
 
-        bool insert_leaf(Node<T>& curr_leaf, std::vector< Node<T> >& temp_nodes,
-                const int i, int &j, const int m) {
-            // i is the leaf to be inserted (curr_leaf == temp_nodes[i], when i < m)
-            // j is the current number of nodes in the tree
-            // m is the total number of leaf nodes
-
-            // find the node k whose large cell contains the leaf i
-            int k = i - 1;
-            while( !is_contained(curr_leaf.getId(), temp_nodes[k].getParent()) )
-                k = parentIndexMap[temp_nodes[k].getId()].index; // tree is local
-
-            NodeIndex temp_index;
-
-            // if leaf i is contained in small cell of k, insert i as child of k
-            // else create a new internal node and make i and k the children of this node
-            if( is_contained(curr_leaf.getId(), temp_nodes[k].getParent()) ) {
-                // node k will become the parent of node i
-
-                // set the large cell of i
-                long large_cell = compute_large_cell(
-                        temp_nodes[k].getId(),	curr_leaf.getId());
-                curr_leaf.setParent(large_cell);
-
-                // set k as parent of i
-                parentIndexMap[curr_leaf.getId()]=NodeIndex(procRank,k);
-
-                // set i as child of k (if i is not borrwoed leaf)
-                if(i != m)
-                    temp_nodes[k].addChild(NodeIndex(procRank,i));
-
-            } else {
-                // a new internal node j is created which is made the parent of nodes i and k
-
-                long small_cell = compute_small_cell(
-                        curr_leaf.getId(), temp_nodes[k].getId());
-
-                // make the new node j
-                temp_nodes.push_back(Node<T>(small_cell));
-                temp_nodes[j].setParent(temp_nodes[k].getParent());
-
-                // make parent of k as parent of j
-                temp_index = parentIndexMap[temp_nodes[k].getId()];
-                parentIndexMap[temp_nodes[j].getId()]=temp_index;
-                temp_index.processorId=procRank;
-
-                // make i and k the children of j
-                temp_nodes[j].clearChildren();
-                temp_nodes[j].addChild(NodeIndex(procRank, k));
-                if(i != m)
-                    temp_nodes[j].addChild(NodeIndex(procRank, i));
-
-                // make j the child of k's parent
-                if(temp_index.index != -1) {
-                    // check why is k always the last child of its parent ???
-                    temp_nodes[temp_index.index].updateLastChild(
-                            NodeIndex(procRank, j));
-                } // if
-
-                // make j the parent of i and k
-                long large_cell = compute_large_cell(
-                        temp_nodes[j].getId(), temp_nodes[i].getId());
-                curr_leaf.setParent(large_cell);
-                parentIndexMap[curr_leaf.getId()]=NodeIndex(procRank, j);
-
-                large_cell = compute_large_cell(
-                        temp_nodes[j].getId(), temp_nodes[k].getId());
-                temp_nodes[k].setParent(large_cell);
-                parentIndexMap[temp_nodes[k].getId()]=NodeIndex(procRank, j);
-
-                ++j; // increase the total number nodes
-
-            } // if-else
-
-            return true;
-        } // insert_leaf()
 
         int get_root(const std::vector<Node<T> >& temp_nodes) {
             int root_index = 0;
@@ -415,93 +340,9 @@ template<typename T> class Tree: public Messager<T> {
             return root_index;
         } // get_root()
 
-        bool construct_postorder(const std::vector<Node<T> >& temp_nodes,
-                const int& root, int& count) {
-
-            int num_children = temp_nodes[root].numChildren();
-            if(num_children == 0) {
-                Node<T> temp1 = temp_nodes[root];
-                temp1.clearChildren();
-                node_list.push_back(temp1);
-                ++ count;
-                return true;
-            } // if
-
-            std::vector<NodeIndex>* children=temp_nodes[root].getChildren();
-            std::vector<int> children_index;
-            for(int i=0;i<children->size();i++){
-                construct_postorder(temp_nodes, children->at(i).index, count);
-                children_index.push_back(count - 1);
-            }
-
-            Node<T> temp1 = temp_nodes[root];
-            temp1.clearChildren();
-            node_list.push_back(temp1);
-
-            // insert temp_nodes[root] and set its parent
-
-            // set the parent child relations
-            for(int i=0;i<children_index.size();i++){
-                //			children_index[i]
-                parentIndexMap[node_list[children_index[i]].getId()]=NodeIndex(procRank, count);
-                node_list[count].addChild(NodeIndex(procRank, children_index[i]));
-            }
-
-            ++count;
-
-            return true;
-        } // construct_postorder()
-
-        std::vector<Node<T> > node_list;
-
-        bool insert_data_points(const int& total_nodes) {
-            for(int i = 0, j = 0; i < this->localBuffer.size(); ++ j) {
-                if(node_list[j].getType()==LEAF) {
-                    while(this->localBuffer[i].cellId == node_list[j].getId()) {
-                        node_list[j]._insert(this->localBuffer[i]);
-                        ++ i;
-                        if(i >= this->localBuffer.size()) break;
-                    } // while
-                } // if
-            } // for
-            return true;
-        } // insert_data_points()
-
-        bool globalize_tree(const long last_small_cell, unsigned int m,
-                int& total_nodes, unsigned int levels,
-                const long* boundary_array) {
-
-            //		typedef typename tree_node::const_children_iterator children_iter;
-
-            // count the number of 'out of order' (oo) nodes (nodes to right of borrowed leaf)
-            int num_oo_nodes = 0;
-            if(!comm.isLastProc()) {
-                int i = total_nodes - 1;
-                while(node_list[i].getId() != last_small_cell) {
-                    if(is_contained(boundary_array[procRank + 1],
-                                node_list[i].getId())) {
-                        ++ num_oo_nodes;
-                        -- i;
-                    } else {
-                        break;
-                    } // if-else
-                } // while
-            } // if
-
-            // prepare the send buffers containing the oo nodes to be sent,
-            // identify the processor id to where to send the oo nodes, and
-            // perform the communications to send and receive the oo nodes
-
-            int* send_count = new int[numProc];
-            int* ptr = new int[numProc];
-
-            return true;
-        } // globalize_tree()
-
-
     protected:
-        inline Node<T>& _local(int a) const { return localArr[a]; }
-        
+        inline Node<T>& _local(int a)  { return this->localArr.at(a); }
+
         //buffer array that stores private data
         std::vector<T> private_data;
 
@@ -553,28 +394,28 @@ template<typename T> class Tree: public Messager<T> {
         void _assemble() {
             std::set<int> aux;
             int old_last = -1;
-            int new_last = localArr.size()-1;
+            int new_last = this->localArr.size()-1;
 
             while(new_last - old_last > 1){ 
                 for(int i = old_last+1; i <= new_last; i++)
                     aux.insert(_local(i).id >> 3);
-                old_last = localArr.size()-1;
+                old_last = this->localArr.size()-1;
 
                 for(auto it : aux){
-                    localArr.push_back(Node<T>(it));
-                    for(int i = 0; i < localArr.size()-1; i++){
+                    this->localArr.push_back(Node<T>(it));
+                    for(int i = 0; i < this->localArr.size()-1; i++){
                         if((_local(i).id) >> 3 == it){
-                            localArr.back().childset.insert(std::make_pair(i, _local(i).id));
-                            _local(i).parent = localArr.size()-1;
+                            this->localArr.back().childset.insert(std::make_pair(i, _local(i).id));
+                            _local(i).parent = this->localArr.size()-1;
                         }
                     }
                 }
                 aux.clear();
-                new_last = localArr.size()-1;
+                new_last = this->localArr.size()-1;
             }
 
-            localArr.back().parent = -1;
-            for(auto&& it : localArr){
+            this->localArr.back().parent = -1;
+            for(auto&& it : this->localArr){
                 if(it.childset.empty())
                     it.childset.insert(std::make_pair(-1,-1));
             }
