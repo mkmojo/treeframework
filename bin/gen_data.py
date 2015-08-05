@@ -7,10 +7,10 @@ def generate_input(filename, num, levels):
         f.write("MAX_LEVEL "+levels+'\n'+'\n')
         f.write("DATA_TABLE"+'\n')
         for num_line in range(int(num)):
-            x = str(random.uniform(1, 10))
-            y = str(random.uniform(1, 10))
-            z = str(random.uniform(1, 10))
-            mass = str(random.uniform(1, 10))
+            x = str(random.uniform(0, 1))
+            y = str(random.uniform(0, 1))
+            z = str(random.uniform(0, 1))
+            mass = str(random.uniform(0, 1))
             f.write(" ".join( [x, y, z, mass]) + '\n')
 
 def main():
