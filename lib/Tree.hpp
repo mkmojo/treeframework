@@ -557,15 +557,20 @@ template<typename T> class Tree: public Messager<T> {
         }
 
         void _flush_buffer() {
+            cout << "DEBUG " <<procRank << ":  " << "localBuffer size: " << this->localBuffer.size() <<endl;
             for (auto it : this->localBuffer) {
-                int cellId = getCellId(it);//this->user_locate(it, /**/3);
+                long cellId = getCellId(it);
                 auto itt = nodeTable.find(cellId);
-                if (itt != nodeTable.end()) localArr[(*itt).second]._insert(it);
+                if (itt != nodeTable.end()){ 
+                    localArr[(*itt).second]._insert(it);
+                }
                 else {
                     localArr.push_back(Node<T>(it, cellId)); 
                     nodeTable[cellId] = localArr.size() - 1;
                 }
             }
+            cout << "DEBUG " <<procRank << ":  " << "localArr size: " << this->localArr.size() <<endl;
+            cout << "DEBUG " <<procRank << ":  " << "nodeTable size: " << this->nodeTable.size() <<endl;
             _clear_localbuffer();
         }
 
