@@ -60,7 +60,7 @@ template<typename T> class Tree: public Messager<T> {
 
 
         std::vector<Node<T> > localArr;
-        std::unordered_map<int, int> nodeTable;
+        std::unordered_map<long, int> nodeTable;
 
         int ndim=0, maxlevel=0;
         double globalMinX=0, globalMaxX=0;
@@ -558,7 +558,7 @@ template<typename T> class Tree: public Messager<T> {
 
         void _flush_buffer() {
             for (auto it : this->localBuffer) {
-                int cellId = this->user_locate(it, /**/3);
+                int cellId = getCellId(it);//this->user_locate(it, /**/3);
                 auto itt = nodeTable.find(cellId);
                 if (itt != nodeTable.end()) localArr[(*itt).second]._insert(it);
                 else {

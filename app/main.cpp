@@ -50,25 +50,25 @@ bool MyPredicate(const std::vector<Data>& dataIn){
 
 int MyLocate(const Data& d, int depth){
     int tmp = 1;
-    if(depth == 1) return tmp;
-    int xc, yc, zc, cc;
-    double xm, ym, zm, xl, xh, yl, yh, zl, zh;
-    xl = 0.0; xh = 1.0;
-    yl = 0.0; yh = 1.0;
-    zl = 0.0; zh = 1.0;
-    for(int i = 1; i < depth; i++){
-        tmp <<= 3;
-        xm = xl+0.5*(xh-xl); ym = yl+0.5*(yh-yl); zm = zl+0.5*(zh-zl);
-        xc = (d.x > xm); yc = (d.y > ym); zc = (d.z > zm);
-        cc = (xc<<2) | (yc<<1) | zc;
-        tmp |= cc;
-        if(d.x > xm) xl = xm;
-        else xh = xm;
-        if(d.y > ym) yl = ym;
-        else yh = ym;
-        if(d.z > zm) zl = zm;
-        else zh = zm;
-    }
+    //if(depth == 1) return tmp;
+    //int xc, yc, zc, cc;
+    //double xm, ym, zm, xl, xh, yl, yh, zl, zh;
+    //xl = 0.0; xh = 1.0;
+    //yl = 0.0; yh = 1.0;
+    //zl = 0.0; zh = 1.0;
+    //for(int i = 1; i < depth; i++){
+    //    tmp <<= 3;
+    //    xm = xl+0.5*(xh-xl); ym = yl+0.5*(yh-yl); zm = zl+0.5*(zh-zl);
+    //    xc = (d.x > xm); yc = (d.y > ym); zc = (d.z > zm);
+    //    cc = (xc<<2) | (yc<<1) | zc;
+    //    tmp |= cc;
+    //    if(d.x > xm) xl = xm;
+    //    else xh = xm;
+    //    if(d.y > ym) yl = ym;
+    //    else yh = ym;
+    //    if(d.z > zm) zl = zm;
+    //    else zh = zm;
+    //}
     return tmp;
 }
 
