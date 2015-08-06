@@ -251,97 +251,9 @@ template<typename T> class Tree: public Messager<T> {
             std::sort(this->localBuffer.begin(), this->localBuffer.end(), cmpPoint);
 
             //for (auto&& it : this->localBuffer)
-             //   cout << procRank << ": retrieved node " << it.cellId << endl;
+            //   cout << procRank << ": retrieved node " << it.cellId << endl;
         }
 
-        bool is_equal(double a, double b) {
-            if(fabs(a - b) > 1e-9) return false;
-            return true;
-        } // is_equal()
-
-        // returns the position of leftmost 1
-        int log_2(uint64_t a) {
-            int k = 0;
-
-            while(a) {
-                k++;
-                a = a >> 1;
-            }
-
-            return k;
-        }
-
-        // function to find if a is contained in b (strictly)
-        bool is_contained(long a, long b) {
-            // get the positions of the leftmost 1
-            int k = log_2(a);
-            int l = log_2(b);
-
-            if(a == 0 || b == 0) return false;
-
-            if(b == 1) return true; // b is the whole domain
-
-            if(l >= k) return false;    // cell a cannot have larger or equal sized key as b
-
-            long temp1 = 0, temp2 = 0, temp3 = 0;
-            temp1 = a << (64 - k);
-            temp2 = b << (64 - l);
-            temp3 = temp1 ^ temp2;
-
-            int m = log_2(temp3);
-
-            if(m > 64 - l) return false;
-
-            return true;
-        } // is_contained()
-
-        // compute the large cell of a node given its small cell 'cell'
-        // and its parent's small cell 'parent'.
-        // The large cell is the cell obtained by first division of parent's
-        // small cell, that contains the node's small cell.
-        long compute_large_cell(long parent, long cell) {
-            int k = log_2(parent);
-            int l = log_2(cell);
-
-            long large_cell = 0;
-
-            large_cell = cell >> (l - k - 3);
-
-            return large_cell;
-        } // compute_large_cell()
-
-        // Compute the smallest cell which contains the two given cells a and b
-        long compute_small_cell(long a, long b) {
-
-            if(is_contained(a, b)) return b;
-            if(is_contained(b, a)) return a;
-
-            int k = log_2(a);
-            int l = log_2(b);
-
-            long temp1 = 0, temp2 = 0, temp3 = 0, small_cell = 0;
-            temp1 = a << (64 - k);
-            temp2 = b << (64 - l);
-
-            temp3 = temp1 ^ temp2;
-
-            int m = log_2(temp3);
-            int shift = 63 - ((63 - m) / 3) * 3;
-
-            small_cell = temp1 >> shift;
-
-            return small_cell;
-        } // compute_small_cell()
-
-
-        int get_root(const std::vector<Node<T> >& temp_nodes) {
-            int root_index = 0;
-
-            while(parentIndexMap[temp_nodes[root_index].getId()].index != -1){
-                root_index = parentIndexMap[temp_nodes[root_index].getId()].index;
-            }
-            return root_index;
-        } // get_root()
 
     protected:
 
@@ -547,44 +459,6 @@ template<typename T> class Tree: public Messager<T> {
         Tree() :Messager<T>() {
             comm=this->msgBuffer.msgBufferLayer;
         }
-        /*
-           std::string getLocalTree() const {
-           std::string result("");
-           for(auto it = local_tree.begin(); it != local_tree.end(); it++){
-           auto bset = std::bitset<7>(_local(*it).id);
-           result = result + bset.to_string() + "*";
-           }
-           if(!result.empty()) result.pop_back();
-           return result;
-           }
-
-           std::string getLinearTree() const {
-           std::string result("");
-           for(auto it = local_arr->rbegin(); it != local_arr->rend(); it++){
-           auto curr_bset = std::bitset<7>((*it).id);
-           result = result + curr_bset.to_string() + "(" + std::to_string((*it).getCount()) + ")" + "[";
-           for(auto itt = (*it).childset.begin(); itt != (*it).childset.end(); itt++){
-           if((*itt).first != -1){
-           auto child_bset = std::bitset<7>(_local((*itt).first).id);
-           result = result + child_bset.to_string() + ",";
-           }
-           }
-           if(result.back() == ',') result.pop_back();
-           result = result + "];";
-           }
-           if(!result.empty()) result.pop_back();
-           return result;
-           }
-
-           inline bool isEmpty() const { return buffer_arr->empty() && local_arr->empty() && local_tree.empty(); }
-
-        //void print(std::ostream& stream) const {
-        //    std::string linear_str = getLinearTree();
-        //    std::string tree_str = getLocalTree();
-        //    stream << linear_str << std::endl;
-        //    stream << tree_str << std::endl;
-        //}
-        */
 
         void printData() const {
             std::cout << " ";
