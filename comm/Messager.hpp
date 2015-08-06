@@ -16,9 +16,9 @@ protected:
     //messages stored in a list of queues
     MessageBuffer<T> msgBuffer;
     std::vector<T> localBuffer;
-    std::vector<Node<T> > localArr;
+    //std::vector<Node<T> > localArr;
     std::vector<int> localStruct;
-    std::unordered_map<int, int> nodeTable;
+    //std::unordered_map<int, int> nodeTable;
 
     //> user implementation 
     predicate_functional user_predicate;
@@ -103,7 +103,7 @@ protected:
 
     virtual void _sort() = 0;
 
-    virtual void _load() = 0;
+    virtual void _load(std::string) = 0;
 
     virtual void _postLoad() = 0;
 
@@ -119,9 +119,9 @@ public:
     Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), state(NAS_WAITING) {
     };
 
-    inline bool isEmpty() const {
-        return localBuffer->empty() && localArr->empty() && localStruct.empty();
-    }
+    //inline bool isEmpty() const {
+    //    return localBuffer->empty() && localArr->empty() && localStruct.empty();
+    //}
 
     //sl15: this method needs to be overridden by the subclasses
 
@@ -188,7 +188,8 @@ public:
             switch (state) {
                 //sl15: the calls commented out in this block needs a different interface
                 case NAS_LOADING:
-                    _load();
+                    //_load();
+                    //readPoints();
                     _endState();
                     numReachedCheckpoint++;
 
@@ -216,29 +217,25 @@ public:
         }
     }
 
-
-
     virtual void build(std::string filename) {
-        //        if(msgBuffer.msgBufferLayer.isMaster()) runControl(filename);
-        //        else run();
-        //runSimple(filename);
+        //_load(filename);
         //_flush_buffer();
         //_assemble();
     }
 
     virtual void compute() {
-        for (size_t i = 0; i < localArr.size(); i++) {
-            localArr[i].genset = user_generate(localArr[i]);
-        }
+        //    for (size_t i = 0; i < localArr.size(); i++) {
+        //        localArr[i].genset = user_generate(localArr[i]);
+        //    }
 
-        msgBuffer.msgBufferLayer.barrier();
+        //    msgBuffer.msgBufferLayer.barrier();
 
-        for (size_t i = 0; i < localArr.size(); i++) {
-            std::vector<T > genNodes;
-            for (auto iter = localArr[i].genset.begin(); iter != localArr[i].genset.end(); iter++) {
-                genNodes.push_back(localArr[*iter].dataArr[0]);
-            }
-            user_combine(genNodes);
-        }
+        //    for (size_t i = 0; i < localArr.size(); i++) {
+        //        std::vector<T > genNodes;
+        //        for (auto iter = localArr[i].genset.begin(); iter != localArr[i].genset.end(); iter++) {
+        //            genNodes.push_back(localArr[*iter].dataArr[0]);
+        //        }
+        //        user_combine(genNodes);
+        //    }
     }
 };
