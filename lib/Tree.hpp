@@ -6,6 +6,7 @@
 #include <queue>
 #include <stack>
 #include <set>
+#include <bitset>
 #include <math.h>
 #include <map>
 
@@ -249,8 +250,8 @@ template<typename T> class Tree: public Messager<T> {
             //sort the data (not needed perhaps)
             std::sort(this->localBuffer.begin(), this->localBuffer.end(), cmpPoint);
 
-            for (auto&& it : this->localBuffer)
-                cout << procRank << ": retrieved node " << it.cellId << endl;
+            //for (auto&& it : this->localBuffer)
+             //   cout << procRank << ": retrieved node " << it.cellId << endl;
         }
 
         bool is_equal(double a, double b) {
@@ -502,7 +503,6 @@ template<typename T> class Tree: public Messager<T> {
 
 
     protected:
-        inline Node<T>& _local(int a) { return this->localArr[a]; }
 
         //buffer array that stores private data
         std::vector<T> private_data;
@@ -512,7 +512,7 @@ template<typename T> class Tree: public Messager<T> {
         }
 
         //sl15: required to be implemented by the implementer
-        void _load() {
+        void _readPoints() {
             if (comm.isMaster()) {
                 std::ifstream fs(this->filename.c_str());
                 std::string line;
@@ -583,15 +583,15 @@ template<typename T> class Tree: public Messager<T> {
 
             while(new_last - old_last > 1){ 
                 for(int i = old_last+1; i <= new_last; i++)
-                    aux.insert(_local(i).id >> 3);
+                    aux.insert(localArr[i].id >> 3);
                 old_last = localArr.size()-1;
 
                 for(auto it : aux){
                     localArr.push_back(Node<T>(it));
                     for(int i = 0; i < localArr.size()-1; i++){
-                        if((_local(i).id) >> 3 == it){
-                            localArr.back().childset.insert(std::make_pair(i, _local(i).id));
-                            _local(i).parent = localArr.size()-1;
+                        if((localArr[i].id) >> 3 == it){
+                            localArr.back().childset.insert(std::make_pair(i, localArr[i].id));
+                            localArr[i].parent = localArr.size()-1;
                         }
                     }
                 }
@@ -605,8 +605,10 @@ template<typename T> class Tree: public Messager<T> {
                     it.childset.insert(std::make_pair(-1,-1));
             }
 
-            //_post_order_walk(&Tree::_add_to_tree);
+            cout << "DEBUG after assemble " <<procRank << ":  " << "localArr size: " << this->localArr.size() <<endl;
+            cout << "DEBUG after assemble " <<procRank << ":  " << "nodeTable size: " << this->nodeTable.size() <<endl;
 
+            _post_order_walk(&Tree::_add_to_tree);
         }
 
         //additional implementations by the implementer
@@ -645,6 +647,37 @@ template<typename T> class Tree: public Messager<T> {
             delete track;
         }
 
+        std::string getLocalTree() const {
+            std::string result("");
+            for(auto it = this->localStruct.begin(); it != this->localStruct.end(); it++){
+                auto bset = std::bitset<7>(localArr[*it].id);
+                result = result + bset.to_string() + "*";
+            }
+            if(!result.empty()) result.pop_back();
+            return result;
+        }
+
+        std::string getLinearTree() const {
+            std::string result("");
+            for(auto it = localArr.rbegin(); it != localArr.rend(); it++){
+                auto curr_bset = std::bitset<7>((*it).id);
+                result = result + curr_bset.to_string() + "(" + std::to_string((*it).getCount()) + ")" + "[";
+                for(auto itt = (*it).childset.begin(); itt != (*it).childset.end(); itt++){
+                    if((*itt).first != -1){
+                        auto child_bset = std::bitset<7>(localArr[(*itt).first].id);
+                        result = result + child_bset.to_string() + ",";
+                    }
+                }
+                if(result.back() == ',') result.pop_back();
+                result = result + "];";
+            }
+            if(!result.empty()) result.pop_back();
+            return result;
+        }
+
+        inline bool isEmpty() const { return this->localBuffer.empty() && localArr.empty() && this->localStruct.empty(); }
+
+
         void free(){
             //TODO free allocated memory
         }
@@ -653,10 +686,10 @@ template<typename T> class Tree: public Messager<T> {
             this->msgBuffer.flush();
         }
 
-        void runSimple(std::string filename) {
+        void _load(std::string filename) {
             this->filename = filename;
             if (this->msgBuffer.msgBufferLayer.isMaster()) {
-                _load();
+                _readPoints();
                 _endState();
                 //this->msgBuffer.sendControlMessage(APC_SET_STATE, NAS_LOAD_COMPLETE);
                 this->msgBuffer.msgBufferLayer.barrier();
@@ -673,6 +706,44 @@ template<typename T> class Tree: public Messager<T> {
         Tree() :Messager<T>() {
             comm=this->msgBuffer.msgBufferLayer;
         }
+        /*
+           std::string getLocalTree() const {
+           std::string result("");
+           for(auto it = local_tree.begin(); it != local_tree.end(); it++){
+           auto bset = std::bitset<7>(_local(*it).id);
+           result = result + bset.to_string() + "*";
+           }
+           if(!result.empty()) result.pop_back();
+           return result;
+           }
+
+           std::string getLinearTree() const {
+           std::string result("");
+           for(auto it = local_arr->rbegin(); it != local_arr->rend(); it++){
+           auto curr_bset = std::bitset<7>((*it).id);
+           result = result + curr_bset.to_string() + "(" + std::to_string((*it).getCount()) + ")" + "[";
+           for(auto itt = (*it).childset.begin(); itt != (*it).childset.end(); itt++){
+           if((*itt).first != -1){
+           auto child_bset = std::bitset<7>(_local((*itt).first).id);
+           result = result + child_bset.to_string() + ",";
+           }
+           }
+           if(result.back() == ',') result.pop_back();
+           result = result + "];";
+           }
+           if(!result.empty()) result.pop_back();
+           return result;
+           }
+
+           inline bool isEmpty() const { return buffer_arr->empty() && local_arr->empty() && local_tree.empty(); }
+
+        //void print(std::ostream& stream) const {
+        //    std::string linear_str = getLinearTree();
+        //    std::string tree_str = getLocalTree();
+        //    stream << linear_str << std::endl;
+        //    stream << tree_str << std::endl;
+        //}
+        */
 
         void printData() const {
             std::cout << " ";
@@ -682,8 +753,15 @@ template<typename T> class Tree: public Messager<T> {
         }
 
         void build(std::string filename) {
-            runSimple(filename);
+            _load(filename);
             _flush_buffer();
             _assemble();
+        }
+
+        void print(std::ostream& stream) const {
+            std::string linear_str = getLinearTree();
+            std::string tree_str = getLocalTree();
+            stream << linear_str << std::endl;
+            stream << tree_str << std::endl;
         }
 };
