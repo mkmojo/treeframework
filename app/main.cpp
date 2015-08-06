@@ -77,6 +77,7 @@ int main(int argc, char *argv[]){
     Tree<Data> *MyTree=new Tree<Data>();
     MyTree->assign(MyGenerate, MyPredicate, MyCombine, MyEvolve, MyLocate);
     MyTree->build(argv[1]);
+    MyTree->print(std::cout);
     /*
     MyTree.compute();
     std::cout << "calling clear" << std::endl;
