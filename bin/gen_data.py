@@ -16,7 +16,7 @@ def generate_input(filename, num, levels):
 def main():
     if len(sys.argv) != 4:
         print "error, must have 3 arguments"
-        print "filename, n_points, m_levels"
+        print "output_name, n_points, m_levels"
         exit(1)
     generate_input(sys.argv[1],sys.argv[2], sys.argv[3])
 
