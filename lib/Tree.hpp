@@ -62,7 +62,7 @@ template<typename T> class Tree: public Messager<T> {
 
         std::vector<Node<T> > localArr;
         std::unordered_map<long, int> nodeTable;
-        std::vector<long> boundry_array; //used to save borrowed nodes
+        std::vector<long> boundary_array; //used to save borrowed nodes
 
         int ndim=0, maxlevel=0;
         double globalMinX=0, globalMaxX=0;
@@ -310,22 +310,12 @@ template<typename T> class Tree: public Messager<T> {
             this->localBuffer.clear();
         }
 
-        void _borrow_first_node(std::vector<long>& boundry_array){
+        void _borrow_first_node(std::vector<long>& boundary_array){
             long *boundry_array_buffer; 
 
             comm.gatherAll(&localArr[0].id, 1, boundry_array_buffer);
             for (int i = 0; i < numProc; i++) {
-                boundry_array.push_back(boundry_array_buffer[i]);
-            }
-
-            if(procRank != numProc - 1 ){
-                long cellId = boundry_array[(procRank + 1) % numProc];
-                //create empty node at the end of localArr with borrowed id;
-                localArr.push_back(Node<T>(cellId));
-                nodeTable[cellId] =  localArr.size() - 1;
-            }else{
-                //qqiu0809: Does the last processor need to borrow from the first one, or 
-                //just ignore?
+                boundary_array.push_back(boundry_array_buffer[i]);
             }
 
             delete [] boundry_array_buffer;
@@ -351,10 +341,9 @@ template<typename T> class Tree: public Messager<T> {
             comm.barrier();
             cout << "DEBUG " <<procRank << ":  " << "localArr size: " << this->localArr.size() <<endl;
             cout << "DEBUG " <<procRank << ":  " << "nodeTable size: " << this->nodeTable.size() <<endl;
-            _borrow_first_node(boundry_array);
+            _borrow_first_node(boundary_array);
+            cout << "DEBUG " <<procRank << ":  " << "boundary_array size: " << boundary_array.size() <<endl;
 
-            cout << "DEBUG " <<procRank << ":  " << "localArr size after borrow: " << this->localArr.size() <<endl;
-            cout << "DEBUG " <<procRank << ":  " << "nodeTable size after borrow: " << this->nodeTable.size() <<endl;
             _clear_localbuffer();
         }
 
