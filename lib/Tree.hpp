@@ -57,11 +57,12 @@ struct OctreePoint {
 template<typename T> class Tree: public Messager<T> {
     private:
         CommLayer<T> comm; //reference variable for the ComLayer defined in parent class
-        map< int ,NodeIndex> parentIndexMap;
+        map<int ,NodeIndex> parentIndexMap;
 
 
         std::vector<Node<T> > localArr;
         std::unordered_map<long, int> nodeTable;
+        std::vector<long> boundry_array; //used to save borrowed nodes
 
         int ndim=0, maxlevel=0;
         double globalMinX=0, globalMaxX=0;
@@ -208,7 +209,7 @@ template<typename T> class Tree: public Messager<T> {
         }
 
         std::vector<long> performSampleSort(std::vector<long> m_cbuffer) {
-            long* m_pivotbuffer;
+            long* m_pivotbuffer; // qqiu0809: memory leak? forgot to delete m_pivotbuffer?
 
             int size=comm.gatherAll(&m_cbuffer[0],m_cbuffer.size(), m_pivotbuffer);
 
@@ -309,25 +310,53 @@ template<typename T> class Tree: public Messager<T> {
             this->localBuffer.clear();
         }
 
+        void _borrow_first_node(std::vector<long>& boundry_array){
+            long *boundry_array_buffer; 
+
+            comm.gatherAll(&localArr[0].id, 1, boundry_array_buffer);
+            for (int i = 0; i < numProc; i++) {
+                boundry_array.push_back(boundry_array_buffer[i]);
+            }
+
+            if(procRank != numProc - 1 ){
+                long cellId = boundry_array[(procRank + 1) % numProc];
+                //create empty node at the end of localArr with borrowed id;
+                localArr.push_back(Node<T>(cellId));
+                nodeTable[cellId] =  localArr.size() - 1;
+            }else{
+                //qqiu0809: Does the last processor need to borrow from the first one, or 
+                //just ignore?
+            }
+
+            delete [] boundry_array_buffer;
+        }
+
         void _flush_buffer() {
             cout << "DEBUG " <<procRank << ":  " << "localBuffer size: " << this->localBuffer.size() <<endl;
+            //insert points to LocalArr
+            //use nodeTable to do book keeping
             for (auto it : this->localBuffer) {
                 long cellId = getCellId(it);
                 auto itt = nodeTable.find(cellId);
                 if (itt != nodeTable.end()){ 
+                    //found existing
                     localArr[(*itt).second]._insert(it);
                 }
                 else {
+                    //new node
                     localArr.push_back(Node<T>(it, cellId)); 
                     nodeTable[cellId] = localArr.size() - 1;
                 }
             }
+            comm.barrier();
             cout << "DEBUG " <<procRank << ":  " << "localArr size: " << this->localArr.size() <<endl;
             cout << "DEBUG " <<procRank << ":  " << "nodeTable size: " << this->nodeTable.size() <<endl;
+            _borrow_first_node(boundry_array);
+
+            cout << "DEBUG " <<procRank << ":  " << "localArr size after borrow: " << this->localArr.size() <<endl;
+            cout << "DEBUG " <<procRank << ":  " << "nodeTable size after borrow: " << this->nodeTable.size() <<endl;
             _clear_localbuffer();
         }
-
-
 
         void _assemble() {
             std::set<int> aux;
