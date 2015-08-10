@@ -36,7 +36,7 @@ template<typename T> class Node{
     //R comval; //sl15: combine type
     NodeSet genset;
     NodeOrderSet childset;
-    int id, parent;
+    long id, parent;
     NodeType type;
 
     //sl15: all classes that need access to node
