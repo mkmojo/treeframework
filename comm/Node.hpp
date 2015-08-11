@@ -38,6 +38,7 @@ template<typename T> class Node{
     NodeOrderSet childset;
     long id, parent;
     NodeType type;
+    bool hasData;
 
     //sl15: all classes that need access to node
     template<typename U> friend class Messager;
@@ -45,10 +46,11 @@ template<typename T> class Node{
 
     inline void _insert(T data_in){ dataArr.push_back(data_in); }
     std::vector<NodeIndex> children;
-    public:
-    Node(long id_in):id(id_in){ }
 
-    Node(T data_in, int id_in):id(id_in),parent(-1){ dataArr.push_back(data_in); }
+public:
+    Node(long id_in):id(id_in), hasData(false){ }
+
+    Node(T data_in, int id_in):id(id_in),parent(-1), hasData(true){ dataArr.push_back(data_in); }
 
     ~Node(){ }
 

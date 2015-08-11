@@ -318,6 +318,10 @@ template<typename T> class Tree: public Messager<T> {
                 boundary_array.push_back(boundry_array_buffer[i]);
             }
 
+            //if not last proc, add an empty node to the local array
+            if(procRank < numProc-1) localArr.push_back(Node<T>(boundry_arry[procRank+1]));
+            out_of_order = localArr.size()-1;
+
             delete [] boundry_array_buffer;
         }
 
@@ -355,6 +359,7 @@ template<typename T> class Tree: public Messager<T> {
             while(new_last - old_last > 1){ 
                 for(int i = old_last+1; i <= new_last; i++)
                     aux.insert(localArr[i].id >> 3);
+
                 old_last = localArr.size()-1;
 
                 for(auto it : aux){
