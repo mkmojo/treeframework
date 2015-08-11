@@ -12,13 +12,15 @@ template<typename T> class Messager {
         typedef std::function<void (std::vector<T>&) > combine_functional;
         typedef std::function<void (std::vector<T>&) > evolve_functional;
         typedef std::function<int (const T&, int) > locate_functional;
-        std::string filename;
+
+        int localBound;
+
         //messages stored in a list of queues
         MessageBuffer<T> msgBuffer;
         std::vector<T> localBuffer;
-        //std::vector<Node<T> > localArr;
-        std::vector<int> localStruct;
-        //std::unordered_map<int, int> nodeTable;
+        std::vector<Node<T> > localArr;
+        std::vector<Node<T> > localStruct;
+        std::unordered_map<int, long> nodeTable;
 
         //> user implementation 
         predicate_functional user_predicate;
@@ -114,7 +116,7 @@ template<typename T> class Messager {
     public:
         //maxLevel needs to be read in from user input in loadPoint function
 
-        Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), state(NAS_WAITING) {
+        Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), state(NAS_WAITING), localBound(0){
         };
 
 

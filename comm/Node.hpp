@@ -1,4 +1,5 @@
 #include <set>
+#include <map>
 #include <unordered_set>
 #include <utility>
 struct NodeIndex{
@@ -15,16 +16,8 @@ struct NodeIndex{
 //  long id; //cellId
 //}
 
-//std::pair< std::pair<int, int>, long> Pair;
-typedef std::pair<int, long> Pair;
-struct pair_compare{
-    inline bool operator()(const Pair& lhs, const Pair& rhs) const {
-        return lhs.second < rhs.second;
-    }
-};
-
 typedef std::unordered_set<int> NodeSet;
-typedef std::set<Pair, pair_compare> NodeOrderSet;
+typedef std::map<long, int> NodeOrderSet;
 enum NodeType{
     ROOT,
     INTERNAL,
@@ -34,7 +27,7 @@ enum NodeType{
 template<typename T> class Node{
     std::vector<T> dataArr;
     //R comval; //sl15: combine type
-    NodeSet genset;
+    NodeSet genset, childindexset;
     NodeOrderSet childset;
     long id, parent;
     NodeType type;
@@ -56,7 +49,7 @@ public:
 
     inline int getCount() const { return dataArr.size(); }
 
-    int getId() const{
+    long getId() const{
         return id;
     }
 

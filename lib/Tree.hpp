@@ -59,9 +59,6 @@ template<typename T> class Tree: public Messager<T> {
         CommLayer<T> comm; //reference variable for the ComLayer defined in parent class
         map<int ,NodeIndex> parentIndexMap;
 
-
-        std::vector<Node<T> > localArr;
-        std::unordered_map<long, int> nodeTable;
         std::vector<long> boundary_array; //used to save borrowed nodes
 
         int ndim=0, maxlevel=0;
@@ -90,26 +87,14 @@ template<typename T> class Tree: public Messager<T> {
             for (unsigned i = 1; i < this->localBuffer.size(); i++) {
                 OctreePoint &cntPoint = this->localBuffer[i];
                 //For current smallest cord
-                if (cntPoint.x < minX) {
-                    minX = cntPoint.x;
-                }
-                if (cntPoint.y < minY) {
-                    minY = cntPoint.y;
-                }
-                if (cntPoint.z < minZ) {
-                    minZ = cntPoint.z;
-                }
+                if (cntPoint.x < minX) minX = cntPoint.x;
+                if (cntPoint.y < minY) minY = cntPoint.y;
+                if (cntPoint.z < minZ) minZ = cntPoint.z;
 
                 //For current largest cord
-                if (cntPoint.x > maxX) {
-                    maxX = cntPoint.x;
-                }
-                if (cntPoint.y > maxY) {
-                    maxY = cntPoint.y;
-                }
-                if (cntPoint.z > maxZ) {
-                    maxZ = cntPoint.z;
-                }
+                if (cntPoint.x > maxX) maxX = cntPoint.x;
+                if (cntPoint.y > maxY) maxY = cntPoint.y;
+                if (cntPoint.z > maxZ) maxZ = cntPoint.z;
             }
 
             //set global dimension
@@ -136,21 +121,17 @@ template<typename T> class Tree: public Messager<T> {
 
             for (unsigned int i = 0; i < height; ++i) {
                 key = key << 1;
-                if (x_64 & mask)
-                    key = key | 1;
+                if (x_64 & mask) key = key | 1;
                 x_64 = x_64 << 1;
 
                 key = key << 1;
-                if (y_64 & mask)
-                    key = key | 1;
+                if (y_64 & mask) key = key | 1;
                 y_64 = y_64 << 1;
 
                 key = key << 1;
-                if (z_64 & mask)
-                    key = key | 1;
+                if (z_64 & mask) key = key | 1;
                 z_64 = z_64 << 1;
-            } // for
-
+            }
             return key;
         }
 
@@ -251,7 +232,7 @@ template<typename T> class Tree: public Messager<T> {
             //sort the data (not needed perhaps)
             std::sort(this->localBuffer.begin(), this->localBuffer.end(), cmpPoint);
 
-            //for (auto&& it : this->localBuffer)
+            //for (auto&& it : localBuffer)
             //   cout << procRank << ": retrieved node " << it.cellId << endl;
         }
 
@@ -266,9 +247,9 @@ template<typename T> class Tree: public Messager<T> {
         }
 
         //sl15: required to be implemented by the implementer
-        void _readPoints() {
+        void _readPoints(string filename) {
             if (comm.isMaster()) {
-                std::ifstream fs(this->filename.c_str());
+                std::ifstream fs(filename.c_str());
                 std::string line;
                 bool datastart = false;
 
@@ -285,9 +266,7 @@ template<typename T> class Tree: public Messager<T> {
                             datastart = true;
                             continue;
                         }
-                    } else {
-                        this->add(T(iss));
-                    }
+                    } else this->add(T(iss));
                 }
             }
         }
@@ -311,18 +290,17 @@ template<typename T> class Tree: public Messager<T> {
         }
 
         void _borrow_first_node(std::vector<long>& boundary_array){
-            long *boundry_array_buffer; 
+            long *boundary_array_buffer; 
 
-            comm.gatherAll(&localArr[0].id, 1, boundry_array_buffer);
+            comm.gatherAll(&(this->localArr[0].id), 1, boundary_array_buffer);
             for (int i = 0; i < numProc; i++) {
-                boundary_array.push_back(boundry_array_buffer[i]);
+                boundary_array.push_back(boundary_array_buffer[i]);
             }
 
             //if not last proc, add an empty node to the local array
-            if(procRank < numProc-1) localArr.push_back(Node<T>(boundry_arry[procRank+1]));
-            out_of_order = localArr.size()-1;
+            if(procRank < numProc-1) this->localArr.push_back(Node<T>(boundary_array[procRank+1]));
 
-            delete [] boundry_array_buffer;
+            delete [] boundary_array_buffer;
         }
 
         void _flush_buffer() {
@@ -331,15 +309,14 @@ template<typename T> class Tree: public Messager<T> {
             //use nodeTable to do book keeping
             for (auto it : this->localBuffer) {
                 long cellId = getCellId(it);
-                auto itt = nodeTable.find(cellId);
-                if (itt != nodeTable.end()){ 
+                auto itt = this->nodeTable.find(cellId);
+                if (itt != this->nodeTable.end()){ 
                     //found existing
-                    localArr[(*itt).second]._insert(it);
-                }
-                else {
+                    this->localArr[(*itt).second]._insert(it);
+                } else {
                     //new node
-                    localArr.push_back(Node<T>(it, cellId)); 
-                    nodeTable[cellId] = localArr.size() - 1;
+                    this->localArr.push_back(Node<T>(it, cellId)); 
+                    this->nodeTable[cellId] = this->localArr.size() - 1;
                 }
             }
             comm.barrier();
@@ -358,16 +335,16 @@ template<typename T> class Tree: public Messager<T> {
 
             while(new_last - old_last > 1){ 
                 for(int i = old_last+1; i <= new_last; i++)
-                    aux.insert(localArr[i].id >> 3);
+                    aux.insert(this->localArr[i].id >> 3);
 
-                old_last = localArr.size()-1;
+                old_last = this->localArr.size()-1;
 
                 for(auto it : aux){
-                    localArr.push_back(Node<T>(it));
-                    for(int i = 0; i < localArr.size()-1; i++){
-                        if((localArr[i].id) >> 3 == it){
-                            localArr.back().childset.insert(std::make_pair(i, localArr[i].id));
-                            localArr[i].parent = localArr.size()-1;
+                    this->localArr.push_back(Node<T>(it));
+                    for(int i = 0; i < this->localArr.size()-1; i++){
+                        if((this->localArr[i].id) >> 3 == it){
+                            this->localArr.back().childset.insert(std::make_pair(this->localArr[i].id, i));
+                            this->localArr[i].parent = this->localArr.size()-1;
                         }
                     }
                 }
@@ -384,49 +361,75 @@ template<typename T> class Tree: public Messager<T> {
             cout << "DEBUG after assemble " <<procRank << ":  " << "localArr size: " << this->localArr.size() <<endl;
             cout << "DEBUG after assemble " <<procRank << ":  " << "nodeTable size: " << this->nodeTable.size() <<endl;
 
-            _post_order_walk(&Tree::_add_to_tree);
+            _post_order_walk();
         }
 
-        //additional implementations by the implementer
-        inline void _add_to_tree(int a) {
-            this->localStruct.push_back(a);
-        }
-
-        void _post_order_walk(void (Tree::*fun)(int)) {
+        void _post_order_walk() {
             std::stack<int> aux;
             auto track = new std::vector<NodeOrderSet::iterator>;
-            std::vector<Node<T> >& localArr = this->localArr;
 
-            for (auto&& it : localArr)
+            for (auto&& it : this->localArr)
                 track->push_back(it.childset.begin());
 
-            int last_visited = -1;
-            int current = localArr.size() - 1;
-            int peek = 0;
+            int n = this->localArr.size();
+            int last_visited = -1, current = n-1, peek = 0, count = 0;
+
+            this->localStruct.reserve(n);
+            vector<int> tab(n, 0);
             while (!aux.empty() || current != -1) {
                 if (current != -1) {
                     aux.push(current);
-                    current = (*track)[current]->first;
+                    current = (*track)[current]->second;
                 } else {
                     peek = aux.top();
                     ++(*track)[peek];
-                    if ((*track)[peek] != localArr[peek].childset.end()
-                            && last_visited != ((*track)[peek])->first) {
-                        current = (*track)[peek]->first;
+                    if ((*track)[peek] != this->localArr[peek].childset.end()
+                            && last_visited != ((*track)[peek])->second) {
+                        current = (*track)[peek]->second;
                     } else {
-                        (this->*fun)(peek);
+                        this->localStruct.push_back(this->localArr[peek]);
+                        tab[peek] = count++;
                         last_visited = aux.top();
                         aux.pop();
                     }
                 }
             }
             delete track;
+
+            //clear localArr. localStruct will be used from now on
+            this->localArr.clear();
+
+            //fix the parent and children links
+            for(auto&& it : this->localStruct){
+                it.parent = tab[it.parent];
+                for(auto&& itt : it.childset){
+                    itt.second = tab[itt.second];
+                    it.childindexset.insert(itt.second);
+                }
+            }
+        }
+
+        void _globalize(){
+            //obtain local bound (any index greater or equal are out of order)
+            int n = this->localStruct.size();
+            for(int i = 0; i < n; i++){
+                if(! this->localStruct[i].hasData) break;
+                else this->localBound++;
+            }
+
+            for(int i = this->localBound; i < n; i++){
+                //determine the processor
+                Node<T>& curr = this->localStruct[i];
+                int proc = std::lower_bound(boundary_array.begin(), boundary_array.end(), curr.id)
+                        - boundary_array.begin() - 1;
+                //TODO send this->llocalStruct[i] to proc through commlayer
+            }
         }
 
         std::string getLocalTree() const {
             std::string result("");
-            for(auto it = this->localStruct.begin(); it != this->localStruct.end(); it++){
-                auto bset = std::bitset<7>(localArr[*it].id);
+            for(auto&& it : this->localStruct){
+                auto bset = std::bitset<7>(it.getId());
                 result = result + bset.to_string() + "*";
             }
             if(!result.empty()) result.pop_back();
@@ -435,12 +438,12 @@ template<typename T> class Tree: public Messager<T> {
 
         std::string getLinearTree() const {
             std::string result("");
-            for(auto it = localArr.rbegin(); it != localArr.rend(); it++){
+            for(auto it = this->localArr.rbegin(); it != this->localArr.rend(); it++){
                 auto curr_bset = std::bitset<7>((*it).id);
                 result = result + curr_bset.to_string() + "(" + std::to_string((*it).getCount()) + ")" + "[";
                 for(auto itt = (*it).childset.begin(); itt != (*it).childset.end(); itt++){
-                    if((*itt).first != -1){
-                        auto child_bset = std::bitset<7>(localArr[(*itt).first].id);
+                    if((*itt).second != -1){
+                        auto child_bset = std::bitset<7>(this->localArr[(*itt).second].id);
                         result = result + child_bset.to_string() + ",";
                     }
                 }
@@ -451,8 +454,7 @@ template<typename T> class Tree: public Messager<T> {
             return result;
         }
 
-        inline bool isEmpty() const { return this->localBuffer.empty() && localArr.empty() && this->localStruct.empty(); }
-
+        inline bool isEmpty() const { return this->localBuffer.empty() && this->localArr.empty() && this->localStruct.empty(); }
 
         void free(){
             //TODO free allocated memory
@@ -463,11 +465,10 @@ template<typename T> class Tree: public Messager<T> {
         }
 
         void _load(std::string filename) {
-            this->filename = filename;
             if (this->msgBuffer.msgBufferLayer.isMaster()) {
-                _readPoints();
+                _readPoints(filename);
                 _endState();
-                //this->msgBuffer.sendControlMessage(APC_SET_STATE, NAS_LOAD_COMPLETE);
+                //msgBuffer.sendControlMessage(APC_SET_STATE, NAS_LOAD_COMPLETE);
                 this->msgBuffer.msgBufferLayer.barrier();
             } else {
                 this->msgBuffer.msgBufferLayer.barrier();
@@ -480,7 +481,7 @@ template<typename T> class Tree: public Messager<T> {
 
     public:
         Tree() :Messager<T>() {
-            comm=this->msgBuffer.msgBufferLayer;
+            comm = this->msgBuffer.msgBufferLayer;
         }
 
         void printData() const {
@@ -494,6 +495,7 @@ template<typename T> class Tree: public Messager<T> {
             _load(filename);
             _flush_buffer();
             _assemble();
+            _globalize();
         }
 
         void print(std::ostream& stream) const {
