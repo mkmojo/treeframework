@@ -293,9 +293,8 @@ template<typename T> class Tree: public Messager<T> {
             long *boundary_array_buffer; 
 
             comm.gatherAll(&(this->localArr[0].id), 1, boundary_array_buffer);
-            for (int i = 0; i < numProc; i++) {
+            for (int i = 0; i < numProc; i++)
                 boundary_array.push_back(boundary_array_buffer[i]);
-            }
 
             //if not last proc, add an empty node to the local array
             if(procRank < numProc-1) this->localArr.push_back(Node<T>(boundary_array[procRank+1]));
@@ -307,6 +306,7 @@ template<typename T> class Tree: public Messager<T> {
             cout << "DEBUG " <<procRank << ":  " << "localBuffer size: " << this->localBuffer.size() <<endl;
             //insert points to LocalArr
             //use nodeTable to do book keeping
+            //TODO when creating node, don't insert data
             for (auto it : this->localBuffer) {
                 long cellId = getCellId(it);
                 auto itt = this->nodeTable.find(cellId);
@@ -407,6 +407,8 @@ template<typename T> class Tree: public Messager<T> {
                     it.childindexset.insert(itt.second);
                 }
             }
+
+            //TODO flush localBuffer into localStruct nodes
         }
 
         void _globalize(){
@@ -422,8 +424,11 @@ template<typename T> class Tree: public Messager<T> {
                 Node<T>& curr = this->localStruct[i];
                 int proc = std::lower_bound(boundary_array.begin(), boundary_array.end(), curr.id)
                         - boundary_array.begin() - 1;
-                //TODO send this->llocalStruct[i] to proc through commlayer
+                //TODO append this->llocalStruct[i]'s id and links (need a data structure. pair of proc and index) of the sending queue
             }
+            //TODO send everything
+            //TODO barrier
+            //TODO unserialize things in the receiving buffer
         }
 
         std::string getLocalTree() const {
