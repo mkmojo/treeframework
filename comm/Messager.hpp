@@ -6,6 +6,7 @@
 using namespace std;
 
 template<typename T> class Messager {
+    int count = 0;
     protected:
         typedef std::function<bool (const std::vector<T>&) > predicate_functional;
         typedef std::function<NodeSet(const Node<T>&) > generate_functional;
@@ -14,10 +15,12 @@ template<typename T> class Messager {
         typedef std::function<int (const T&, int) > locate_functional;
 
         int localBound;
+        bool lDependency; //dependency flag
 
         //messages stored in a list of queues
         MessageBuffer<T> msgBuffer;
         std::vector<T> localBuffer;
+        std::vector<int> generateOrder;
         std::vector<Node<T> > localArr;
         std::vector<Node<T> > localStruct;
         std::unordered_map<long, int> nodeTable;
@@ -104,6 +107,7 @@ template<typename T> class Messager {
             checkpointSum = 0;
         }
 
+        /*
         virtual void _sort() = 0;
 
         virtual void _load(std::string) = 0;
@@ -111,15 +115,38 @@ template<typename T> class Messager {
         virtual void _postLoad() = 0;
 
         virtual void _assemble() = 0;
+        */
 
-    private:
-        int count = 0;
+        bool getTopologicalSortingOrderHelper(int cur, std::unordered_set<int> visited, std::unordered_set<int> done){
+            visited.insert(cur);
+            bool hasCycle = false;
+            for(auto i : localStruct[cur].genset){
+                if(visited.find(i) == visited.end()) 
+                    hasCycle = hasCycle || getTopologicalSortingOrderHelper(i, visited, done);
+                else if(done.find(i) == done.end()) return true;
+            }
+            generateOrder.push_back(cur);
+            done.insert(cur);
+            return hasCycle;
+        }
+
+        bool getTopologicalSortingOrder(){
+            std::unordered_set<int> visited, done;
+
+            for(int i = 0; i < generateOrder.size(); i++){
+                if(visited.find(i) == visited.end() && getTopologicalSortingOrderHelper(i, visited, done))
+                    return true;
+            }
+            return false;
+        }
+
     public:
         //maxLevel needs to be read in from user input in loadPoint function
-
-        Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), state(NAS_WAITING), localBound(0){
+        Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), state(NAS_WAITING), localBound(0), lDependency(true){
         };
 
+
+        inline bool isEmpty() const { return this->localBuffer.empty() && this->localArr.empty() && this->localStruct.empty(); }
 
         //sl15: this method needs to be overridden by the subclasses
         virtual int computeProcID() {
@@ -147,25 +174,25 @@ template<typename T> class Messager {
             user_locate = locate_in;
         }
 
-        virtual void build(std::string filename) {
-            //_load(filename);
-            //_flush_buffer();
-            //_assemble();
-        }
-
         virtual void compute() {
-            //    for (size_t i = 0; i < localArr.size(); i++) {
-            //        localArr[i].genset = user_generate(localArr[i]);
-            //    }
+            for (size_t i = 0; i < localBound; i++){
+                localStruct[i].genset = user_generate(localStruct[i]);
+                generateOrder.push_back(i);
+            }
 
-            //    msgBuffer.msgBufferLayer.barrier();
+            if(lDependency){
+                bool hasCycle = getTopologicalSortingOrder();
+                if(hasCycle){ //cycle is detected, print a warning message and quit
+                    //TODO needs processes to emit error message and quit 
+                    std::cout << "Generate Graph contains cycle. Terminating Process... " << std::endl;
+                    exit(-1); //TODO needs better way to quit 
+                }
+            }
 
-            //    for (size_t i = 0; i < localArr.size(); i++) {
-            //        std::vector<T > genNodes;
-            //        for (auto iter = localArr[i].genset.begin(); iter != localArr[i].genset.end(); iter++) {
-            //            genNodes.push_back(localArr[*iter].dataArr[0]);
-            //        }
-            //        user_combine(genNodes);
-            //    }
+            msgBuffer.msgBufferLayer.barrier();
+
+            for (int i = 0; i < localBound; i++) {
+                //call user combine on localStruct[generateOrder[i]]
+            }
         }
 };

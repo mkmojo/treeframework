@@ -55,7 +55,6 @@ struct OctreePoint {
 };
 
 template<typename T> class Tree: public Messager<T> {
-    private:
         CommLayer<T> comm; //reference variable for the ComLayer defined in parent class
         map<int ,NodeIndex> parentIndexMap;
 
@@ -238,7 +237,6 @@ template<typename T> class Tree: public Messager<T> {
 
 
     protected:
-
         //buffer array that stores private data
         std::vector<T> private_data;
 
@@ -271,7 +269,7 @@ template<typename T> class Tree: public Messager<T> {
             }
         }
 
-        void _sort() {
+        virtual void _sort() {
             //set labels for each point (node ids)
             setUpPointIds();
 
@@ -323,7 +321,7 @@ template<typename T> class Tree: public Messager<T> {
             _clear_localbuffer();
         }
 
-        void _assemble() {
+        virtual void _assemble() {
             std::set<int> aux;
             int old_last = -1;
             int new_last = this->localArr.size()-1;
@@ -440,6 +438,10 @@ template<typename T> class Tree: public Messager<T> {
                 this->localStruct[this->nodeTable[getCellId(it)]]._insert(it);
 
             this->localBuffer.clear();
+            
+            //TODO shall we keep out of order nodes or remove them?
+            //localStruct resize to size of localBound
+            //this->localStruct.resize(this->localBound);
         }
 
         std::string getLocalTree() const {
@@ -470,8 +472,6 @@ template<typename T> class Tree: public Messager<T> {
             return result;
         }
 
-        inline bool isEmpty() const { return this->localBuffer.empty() && this->localArr.empty() && this->localStruct.empty(); }
-
         void free(){
             //TODO free allocated memory
         }
@@ -480,7 +480,7 @@ template<typename T> class Tree: public Messager<T> {
             this->msgBuffer.flush();
         }
 
-        void _load(std::string filename) {
+        virtual void _load(std::string filename) {
             if (this->msgBuffer.msgBufferLayer.isMaster()) {
                 _readPoints(filename);
                 _endState();
@@ -507,7 +507,7 @@ template<typename T> class Tree: public Messager<T> {
             std::cout << std::endl;
         }
 
-        void build(std::string filename) {
+        virtual void build(std::string filename) {
             _load(filename);
             _flush_buffer();
             _assemble();
