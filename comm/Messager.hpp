@@ -20,7 +20,8 @@ template<typename T> class Messager {
         std::vector<T> localBuffer;
         std::vector<Node<T> > localArr;
         std::vector<Node<T> > localStruct;
-        std::unordered_map<int, long> nodeTable;
+        std::unordered_map<long, int> nodeTable;
+        std::unordered_map<int, unordered_set<int> > nodesToSend, nodesToReceive;
 
         //> user implementation 
         predicate_functional user_predicate;
