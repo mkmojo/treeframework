@@ -304,7 +304,7 @@ template<typename T> class Tree: public Messager<T> {
 
         void _flush_buffer() {
             cout << "DEBUG " <<procRank << ":  " << "localBuffer size: " << this->localBuffer.size() <<endl;
-            //insert points to LocalArr
+            //insert points to LocalArr from lcoalBuffer
             //use nodeTable to do book keeping
             //TODO when creating node, don't insert data
             for (auto it : this->localBuffer) {
