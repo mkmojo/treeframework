@@ -3,7 +3,7 @@
 .SUFFIXES: .o .cpp
 
 CC = mpic++ -D x86
-CFLAGS = -g -O3 -D_REENTRANT -std=c++0x
+CFLAGS = -g -O3 -D_REENTRANT -std=c++11
 LFLAGS = -lm
 
 CTAGS = ctags

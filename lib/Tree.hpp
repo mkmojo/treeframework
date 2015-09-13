@@ -55,7 +55,6 @@ struct OctreePoint {
 };
 
 template<typename T> class Tree: public Messager<T> {
-    private:
         CommLayer<T> comm; //reference variable for the ComLayer defined in parent class
         map<int ,NodeIndex> parentIndexMap;
 
@@ -238,7 +237,6 @@ template<typename T> class Tree: public Messager<T> {
 
 
     protected:
-
         //buffer array that stores private data
         std::vector<T> private_data;
 
@@ -271,7 +269,7 @@ template<typename T> class Tree: public Messager<T> {
             }
         }
 
-        void _sort() {
+        virtual void _sort() {
             //set labels for each point (node ids)
             setUpPointIds();
 
@@ -306,16 +304,11 @@ template<typename T> class Tree: public Messager<T> {
             cout << "DEBUG " <<procRank << ":  " << "localBuffer size: " << this->localBuffer.size() <<endl;
             //insert points to LocalArr from lcoalBuffer
             //use nodeTable to do book keeping
-            //TODO when creating node, don't insert data
             for (auto it : this->localBuffer) {
                 long cellId = getCellId(it);
                 auto itt = this->nodeTable.find(cellId);
-                if (itt != this->nodeTable.end()){ 
-                    //found existing
-                    this->localArr[(*itt).second]._insert(it);
-                } else {
-                    //new node
-                    this->localArr.push_back(Node<T>(it, cellId)); 
+                if (itt == this->nodeTable.end()){
+                    this->localArr.push_back(Node<T>(cellId)); 
                     this->nodeTable[cellId] = this->localArr.size() - 1;
                 }
             }
@@ -328,7 +321,7 @@ template<typename T> class Tree: public Messager<T> {
             _clear_localbuffer();
         }
 
-        void _assemble() {
+        virtual void _assemble() {
             std::set<int> aux;
             int old_last = -1;
             int new_last = this->localArr.size()-1;
@@ -368,6 +361,9 @@ template<typename T> class Tree: public Messager<T> {
             std::stack<int> aux;
             auto track = new std::vector<NodeOrderSet::iterator>;
 
+            //need to repopulate the node table
+            this->nodeTable.clear();
+
             for (auto&& it : this->localArr)
                 track->push_back(it.childset.begin());
 
@@ -388,6 +384,7 @@ template<typename T> class Tree: public Messager<T> {
                         current = (*track)[peek]->second;
                     } else {
                         this->localStruct.push_back(this->localArr[peek]);
+                        this->nodeTable[this->localArr[peek].id] = this->localStruct.size()-1;
                         tab[peek] = count++;
                         last_visited = aux.top();
                         aux.pop();
@@ -402,13 +399,12 @@ template<typename T> class Tree: public Messager<T> {
             //fix the parent and children links
             for(auto&& it : this->localStruct){
                 it.parent = tab[it.parent];
+
                 for(auto&& itt : it.childset){
                     itt.second = tab[itt.second];
                     it.childindexset.insert(itt.second);
                 }
             }
-
-            //TODO flush localBuffer into localStruct nodes
         }
 
         void _globalize(){
@@ -424,11 +420,28 @@ template<typename T> class Tree: public Messager<T> {
                 Node<T>& curr = this->localStruct[i];
                 int proc = std::lower_bound(boundary_array.begin(), boundary_array.end(), curr.id)
                         - boundary_array.begin() - 1;
-                //TODO append this->llocalStruct[i]'s id and links (need a data structure. pair of proc and index) of the sending queue
+                for(auto c : curr.childindexset)
+                    curr.remoteChildren.insert(std::pair<int,int>(proc, c));
+
+                curr.childindexset.clear();
+                curr.childset.clear();
+
+                //append the index to send queue
+                this->nodesToSend[proc].insert(i);
             }
             //TODO send everything
             //TODO barrier
             //TODO unserialize things in the receiving buffer
+            
+            //flush localBuffer into localStruct nodes
+            for(auto&& it : this->localBuffer)
+                this->localStruct[this->nodeTable[getCellId(it)]]._insert(it);
+
+            this->localBuffer.clear();
+            
+            //TODO shall we keep out of order nodes or remove them?
+            //localStruct resize to size of localBound
+            //this->localStruct.resize(this->localBound);
         }
 
         std::string getLocalTree() const {
@@ -443,23 +456,21 @@ template<typename T> class Tree: public Messager<T> {
 
         std::string getLinearTree() const {
             std::string result("");
-            for(auto it = this->localArr.rbegin(); it != this->localArr.rend(); it++){
+            for(auto it = this->localStruct.rbegin(); it != this->localStruct.rend(); it++){
                 auto curr_bset = std::bitset<7>((*it).id);
                 result = result + curr_bset.to_string() + "(" + std::to_string((*it).getCount()) + ")" + "[";
                 for(auto itt = (*it).childset.begin(); itt != (*it).childset.end(); itt++){
                     if((*itt).second != -1){
-                        auto child_bset = std::bitset<7>(this->localArr[(*itt).second].id);
+                        auto child_bset = std::bitset<7>(this->localStruct[(*itt).second].id);
                         result = result + child_bset.to_string() + ",";
                     }
                 }
                 if(result.back() == ',') result.pop_back();
-                result = result + "];";
+                result += "];";
             }
             if(!result.empty()) result.pop_back();
             return result;
         }
-
-        inline bool isEmpty() const { return this->localBuffer.empty() && this->localArr.empty() && this->localStruct.empty(); }
 
         void free(){
             //TODO free allocated memory
@@ -469,7 +480,7 @@ template<typename T> class Tree: public Messager<T> {
             this->msgBuffer.flush();
         }
 
-        void _load(std::string filename) {
+        virtual void _load(std::string filename) {
             if (this->msgBuffer.msgBufferLayer.isMaster()) {
                 _readPoints(filename);
                 _endState();
@@ -496,7 +507,7 @@ template<typename T> class Tree: public Messager<T> {
             std::cout << std::endl;
         }
 
-        void build(std::string filename) {
+        virtual void build(std::string filename) {
             _load(filename);
             _flush_buffer();
             _assemble();

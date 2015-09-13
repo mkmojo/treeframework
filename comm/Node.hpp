@@ -24,11 +24,18 @@ enum NodeType{
     LEAF
 };
 
+struct pairHash{
+    inline size_t operator()(const std::pair<int, int>& v) const{
+        return v.first*numProc+v.second;
+    }
+};
+
 template<typename T> class Node{
     std::vector<T> dataArr;
     //R comval; //sl15: combine type
     NodeSet genset, childindexset;
     NodeOrderSet childset;
+    std::unordered_set<std::pair<int, int>, pairHash> remoteChildren;
     long id, parent;
     NodeType type;
     bool hasData;
