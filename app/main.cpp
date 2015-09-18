@@ -27,6 +27,19 @@ struct Data : OctreePoint{
     void free(){
     	//nothing to do
     }
+
+    size_t getSize() const{
+        return sizeof(*this);
+    }
+
+    void serialize(char* dest){
+        data_utils::copyData(dest, this, sizeof(*this));
+    }
+
+    size_t unserialize(const char* src){
+        data_utils::copyData(this, src, sizeof(*this));
+    }
+
 };
 
 NodeSet MyGenerate(const Node<Data>& mynode){

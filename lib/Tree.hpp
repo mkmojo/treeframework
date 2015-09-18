@@ -19,11 +19,6 @@ struct OctreePoint {
     double x,y,z;
     long cellId;
 
-    virtual void save(void* dest)=0;
-    virtual size_t load(const void* src)=0;
-    virtual size_t size()=0;
-    virtual void free()=0;
-
     OctreePoint():x(0), y(0), z(0), cellId(0){}
 
     OctreePoint(std::istringstream& ss):cellId(0){
@@ -31,27 +26,14 @@ struct OctreePoint {
     }
 
     virtual void serialize(char* dest){
-        size_t total=0;
-        total+=data_utils::copyData(dest+total, &x, sizeof(x));
-        total+=data_utils::copyData(dest+total, &y, sizeof(y));
-        total+=data_utils::copyData(dest+total, &z, sizeof(z));
-        total+=data_utils::copyData(dest+total, &cellId, sizeof(cellId));
-        save(dest+total);
     }
 
     virtual size_t unserialize(const char* src){
-        int total=0;
-        total+=data_utils::copyData(&x, src+total, sizeof(x));
-        total+=data_utils::copyData(&y, src+total, sizeof(y));
-        total+=data_utils::copyData(&z, src+total, sizeof(z));
-        total+=data_utils::copyData(&cellId, src+total, sizeof(cellId));
-        total+=load(src+total);
-        return total;
     }
 
     virtual size_t getSize() const{
-        return 3*sizeof(double)+sizeof(long);
-    };
+    }
+
 };
 
 template<typename T> class Tree: public Messager<T> {
