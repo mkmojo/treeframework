@@ -2,27 +2,9 @@
 #include <map>
 #include <unordered_set>
 #include <utility>
-struct NodeIndex{
-	int processorId=-1;
-	int index=-1;
-	NodeIndex(){}
-	NodeIndex(int procId, int arrayIndex):processorId(procId), index(arrayIndex){}
-};
-
-//qqiu0806: add in strucutre for index
-//node_index {
-//  int proc;
-//  int index; 
-//  long id; //cellId
-//}
 
 typedef std::unordered_set<int> NodeSet;
 typedef std::map<long, int> NodeOrderSet;
-enum NodeType{
-    ROOT,
-    INTERNAL,
-    LEAF
-};
 
 struct pairHash{
     inline size_t operator()(const std::pair<int, int>& v) const{
@@ -31,13 +13,14 @@ struct pairHash{
 };
 
 template<typename T> class Node{
+    //TODO used when packed to send buffer
+    int sDataArr, sRemoteChildren;
     std::vector<T> dataArr;
     //R comval; //sl15: combine type
     NodeSet genset, childindexset;
     NodeOrderSet childset;
     std::unordered_set<std::pair<int, int>, pairHash> remoteChildren;
     long id, parent;
-    NodeType type;
     bool hasData;
 
     //sl15: all classes that need access to node
@@ -45,12 +28,14 @@ template<typename T> class Node{
     template<typename U> friend class Tree;
 
     inline void _insert(T data_in){ dataArr.push_back(data_in); }
-    std::vector<NodeIndex> children;
 
-public:
+    public:
     Node(long id_in):id(id_in), hasData(false){ }
 
     Node(T data_in, int id_in):id(id_in),parent(-1), hasData(true){ dataArr.push_back(data_in); }
+
+    //TODO
+    //Node(char* src){}
 
     ~Node(){ }
 
@@ -72,33 +57,9 @@ public:
         parent=parent_in;
     }
 
-    NodeType getType() const{
-        return type;
-    }
-
-    void setType(NodeType type_in){
-        type=type_in;
-    }
-
-    void addChild(NodeIndex childIndex){
-        children.push_back(childIndex);
-    }
-
-    void clearChildren(){
-        children.clear();
-    }
-
-    void updateLastChild(NodeIndex childIndex){
-        children.pop_back();
-        children.push_back(childIndex);
-    }
-
-    int numChildren() const{
-        return children.size();
-    }
-
-    std::vector<NodeIndex>* getChildren() const{
-        return (std::vector<NodeIndex>*)&children;
-    }
+    //TODO
+    //char* serialize(){
+    //   set size for two arr
+    //}
 };
 
