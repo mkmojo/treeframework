@@ -33,44 +33,36 @@ class Data
 
 template <typename T>
 class Tester:public Messager<T>{
-    MessageBuffer<T> msgBuffer;
-    CommLayer<T> comm;
-
     public:
+        //qqiu why written in this way
+        //why need to inherit from Messager() constructor
+        CommLayer<T> comm;
+        Tester() :Messager<T>(){ 
+            comm = this->msgBuffer.msgBufferLayer;
+        }
 
-    //qqiu why written in this way
-    //why need to inherit from Messager() constructor
-    Tester() :Messager<T>(){ 
-        comm = this->msgBuffer.msgBufferLayer;
-    }
+        void receive() {
+            this->_pumpNetwork();
+        }
 
-    void receive() {
-        this->_pumpNetwork();
-    }
-
-    void flush() {
-        msgBuffer.flush();
-    }
-
-
-    size_t size(){
-        return this->getLocalBufferSize();
-    }
+        void flush() {
+            this->msgBuffer.flush();
+        }
 };
 
 int main(int argc, char* argv[])
 {
     MPI_Init(&argc, &argv);
 
-    Data d1(0.3,0.4,5), d2(1,2,4);
+    Data d1(0.3,0.4,5), d2(0.1,0.2,0.4);
 
     //init the test class
     Tester<Data> tester;
 
     if(procRank == 0){
-        tester.addToProc(1, d1);
-        tester.addToProc(0, d2);
-        tester.flush();
+        //tester.addToProc(1, d1);
+        //tester.addToProc(0, d2);
+        //tester.flush();
         if(tester.isEmpty()) { 
             cout << procRank <<": Empty " <<endl;  }
         else{
@@ -78,7 +70,7 @@ int main(int argc, char* argv[])
         }
     }else{ 
         //receiver
-        tester.receive();
+        //tester.receive();
         if(tester.isEmpty()) { 
             cout << procRank <<": Empty " <<endl;  }
         else{
@@ -86,7 +78,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    tester.comm.barrier();
     if(procRank == 0) 
         MPI_Finalize();
     return 0;
