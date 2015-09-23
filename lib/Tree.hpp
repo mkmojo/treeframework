@@ -37,7 +37,7 @@ struct OctreePoint {
 };
 
 template<typename T> class Tree: public Messager<T> {
-        CommLayer<T> comm; //reference variable for the ComLayer defined in parent class
+        CommLayer<T> *comm; //reference variable for the ComLayer defined in parent class
         map<int ,NodeIndex> parentIndexMap;
 
         std::vector<long> boundary_array; //used to save borrowed nodes
@@ -79,12 +79,12 @@ template<typename T> class Tree: public Messager<T> {
             }
 
             //set global dimension
-            globalMinX = comm.reduce(minX, MIN);
-            globalMinY = comm.reduce(minY, MIN);
-            globalMinZ = comm.reduce(minZ, MIN);
-            globalMaxX = comm.reduce(maxX, MAX);
-            globalMaxY = comm.reduce(maxY, MAX);
-            globalMaxZ = comm.reduce(maxZ, MAX);
+            globalMinX = comm->reduce(minX, MIN);
+            globalMinY = comm->reduce(minY, MIN);
+            globalMinZ = comm->reduce(minZ, MIN);
+            globalMaxX = comm->reduce(maxX, MAX);
+            globalMaxY = comm->reduce(maxY, MAX);
+            globalMaxZ = comm->reduce(maxZ, MAX);
         }
 
         long computeKey(unsigned int x, unsigned int y, unsigned z) {
@@ -173,7 +173,7 @@ template<typename T> class Tree: public Messager<T> {
         std::vector<long> performSampleSort(std::vector<long> m_cbuffer) {
             long* m_pivotbuffer; // qqiu0809: memory leak? forgot to delete m_pivotbuffer?
 
-            int size=comm.gatherAll(&m_cbuffer[0],m_cbuffer.size(), m_pivotbuffer);
+            int size=comm->gatherAll(&m_cbuffer[0],m_cbuffer.size(), m_pivotbuffer);
 
             size = removeDuplicatesAndSort(m_pivotbuffer, size);
             //Sample global pivots
@@ -208,7 +208,7 @@ template<typename T> class Tree: public Messager<T> {
             std::vector<int> processorBucketSizes = getLengthsArray(this->localBuffer, splitters);
 
             //distribute the local buffer based on the lengths assigned for each processors
-            comm.redistribute(this->localBuffer, processorBucketSizes);
+            comm->redistribute(this->localBuffer, processorBucketSizes);
 
             //sort the data (not needed perhaps)
             std::sort(this->localBuffer.begin(), this->localBuffer.end(), cmpPoint);
@@ -223,12 +223,12 @@ template<typename T> class Tree: public Messager<T> {
         std::vector<T> private_data;
 
         virtual void _postLoad(){
-            comm.bcast(&maxlevel,1);
+            comm->bcast(&maxlevel,1);
         }
 
         //sl15: required to be implemented by the implementer
         void _readPoints(string filename) {
-            if (comm.isMaster()) {
+            if (comm->isMaster()) {
                 std::ifstream fs(filename.c_str());
                 std::string line;
                 bool datastart = false;
@@ -272,7 +272,7 @@ template<typename T> class Tree: public Messager<T> {
         void _borrow_first_node(std::vector<long>& boundary_array){
             long *boundary_array_buffer; 
 
-            comm.gatherAll(&(this->localArr[0].id), 1, boundary_array_buffer);
+            comm->gatherAll(&(this->localArr[0].id), 1, boundary_array_buffer);
             for (int i = 0; i < numProc; i++)
                 boundary_array.push_back(boundary_array_buffer[i]);
 
@@ -294,7 +294,7 @@ template<typename T> class Tree: public Messager<T> {
                     this->nodeTable[cellId] = this->localArr.size() - 1;
                 }
             }
-            comm.barrier();
+            comm->barrier();
             cout << "DEBUG " <<procRank << ":  " << "localArr size: " << this->localArr.size() <<endl;
             cout << "DEBUG " <<procRank << ":  " << "nodeTable size: " << this->nodeTable.size() <<endl;
             _borrow_first_node(boundary_array);
@@ -479,7 +479,7 @@ template<typename T> class Tree: public Messager<T> {
 
     public:
         Tree() :Messager<T>() {
-            comm = this->msgBuffer.msgBufferLayer;
+            comm = &(this->msgBuffer.msgBufferLayer);
         }
 
         void printData() const {
