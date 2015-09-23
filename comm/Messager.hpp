@@ -155,10 +155,15 @@ template<typename T> class Messager {
 
         //sl15: this function seems to be unnecessary since loading and sorting are all done in run()
         void add(const T& data) {
-            int data_id = computeProcID(); //sl15: computeProcID should be implemented by the user
-            if (data_id == procRank) localBuffer.push_back(data);
-            else msgBuffer.addMessage(data_id, data);
+            int procID = computeProcID(); //sl15: computeProcID should be implemented by the user
+            if (procID == procRank) localBuffer.push_back(data);
+            else msgBuffer.addMessage(procID, data);
             count++;
+        }
+        
+        //qqiu: for debug perpose
+        void addToProc(int procID, const T& data){
+            msgBuffer.addMessage(procID, data);
         }
 
         void assign(generate_functional generate_in
