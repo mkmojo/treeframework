@@ -3,6 +3,14 @@
 #include <unordered_set>
 #include <utility>
 
+struct NodeIndex{
+
+    int processorId=-1;
+    int index=-1;
+    NodeIndex(){}
+    NodeIndex(int procId, int arryIndex):processorId(procId), index(arryIndex){}
+};
+
 typedef std::unordered_set<int> NodeSet;
 typedef std::map<long, int> NodeOrderSet;
 
