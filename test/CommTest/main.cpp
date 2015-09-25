@@ -54,6 +54,10 @@ class Tester:public Messager<T>{
         void barrier(){
             comm->barrier();
         }
+
+        size_t getLocalBufferSize(){
+            return this->localBuffer.size();
+        }
 };
 
 int main(int argc, char* argv[])
@@ -61,10 +65,20 @@ int main(int argc, char* argv[])
     MPI_Init(&argc, &argv);
 
     Data d1(0.3,0.4,5), d2(0.1,0.2,0.4);
-
     // has to have the breaces to makesure destrcution is called before the finalize
     // reference: http://www.devx.com/tips/Tip/13510 
-    {Tester<Data> tester;}
+    {
+        Tester<Data> tester;
+
+        if(procRank == 0){
+            tester.addToProc(0, d1);
+            tester.addToProc(1, d2);
+            tester.flush(); //force buffed message be sent out
+        }
+        tester.receive();
+
+        cout << procRank << ": " << tester.getLocalBufferSize() << endl;
+    }
     MPI_Finalize();
     return 0;
 }
