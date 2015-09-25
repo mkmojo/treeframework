@@ -11,22 +11,24 @@ class Data
     public:
     Data(int x, int y, int z): x(x), y(y), z(z){}
     Data():x(0), y(0), z(0){};
+
+    ~Data(){}
     size_t getSize(){
         return sizeof(x) * 3;
     }
 
     void serialize(char* dest){
         size_t offset=0;
-        offset += data_utils::copyData(dest+offset, &x, sizeof(double));
-        offset += data_utils::copyData(dest+offset, &y, sizeof(double));
-        offset += data_utils::copyData(dest+offset, &z, sizeof(double));
+        offset += data_utils::copyData(dest+offset, &x, sizeof(x));
+        offset += data_utils::copyData(dest+offset, &y, sizeof(y));
+        offset += data_utils::copyData(dest+offset, &z, sizeof(z));
     }
 
     size_t unserialize(const char* src){
         int offset = 0;
-        offset += data_utils::copyData(&x, src+offset, sizeof(double));
-        offset += data_utils::copyData(&y, src+offset, sizeof(double));
-        offset += data_utils::copyData(&z, src+offset, sizeof(double));
+        offset += data_utils::copyData(&x, src+offset, sizeof(x));
+        offset += data_utils::copyData(&y, src+offset, sizeof(y));
+        offset += data_utils::copyData(&z, src+offset, sizeof(z));
         return offset;
     }
 };
@@ -36,9 +38,9 @@ class Tester:public Messager<T>{
     public:
         //qqiu why written in this way
         //why need to inherit from Messager() constructor
-        CommLayer<T> comm;
+        CommLayer<T> *comm;
         Tester() :Messager<T>(){ 
-            comm = this->msgBuffer.msgBufferLayer;
+            comm = &(this->msgBuffer.msgBufferLayer);
         }
 
         void receive() {
@@ -48,6 +50,10 @@ class Tester:public Messager<T>{
         void flush() {
             this->msgBuffer.flush();
         }
+
+        void barrier(){
+            comm->barrier();
+        }
 };
 
 int main(int argc, char* argv[])
@@ -56,30 +62,9 @@ int main(int argc, char* argv[])
 
     Data d1(0.3,0.4,5), d2(0.1,0.2,0.4);
 
-    //init the test class
-    Tester<Data> tester;
-
-    if(procRank == 0){
-        //tester.addToProc(1, d1);
-        //tester.addToProc(0, d2);
-        //tester.flush();
-        if(tester.isEmpty()) { 
-            cout << procRank <<": Empty " <<endl;  }
-        else{
-            cout << procRank << "Not empty" <<endl;
-        }
-    }else{ 
-        //receiver
-        //tester.receive();
-        if(tester.isEmpty()) { 
-            cout << procRank <<": Empty " <<endl;  }
-        else{
-            cout << procRank << "Not empty" <<endl;
-        }
-    }
-
-    tester.comm.barrier();
-    if(procRank == 0) 
-        MPI_Finalize();
+    // has to have the breaces to makesure destrcution is called before the finalize
+    // reference: http://www.devx.com/tips/Tip/13510 
+    {Tester<Data> tester;}
+    MPI_Finalize();
     return 0;
 }
