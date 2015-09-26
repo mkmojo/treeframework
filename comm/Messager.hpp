@@ -163,7 +163,8 @@ template<typename T> class Messager {
         
         //qqiu: for debug perpose
         void addToProc(int procID, const T& data){
-            msgBuffer.addMessage(procID, data);
+            if (procID == procRank) localBuffer.push_back(data);
+            else msgBuffer.addMessage(procID, data);
         }
 
         void assign(generate_functional generate_in
