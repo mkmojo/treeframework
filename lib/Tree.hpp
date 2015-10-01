@@ -466,11 +466,9 @@ template<typename T> class Tree: public Messager<T> {
             if (this->msgBuffer.msgBufferLayer.isMaster()) {
                 _readPoints(filename);
                 _endState();
-                //msgBuffer.sendControlMessage(APC_SET_STATE, NAS_LOAD_COMPLETE);
                 this->msgBuffer.msgBufferLayer.barrier();
             } else {
                 this->msgBuffer.msgBufferLayer.barrier();
-                //_setState(NAS_LOADING);
                 this->_pumpNetwork();
             }
             _postLoad();

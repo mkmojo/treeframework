@@ -34,35 +34,10 @@ template<typename T> class Messager {
         locate_functional user_locate;
 
         unsigned numReachedCheckpoint, checkpointSum, maxLevel;
-        NetworkActionState state;
 
         inline bool _checkpointReached() const {
             return numReachedCheckpoint == numProc;
         }
-
-        virtual void _parseControlMessage(int source) {
-            ControlMessage controlMsg = msgBuffer.msgBufferLayer.receiveControlMessage();
-            switch (controlMsg.msgType) {
-                case APC_SET_STATE:
-                    _setState(NetworkActionState(controlMsg.argument));
-                    break;
-                case APC_CHECKPOINT:
-                    numReachedCheckpoint++;
-                    checkpointSum += controlMsg.argument;
-                    break;
-                case APC_WAIT:
-                    _setState(NAS_WAITING);
-                    msgBuffer.msgBufferLayer.barrier();
-                    break;
-                case APC_BARRIER:
-                    assert(state == NAS_WAITING);
-                    msgBuffer.msgBufferLayer.barrier();
-                    break;
-                    //sl15: need default case
-            }
-        }
-
-        //sl15: currently the return value is not used, but might be later.
 
         virtual size_t _pumpNetwork() {
             for (size_t count = 0;; count++) {
@@ -71,9 +46,6 @@ template<typename T> class Messager {
                 switch (msg) {
                     case APM_CONTROL:
                         {
-                            _parseControlMessage(senderID);
-                            //deal with control message before 
-                            //any other type of message
                             return ++count;
                         }
                     case APM_BUFFERED:
@@ -98,14 +70,6 @@ template<typename T> class Messager {
             msgBuffer.flush();
         }
 
-        virtual void _setState(NetworkActionState newState) {
-            assert(msgBuffer.transmitBufferEmpty());
-            state = newState;
-
-            // Reset the checkpoint counter
-            numReachedCheckpoint = 0;
-            checkpointSum = 0;
-        }
 
         /*
         virtual void _sort() = 0;
@@ -142,7 +106,7 @@ template<typename T> class Messager {
 
     public:
         //maxLevel needs to be read in from user input in loadPoint function
-        Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), state(NAS_WAITING), localBound(0), lDependency(true){
+        Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), localBound(0), lDependency(true){
         };
 
 
