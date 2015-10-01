@@ -18,17 +18,6 @@ template<typename T> class CommLayer{
     uint64_t m_txMessages;
     uint64_t m_txBytes;
 
-    uint64_t _sendControlMessageToNode(int nodeID, APControl command, int argument = 0){
-        assert(procRank == 0);
-        ControlMessage msg;
-        msg.id = m_msgID++;
-        msg.msgType = command;
-        msg.argument = argument;
-
-        MPI_Send(&msg, sizeof msg, MPI_BYTE, nodeID, APM_CONTROL, MPI_COMM_WORLD);
-        return msg.id;
-    }
-
     bool _request_get_status(const MPI_Request& req, MPI_Status& status){
         int flag;
         MPI_Request_get_status(req, &flag, &status);
@@ -64,13 +53,6 @@ public:
 
     inline void barrier(){ MPI_Barrier(MPI_COMM_WORLD); }
 
-    // Send a control message
-    void sendControlMessage(APControl m, int argument = 0 ){
-        for (int i = 0; i < numProc; i++)
-            if (i != procRank) // Don't send the message to myself.
-                _sendControlMessageToNode(i, m, argument);
-    }
-
     bool isMaster(){
     	return procRank == 0;
     }
@@ -78,38 +60,6 @@ public:
     bool isLastProc(){
 		return procRank == (numProc-1);
 	}
-
-    // Receive a control message
-    ControlMessage receiveControlMessage(){
-        int flag;
-        MPI_Status status;
-        MPI_Test(&m_request, &flag, &status);
-        assert(flag);
-        assert((APMessage)status.MPI_TAG == APM_CONTROL);
-
-        int count;
-        MPI_Get_count(&status, MPI_BYTE, &count);
-        ControlMessage msg;
-        assert(count == sizeof msg);
-        std::memcpy(&msg, m_rxBuffer, sizeof msg);
-        assert(m_request == MPI_REQUEST_NULL);
-        MPI_Irecv(m_rxBuffer, RX_BUFSIZE, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, 
-                MPI_COMM_WORLD, &m_request);
-        return msg;
-    }
-
-
-    // Send a message that the checkpoint has been reached
-    uint64_t sendCheckPointMessage(int argument = 0){
-        assert(procRank != 0);
-        ControlMessage msg;
-        msg.id = m_msgID++;
-        msg.msgType = APC_CHECKPOINT;
-        msg.argument = argument;
-
-        MPI_Send(&msg, sizeof msg, MPI_BYTE, 0, APM_CONTROL, MPI_COMM_WORLD);
-        return msg.id;
-    }
 
 
     // Send a buffered message

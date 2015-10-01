@@ -52,15 +52,6 @@ template<typename T> class MessageBuffer{
             msgQueues[i].reserve(MAX_MESSAGES);
     }
 
-    void sendCheckPointMessage(int argument = 0){
-        assert(transmitBufferEmpty());
-        msgBufferLayer.sendCheckPointMessage(argument);
-    }
-
-    void sendControlMessage(APControl command, int argument = 0){
-        assert(transmitBufferEmpty());
-        msgBufferLayer.sendControlMessage(command, argument);
-    }
 
     //sl15: this will be called by the load point method
     void addMessage(int procID, const T& data_in){

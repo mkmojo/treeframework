@@ -10,20 +10,6 @@ extern int numProc;
 static int procRank = 0;
 extern int procRank;
 
-enum APControl{
-    APC_SET_STATE,
-    APC_CHECKPOINT,
-    APC_WAIT,
-    APC_BARRIER,
-};
-
-
-struct ControlMessage{
-    int64_t id;
-    APControl msgType;
-    int argument;
-};
-
 enum APMessage{
     APM_NONE,
     APM_CONTROL,
