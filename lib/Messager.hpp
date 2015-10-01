@@ -1,4 +1,4 @@
-#include "MessageBuffer.hpp"
+#include "../comm/MessageBuffer.hpp"
 #include "Node.hpp"
 #include <map>
 #include <unordered_map>

@@ -33,8 +33,8 @@ class Data
         offset += data_utils::copyData(&z, src+offset, sizeof(z));
         return offset;
     }
-    
 };
+
 
 template <typename T>
 class Tester:public Messager<T>{
@@ -76,15 +76,28 @@ int main(int argc, char* argv[])
 {
     MPI_Init(&argc, &argv);
 
-    Data d1(0.3,0.4,5.2), d2(0.1,0.2,0.4);
-    // has to have the breaces to makesure destrcution is called before the finalize
+    Data d1(0.478131038, 0.083023719, 0.543180758), 
+         d2(0.396991591, 0.538753598, 0.238951817),
+         d3(0.729413654, 0.951979972, 0.21182704),
+         d4(0.711048089, 0.782658799, 0.528640619),
+         d5(0.471475992, 0.907587745, 0.907529236),
+         d6(0.237225837, 0.112680127, 0.988787918),
+         d7(0.113852497, 0.786420657, 0.270951812),
+         d8(0.022292487, 0.44344111, 0.158594184);
+    // has to have the curly breaces to makesure destrcution is called before the MPI_Finalize
     // reference: http://www.devx.com/tips/Tip/13510 
     {
         Tester<Data> tester;
 
         if(procRank == 0){
-            tester.addToProc(1, d1);
-            tester.addToProc(1, d2);
+            tester.addToProc(0, d1);
+            tester.addToProc(0, d2);
+            tester.addToProc(0, d3);
+            tester.addToProc(0, d4);
+            tester.addToProc(1, d5);
+            tester.addToProc(1, d6);
+            tester.addToProc(1, d7);
+            tester.addToProc(1, d8);
             tester.flush(); //force buffed message be sent out
             tester.barrier();
         }else{
