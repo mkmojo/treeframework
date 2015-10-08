@@ -9,30 +9,30 @@ using namespace std;
 class Data
 {
     public:
-    double x, y, z;
-    Data(int x, int y, int z): x(x), y(y), z(z){}
-    Data(double x, double y, double z): x(x), y(y), z(z){}
-    Data():x(0), y(0), z(0){};
+        double x, y, z;
+        Data(int x, int y, int z): x(x), y(y), z(z){}
+        Data(double x, double y, double z): x(x), y(y), z(z){}
+        Data():x(0), y(0), z(0){};
 
-    ~Data(){}
-    size_t getSize(){
-        return sizeof(x) * 3;
-    }
+        ~Data(){}
+        size_t getSize(){
+            return sizeof(x) * 3;
+        }
 
-    void serialize(char* dest){
-        size_t offset=0;
-        offset += data_utils::copyData(dest+offset, &x, sizeof(x));
-        offset += data_utils::copyData(dest+offset, &y, sizeof(y));
-        offset += data_utils::copyData(dest+offset, &z, sizeof(z));
-    }
+        void serialize(char* dest){
+            size_t offset=0;
+            offset += data_utils::copyData(dest+offset, &x, sizeof(x));
+            offset += data_utils::copyData(dest+offset, &y, sizeof(y));
+            offset += data_utils::copyData(dest+offset, &z, sizeof(z));
+        }
 
-    size_t unserialize(const char* src){
-        size_t offset = 0;
-        offset += data_utils::copyData(&x, src+offset, sizeof(x));
-        offset += data_utils::copyData(&y, src+offset, sizeof(y));
-        offset += data_utils::copyData(&z, src+offset, sizeof(z));
-        return offset;
-    }
+        size_t unserialize(const char* src){
+            size_t offset = 0;
+            offset += data_utils::copyData(&x, src+offset, sizeof(x));
+            offset += data_utils::copyData(&y, src+offset, sizeof(y));
+            offset += data_utils::copyData(&z, src+offset, sizeof(z));
+            return offset;
+        }
 };
 
 
