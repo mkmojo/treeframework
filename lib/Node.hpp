@@ -42,9 +42,6 @@ template<typename T> class Node{
 
     Node(T data_in, int id_in):id(id_in),parent(-1), hasData(true){ dataArr.push_back(data_in); }
 
-    //TODO
-    //Node(char* src){}
-
     ~Node(){ }
 
     inline int getCount() const { return dataArr.size(); }
@@ -65,9 +62,16 @@ template<typename T> class Node{
         parent=parent_in;
     }
 
-    //TODO
-    //char* serialize(){
-    //   set size for two arr
-    //}
+    std::string toStr(){
+        if(childset.empty())
+            return std::to_string(id);
+        else{
+            std::string res = std::to_string(id) + "["+ std::to_string(childset.size())+"]"+"( ";
+            for(auto &&it: childset){
+                res += (std::to_string(it.second) + " ");
+            }
+            return res + ")";
+        }
+    }
 };
 

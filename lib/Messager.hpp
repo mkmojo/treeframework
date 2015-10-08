@@ -109,6 +109,24 @@ template<typename T> class Messager {
         Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), localBound(0), lDependency(true){
         };
 
+        std::string localBuffer_toStr() const {
+            std::stringstream ss;
+            std::string strLocalBuffer = "";
+            for(auto it: localBuffer){
+                ss << it.x <<" " << it.y << " "<< it.z <<" "<< it.cellId <<endl;
+                strLocalBuffer += ss.str();
+                ss.str("");
+            }
+            return strLocalBuffer;
+        }
+
+        std::string localArr_toStr() const {
+            std::string res = "";
+            for(auto it: localArr){
+                res +=  (it.toStr() + " ");
+            }
+            return res + "\n";
+        }
 
         inline bool isEmpty() const { return this->localBuffer.empty() && this->localArr.empty() && this->localStruct.empty(); }
 
@@ -124,7 +142,7 @@ template<typename T> class Messager {
             else msgBuffer.addMessage(procID, data);
             count++;
         }
-        
+
         //qqiu: for debug perpose
         void addToProc(int procID, const T& data){
             if (procID == procRank) localBuffer.push_back(data);
