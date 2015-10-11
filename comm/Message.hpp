@@ -2,9 +2,9 @@
 #define MESSAGE_HPP
 
 enum MessageType{
-    MT_POINT;
-    MT_NODE;
-}
+    MT_POINT,
+    MT_NODE
+};
 
 class Message {
     public:
