@@ -25,16 +25,6 @@ class OctreePoint {
     OctreePoint(std::istringstream& ss):cellId(0){
         ss >> x >> y >> z;
     }
-
-    virtual void serialize(char* dest){
-    }
-
-    virtual size_t unserialize(const char* src){
-    }
-
-    virtual size_t getSize() const{
-    }
-
 };
 
 template<typename T> 

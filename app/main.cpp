@@ -1,5 +1,6 @@
 #include "../lib/Tree.hpp"
 #include "../lib/DataUtils.hpp"
+#include "../comm/Message.hpp"
 #include <sstream>
 
 class Data : public OctreePoint{
@@ -15,12 +16,12 @@ class Data : public OctreePoint{
         return sizeof(*this);
     }
 
-    void serialize(char* dest){
-        data_utils::copyData(dest, this, sizeof(*this));
+    size_t serialize(char* dest){
+        return data_utils::copyData(dest, this, sizeof(*this));
     }
 
     size_t unserialize(const char* src){
-        data_utils::copyData(this, src, sizeof(*this));
+        return data_utils::copyData(this, src, sizeof(*this));
     }
 };
 
