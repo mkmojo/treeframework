@@ -2,6 +2,7 @@
 #include <map>
 #include <unordered_set>
 #include <utility>
+#include "../comm/Message.hpp"
 
 struct NodeIndex{
 
@@ -20,7 +21,7 @@ struct pairHash{
     }
 };
 
-template<typename T> class Node{
+template<typename T> class Node : public Message{
     //TODO used when packed to send buffer
     int sDataArr, sRemoteChildren;
     std::vector<T> dataArr;
@@ -73,5 +74,18 @@ template<typename T> class Node{
             return res + ")";
         }
     }
+
+    size_t getNetworkSize() const{
+        return 0;
+    }
+
+    size_t serialize(char* buffer){
+        return 0;
+    }
+
+    size_t unserialize(const char* buffer){
+        return 0;
+    }
+
 };
 

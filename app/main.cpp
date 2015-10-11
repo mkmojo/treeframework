@@ -3,7 +3,7 @@
 #include "../comm/Message.hpp"
 #include <sstream>
 
-class Data : public OctreePoint{
+class Data : public OctreePoint, public Message{
     public:
     double mass;
 
@@ -12,7 +12,7 @@ class Data : public OctreePoint{
         ss >> mass;
     }
 
-    size_t getSize() const{
+    size_t getNetworkSize() const{
         return sizeof(*this);
     }
 
