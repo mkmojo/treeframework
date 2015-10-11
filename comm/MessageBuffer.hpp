@@ -1,7 +1,7 @@
 #include "CommLayer.hpp"
 
-template<typename T> class MessageBuffer{
-    std::vector<std::vector<Message<T>* > > msgQueues;
+class MessageBuffer{
+    std::vector<std::vector<Message* > > msgQueues;
 
     //APMessage checkMessage(int senderID);
     void _checkQueueForSend(int procID, SendMode mode){
@@ -30,7 +30,7 @@ template<typename T> class MessageBuffer{
         }
     }
 
-    void queueMessage(int procID, Message<T>* pMessage, SendMode mode = SM_BUFFERED){
+    void queueMessage(int procID, Message* pMessage, SendMode mode = SM_BUFFERED){
         msgQueues[procID].push_back(pMessage);
         _checkQueueForSend(procID, mode);
     }
@@ -54,8 +54,8 @@ template<typename T> class MessageBuffer{
 
 
     //sl15: this will be called by the load point method
-    void addMessage(int procID, const T& data_in){
-        queueMessage(procID, new Message<T>(data_in)); //sl15: we use default sm_buffered, but is there any other case?
+    void addMessage(int procID, Message* pmsg){
+        queueMessage(procID, pmsg); //sl15: we use default sm_buffered, but is there any other case?
     }
 
     bool transmitBufferEmpty() const{

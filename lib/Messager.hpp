@@ -19,7 +19,7 @@ template<typename T> class Messager {
     bool lDependency; //dependency flag
 
     //messages stored in a list of queues
-    MessageBuffer<T> msgBuffer;
+    MessageBuffer msgBuffer;
     std::vector<T> localBuffer;
     std::vector<int> generateOrder;
     std::vector<Node<T> > localArr;
@@ -53,13 +53,13 @@ template<typename T> class Messager {
                         size_t sdata;
                         comm->getRecvBufferAddress(&pdata, &sdata);
 
-                        std::queue<Message<T>*> msgs;
+                        std::queue<Message*> msgs;
 
                         //parse content at this level
                         int offset = 0;
                         while(offset < sdata){
                             //create empty new message
-                            Message<T>* pNewMessage = new Message<T>();
+                            Message* pNewMessage = (Message*) (new T);
 
                             // Unserialize the new message from the buffer
                             offset += pNewMessage->unserialize(
@@ -73,10 +73,10 @@ template<typename T> class Messager {
                         comm->Irecv();
 
                         while (!msgs.empty()) {
-                            Message<T>* p = msgs.front();
+                            Message* p = msgs.front();
                             msgs.pop();
                             //sl15: need to assert that the point is local
-                            localBuffer.push_back(p->Data); 
+                            localBuffer.push_back(*(T*)p); 
                             //push into the local buffer
                         }
                         break;
@@ -159,10 +159,10 @@ template<typename T> class Messager {
     }
 
     //sl15: this function seems to be unnecessary since loading and sorting are all done in run()
-    void add(const T& data) {
+    void add(T* pdata) {
         int procID = computeProcID(); //sl15: computeProcID should be implemented by the user
-        if (procID == procRank) localBuffer.push_back(data);
-        else msgBuffer.addMessage(procID, data);
+        if (procID == procRank) localBuffer.push_back(*pdata);
+        else msgBuffer.addMessage(procID, pdata);
         count++;
     }
 
@@ -241,7 +241,7 @@ template<typename T> class Messager {
         int i=0;
         for (size_t j = 0; j < vec.size(); j++) {
             for(int k=0;k<vec[j];k++){
-                result[j]+=data[i++].getSize();
+                result[j]+=data[i++].getNetworkSize();
             }
         }
         return result;
@@ -264,12 +264,12 @@ template<typename T> class Messager {
         //Allocate memory for the buffer to serialize the local data and perform serialization
         size_t dataSize = 0;
         for (auto&& it : data)
-            dataSize += it.getSize();
+            dataSize += it.getNetworkSize();
         char* sendingSerializedData = (char*) (malloc(dataSize));
         size_t total = 0;
         for (auto&& it : data) {
             it.serialize(sendingSerializedData + total);
-            total += it.getSize();
+            total += it.getNetworkSize();
         }
 
         //clear current data
@@ -285,7 +285,7 @@ template<typename T> class Messager {
         while (total < returnSize) {
             T* d = new T;
             d->unserialize(retrievedSerializedData + total);
-            total += d->getSize();
+            total += d->getNetworkSize();
             data.push_back(*d);
         }
 
