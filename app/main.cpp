@@ -5,24 +5,24 @@
 
 class Data : public OctreePoint, public Message{
     public:
-    double mass;
+        double mass;
 
-    Data():mass(0.0){}
-    Data(std::istringstream& ss):OctreePoint(ss){
-        ss >> mass;
-    }
+        Data():mass(0.0){}
+        Data(std::istringstream& ss):OctreePoint(ss){
+            ss >> mass;
+        }
 
-    size_t getNetworkSize() const{
-        return sizeof(*this);
-    }
+        size_t getNetworkSize() const{
+            return sizeof(*this);
+        }
 
-    size_t serialize(char* dest){
-        return data_utils::copyData(dest, this, sizeof(*this));
-    }
+        size_t serialize(char* dest){
+            return data_utils::copyData(dest, this, sizeof(*this));
+        }
 
-    size_t unserialize(const char* src){
-        return data_utils::copyData(this, src, sizeof(*this));
-    }
+        size_t unserialize(const char* src){
+            return data_utils::copyData(this, src, sizeof(*this));
+        }
 };
 
 NodeSet MyGenerate(const Node<Data>& mynode){
@@ -75,12 +75,12 @@ int main(int argc, char *argv[]){
     MyTree->build(argv[1]);
     MyTree->print(std::cout);
     /*
-    MyTree.compute();
-    std::cout << "calling clear" << std::endl;
-    MyTree.clear();
-    std::cout << "finished clear" << std::endl;
-    std::cout << MyTree.getLinearTree() << std::endl;
-    std::cout << MyTree.getLocalTree() << std::endl;
-    */
+       MyTree.compute();
+       std::cout << "calling clear" << std::endl;
+       MyTree.clear();
+       std::cout << "finished clear" << std::endl;
+       std::cout << MyTree.getLinearTree() << std::endl;
+       std::cout << MyTree.getLocalTree() << std::endl;
+       */
     MPI_Finalize();
 }
