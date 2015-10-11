@@ -1,6 +1,11 @@
 #ifndef MESSAGE_HPP
 #define MESSAGE_HPP
 
+enum MessageType{
+    MT_POINT;
+    MT_NODE;
+}
+
 class Message {
     public:
         virtual size_t getNetworkSize() const = 0;
