@@ -46,7 +46,7 @@ template<typename T> class MessageBuffer{
     }
 
     public:
-    CommLayer<T> msgBufferLayer;
+    CommLayer msgBufferLayer;
     MessageBuffer() : msgQueues(numProc){ 
         for (auto i = 0; i < msgQueues.size(); i++)
             msgQueues[i].reserve(MAX_MESSAGES);

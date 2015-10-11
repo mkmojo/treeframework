@@ -38,7 +38,7 @@ struct OctreePoint {
 
 template<typename T> 
 class Tree: public Messager<T> {
-    CommLayer<T> *comm; //reference variable for the ComLayer defined in parent class
+    CommLayer *comm; //reference variable for the ComLayer defined in parent class
     map<int ,NodeIndex> parentIndexMap;
 
     std::vector<long> boundary_array; //used to save borrowed nodes

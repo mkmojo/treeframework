@@ -7,7 +7,7 @@
 #include <cstring>
 #include <vector>
 
-template<typename T> class CommLayer{
+class CommLayer{
     uint64_t m_msgID;
     uint8_t* m_rxBuffer;
     MPI_Request m_request;
