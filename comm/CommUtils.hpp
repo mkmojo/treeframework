@@ -12,7 +12,6 @@ extern int procRank;
 
 enum APMessage{
     APM_NONE,
-    APM_CONTROL,
     APM_BUFFERED,
 };
 
