@@ -1,3 +1,5 @@
+#ifndef COMMLAYER_HPP
+#define COMMLAYER_HPP
 #include "Message.hpp"
 #include "CommUtils.hpp"
 #include <mpi.h>
@@ -204,3 +206,4 @@ public:
         //logger(4) << "left receiveBroadcast\n";
     }
 };
+#endif
