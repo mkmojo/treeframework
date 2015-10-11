@@ -208,7 +208,7 @@ class Tree: public Messager<T> {
         std::vector<int> processorBucketSizes = getLengthsArray(this->localBuffer, splitters);
 
         //distribute the local buffer based on the lengths assigned for each processors
-        comm->redistribute(this->localBuffer, processorBucketSizes);
+        this->redistribute(this->localBuffer, processorBucketSizes);
 
         //sort the data (not needed perhaps)
         std::sort(this->localBuffer.begin(), this->localBuffer.end(), cmpPoint);

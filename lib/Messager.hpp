@@ -1,4 +1,5 @@
 #include "../comm/MessageBuffer.hpp"
+#include "../comm/CommLayer.hpp"
 #include "Node.hpp"
 #include <map>
 #include <unordered_map>
@@ -26,6 +27,8 @@ template<typename T> class Messager {
     std::unordered_map<long, int> nodeTable;
     std::unordered_map<int, unordered_set<int> > nodesToSend, nodesToReceive;
 
+    CommLayer<T> *comm = NULL;
+
     //> user implementation 
     predicate_functional user_predicate;
     generate_functional user_generate;
@@ -42,13 +45,13 @@ template<typename T> class Messager {
     virtual size_t _pumpNetwork() {
         for (size_t count = 0;; count++) {
             int senderID;
-            APMessage msg = msgBuffer.msgBufferLayer.checkMessage(senderID);
+            APMessage msg = comm->checkMessage(senderID);
             switch (msg) {
                 case APM_BUFFERED:
                     {
                         char* pdata;
                         size_t sdata;
-                        msgBuffer.msgBufferLayer.getRecvBufferAddress(&pdata, &sdata);
+                        comm->getRecvBufferAddress(&pdata, &sdata);
 
                         std::queue<Message<T>*> msgs;
 
@@ -67,7 +70,7 @@ template<typename T> class Messager {
                             msgs.push(pNewMessage);
                         }
 
-                        msgBuffer.msgBufferLayer.Irecv();
+                        comm->Irecv();
 
                         while (!msgs.empty()) {
                             Message<T>* p = msgs.front();
@@ -126,6 +129,7 @@ template<typename T> class Messager {
     public:
     //maxLevel needs to be read in from user input in loadPoint function
     Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), localBound(0), lDependency(true){
+        comm = &(this->msgBuffer.msgBufferLayer);
     };
 
     std::string localBuffer_toStr() const {
@@ -250,7 +254,7 @@ template<typename T> class Messager {
 
         //exchange among processors how much data it'll be receiving from other processors
         int* allLengths;
-        gatherAll(&lengths[0], lengths.size(), allLengths);
+        comm->gatherAll(&lengths[0], lengths.size(), allLengths);
 
         //setup displacement and length arrays (in byte size) for exchanging data among processors
         std::vector<int> rLengths = getRecvLengths(allLengths);
