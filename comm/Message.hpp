@@ -1,33 +1,36 @@
+#ifndef MESSAGE_HPP
+#define MESSAGE_HPP
 template<typename T> class Messager;
 
 template<typename T> class Message {
-public:
-    T Data; //accessible through the public interface
+    public:
+        T Data; //accessible through the public interface
 
-    Message(){}
-    Message(const T& DataIn) : Data(DataIn){}
+        Message(){}
+        Message(const T& DataIn) : Data(DataIn){}
 
-    //allow copy construction
-    Message(const Message<T>& rhs){
-        Data = rhs.getData();
-    }
+        //allow copy construction
+        Message(const Message<T>& rhs){
+            Data = rhs.getData();
+        }
 
-    size_t getNetworkSize() const{
-    	T a;
-        return a.getSize(); //sizeof(uint8_t) + sizeof(T);
-    }
+        size_t getNetworkSize() const{
+            T a;
+            return a.getSize(); //sizeof(uint8_t) + sizeof(T);
+        }
 
-    size_t serialize(char* buffer){
-        size_t offset = 0;
-        Data.serialize(buffer + offset);
-        offset += Data.getSize();
-        return offset;
-    }
-    
-    size_t unserialize(const char* buffer){
-        size_t offset = 0;
-        Data.unserialize(buffer + offset);
-        offset += Data.getSize();
-        return offset;
-    }
+        size_t serialize(char* buffer){
+            size_t offset = 0;
+            Data.serialize(buffer + offset);
+            offset += Data.getSize();
+            return offset;
+        }
+
+        size_t unserialize(const char* buffer){
+            size_t offset = 0;
+            Data.unserialize(buffer + offset);
+            offset += Data.getSize();
+            return offset;
+        }
 };
+#endif
