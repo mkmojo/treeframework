@@ -2,7 +2,8 @@
 #include "../lib/DataUtils.hpp"
 #include <sstream>
 
-struct Data : OctreePoint{
+class Data : public OctreePoint{
+    public:
     double mass;
 
     Data():mass(0.0){}
@@ -21,7 +22,6 @@ struct Data : OctreePoint{
     size_t unserialize(const char* src){
         data_utils::copyData(this, src, sizeof(*this));
     }
-
 };
 
 NodeSet MyGenerate(const Node<Data>& mynode){

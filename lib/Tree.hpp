@@ -15,7 +15,8 @@
 
 using namespace std;
 
-struct OctreePoint {
+class OctreePoint {
+    public:
     double x,y,z;
     long cellId;
 
