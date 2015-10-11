@@ -67,41 +67,26 @@ public:
         MPI_Send(msg, size, MPI_BYTE, destID, APM_BUFFERED, MPI_COMM_WORLD); 
     }
 
-    void receiveBufferedMessage(std::queue<Message<T>*>& outmessages){
-        assert(outmessages.empty());
+    void getRecvBufferAddress(char** outaddress, size_t *outlength){
         int flag;
         MPI_Status status;
         MPI_Test(&m_request, &flag, &status);
         assert(flag);
         assert((APMessage)status.MPI_TAG == APM_BUFFERED);
 
+        *outaddress = (char*)m_rxBuffer;
+
         int size;
         MPI_Get_count(&status, MPI_BYTE, &size);
+        *outlength = size;
+    }
 
-        int offset = 0;
-        while(offset < size){
-            //create empty new message
-            Message<T>* pNewMessage = new Message<T>();
-
-            // Unserialize the new message from the buffer
-            offset += pNewMessage->unserialize((char*)m_rxBuffer + offset);
-
-            // Construted message will be deleted in the 
-            // LocalOctTree calling function.
-            outmessages.push(pNewMessage);
-        }
-        assert(offset == size);
-
+    void Irecv(){
         assert(m_request == MPI_REQUEST_NULL);
         MPI_Irecv(m_rxBuffer, RX_BUFSIZE, 
                 MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, 
                 &m_request);
-
-        m_rxPackets++;
-        m_rxMessages += outmessages.size();
-        m_rxBytes += size;
     }
-
 
 
     std::vector<long unsigned> reduce(
@@ -175,16 +160,16 @@ public:
     }
 
     int gatherAll(long* send, int sendSize, long* &recv) {
-		int size = sendSize * numProc;
-		recv = (long*) malloc(size * sizeof(long));
+        int size = sendSize * numProc;
+        recv = (long*) malloc(size * sizeof(long));
         //logger(4) << "entering gather\n";
         MPI_Allgather(send, sendSize, MPI_LONG, recv, sendSize, MPI_LONG, MPI_COMM_WORLD);
         return size;
     }
 
     int gatherAll(int* send, int sendSize, int* &recv) {
-		int size = sendSize * numProc;
-		recv = (int*) malloc(size * sizeof(int));
+        int size = sendSize * numProc;
+        recv = (int*) malloc(size * sizeof(int));
         //logger(4) << "entering gather\n";
         MPI_Allgather(send, sendSize, MPI_INT, recv, sendSize, MPI_INT, MPI_COMM_WORLD);
         return size;
@@ -220,88 +205,88 @@ public:
     }
 
     size_t redistribute(char* send, int* sendCounts, int* sendDisplacements,
-    		char* &recv, int* recvCount, int* recvDisplacements){
-    	int total = 0;
-		for (size_t i = 0; i < numProc; i++) {
-			total += recvCount[i];
-		}
-		std::size_t size = total * sizeof(char);
-		recv = (char*) malloc(size);
-    	MPI_Alltoallv(send, sendCounts, sendDisplacements, MPI_BYTE, recv, recvCount, recvDisplacements, MPI_BYTE, MPI_COMM_WORLD);
-    	return size;
+            char* &recv, int* recvCount, int* recvDisplacements){
+        int total = 0;
+        for (size_t i = 0; i < numProc; i++) {
+            total += recvCount[i];
+        }
+        std::size_t size = total * sizeof(char);
+        recv = (char*) malloc(size);
+        MPI_Alltoallv(send, sendCounts, sendDisplacements, MPI_BYTE, recv, recvCount, recvDisplacements, MPI_BYTE, MPI_COMM_WORLD);
+        return size;
     }
 
-	void redistribute(std::vector<T> &data, std::vector<int> processorBucketSizes) {
-		//get the size in bytes for data each processor is getting
-		std::vector<int> lengths = scale(data, processorBucketSizes);
+    void redistribute(std::vector<T> &data, std::vector<int> processorBucketSizes) {
+        //get the size in bytes for data each processor is getting
+        std::vector<int> lengths = scale(data, processorBucketSizes);
 
-		//exchange among processors how much data it'll be receiving from other processors
-		int* allLengths;
-		gatherAll(&lengths[0], lengths.size(), allLengths);
+        //exchange among processors how much data it'll be receiving from other processors
+        int* allLengths;
+        gatherAll(&lengths[0], lengths.size(), allLengths);
 
-		//setup displacement and length arrays (in byte size) for exchanging data among processors
-		std::vector<int> rLengths = getRecvLengths(allLengths);
-		std::vector<int> starts = getStartsArray(lengths);
-		std::vector<int> rStarts = getStartsArray(rLengths);
+        //setup displacement and length arrays (in byte size) for exchanging data among processors
+        std::vector<int> rLengths = getRecvLengths(allLengths);
+        std::vector<int> starts = getStartsArray(lengths);
+        std::vector<int> rStarts = getStartsArray(rLengths);
 
-		//Allocate memory for the buffer to serialize the local data and perform serialization
-		size_t dataSize = 0;
-		for (auto&& it : data)
-			dataSize += it.getSize();
-		char* sendingSerializedData = (char*) (malloc(dataSize));
-		size_t total = 0;
-		for (auto&& it : data) {
-			it.serialize(sendingSerializedData + total);
-			total += it.getSize();
-		}
+        //Allocate memory for the buffer to serialize the local data and perform serialization
+        size_t dataSize = 0;
+        for (auto&& it : data)
+            dataSize += it.getSize();
+        char* sendingSerializedData = (char*) (malloc(dataSize));
+        size_t total = 0;
+        for (auto&& it : data) {
+            it.serialize(sendingSerializedData + total);
+            total += it.getSize();
+        }
 
-		//clear current data
-		data.clear();
+        //clear current data
+        data.clear();
 
-		//exchange data
-		char* retrievedSerializedData;
-		size_t returnSize = redistribute(sendingSerializedData, &lengths[0],
-				&starts[0], retrievedSerializedData, &rLengths[0], &rStarts[0]);
+        //exchange data
+        char* retrievedSerializedData;
+        size_t returnSize = redistribute(sendingSerializedData, &lengths[0],
+                &starts[0], retrievedSerializedData, &rLengths[0], &rStarts[0]);
 
-		//deserialize the raw data back to T data structures and add to the data array
-		total = 0;
-		while (total < returnSize) {
-			T* d = new T;
-			d->unserialize(retrievedSerializedData + total);
-			total += d->getSize();
-			data.push_back(*d);
-		}
+        //deserialize the raw data back to T data structures and add to the data array
+        total = 0;
+        while (total < returnSize) {
+            T* d = new T;
+            d->unserialize(retrievedSerializedData + total);
+            total += d->getSize();
+            data.push_back(*d);
+        }
 
-		free(sendingSerializedData);
-		free(retrievedSerializedData);
-	}
+        free(sendingSerializedData);
+        free(retrievedSerializedData);
+    }
 
 private:
-	std::vector<int> getStartsArray(const std::vector<int> &lengths) {
-		std::vector<int> starts(numProc, 0);
-		for (size_t i = 1; i < lengths.size(); i++) {
-			starts[i] = starts[i - 1] + lengths[i - 1];
-		}
-		return starts;
-	}
+    std::vector<int> getStartsArray(const std::vector<int> &lengths) {
+        std::vector<int> starts(numProc, 0);
+        for (size_t i = 1; i < lengths.size(); i++) {
+            starts[i] = starts[i - 1] + lengths[i - 1];
+        }
+        return starts;
+    }
 
-	std::vector<int> getRecvLengths(const int* allLengths) {
-		std::vector<int> rLengths(numProc, 0);
-		int step = numProc;
-		for (int i = 0; i < numProc; i++) {
-			rLengths[i] = allLengths[step * i + procRank];
-		}
-		return rLengths;
-	}
+    std::vector<int> getRecvLengths(const int* allLengths) {
+        std::vector<int> rLengths(numProc, 0);
+        int step = numProc;
+        for (int i = 0; i < numProc; i++) {
+            rLengths[i] = allLengths[step * i + procRank];
+        }
+        return rLengths;
+    }
 
-	std::vector<int> scale(const std::vector<T> &data, std::vector<int>& vec) {
-		std::vector<int> result(vec.size(),0);
-		int i=0;
-		for (size_t j = 0; j < vec.size(); j++) {
-			for(int k=0;k<vec[j];k++){
-				result[j]+=data[i++].getSize();
-			}
-		}
-		return result;
-	}
+    std::vector<int> scale(const std::vector<T> &data, std::vector<int>& vec) {
+        std::vector<int> result(vec.size(),0);
+        int i=0;
+        for (size_t j = 0; j < vec.size(); j++) {
+            for(int k=0;k<vec[j];k++){
+                result[j]+=data[i++].getSize();
+            }
+        }
+        return result;
+    }
 };
