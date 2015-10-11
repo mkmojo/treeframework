@@ -10,24 +10,6 @@ struct Data : OctreePoint{
         ss >> mass;
     }
 
-    void save(void* dest){ //sl15: void pointer?
-    	data_utils::copyData(dest, &mass, sizeof(mass));
-    }
-
-    //copy data from incoming buffer to Point
-    //roll things into struct
-    size_t load(const void* src){
-    	return data_utils::copyData(&mass, src, sizeof(mass));
-    }
-
-    size_t size(){
-    	return sizeof(mass);
-    }
-
-    void free(){
-    	//nothing to do
-    }
-
     size_t getSize() const{
         return sizeof(*this);
     }
