@@ -237,7 +237,7 @@ class Tree: public Messager<T> {
                         datastart = true;
                         continue;
                     }
-                } else this->add(T(iss));
+                } else this->add(new T(iss));
             }
         }
     }
