@@ -1,3 +1,5 @@
+#ifndef COMMUTILS_HPP
+#define COMMUTILS_HPP
 #include <vector>
 #include <queue>
 #include <iostream>
@@ -23,3 +25,4 @@ enum REDUCE_OP{
 enum SendMode{
     SM_BUFFERED, SM_IMMEDIATE
 };
+#endif
