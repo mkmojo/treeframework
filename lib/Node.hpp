@@ -43,6 +43,8 @@ template<typename T> class Node : public Message{
 
     Node(T data_in, int id_in):id(id_in),parent(-1), hasData(true){ dataArr.push_back(data_in); }
 
+    Node(){ }
+
     ~Node(){ }
 
     inline int getCount() const { return dataArr.size(); }
