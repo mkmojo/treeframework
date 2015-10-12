@@ -58,9 +58,24 @@ template<typename T> class Messager {
                         //parse content at this level
                         int offset = 0;
                         while(offset < sdata){
-                            //create empty new message
-                            Message* pNewMessage = (Message*) (new T);
+                            MessageType type = Message::readMessageType(pdata + offset);
 
+                            //create empty new message
+                            Message* pNewMessage ;
+                            switch(type)
+                            {
+                                case MT_POINT:
+                                    pNewMessage = (Message*) (new T);
+                                    break;
+                                case MT_NODE:
+                                    pNewMessage = (Message*) (new Node<T>);
+                                    break;
+                                default:
+                                    cout << "DEBUG " + to_string(procRank) + " " + "message type not defined. " 
+                                        + "got: " + to_string(type) + " expcect: " + to_string(MT_POINT) + "\n"; 
+                                    assert(false);
+                                    break;
+                            }
                             // Unserialize the new message from the buffer
                             offset += pNewMessage->unserialize(
                                     pdata + offset);
@@ -103,18 +118,18 @@ template<typename T> class Messager {
        virtual void _assemble() = 0;
        */
 
-    bool getTopologicalSortingOrderHelper(int cur, std::unordered_set<int> visited, std::unordered_set<int> done){
-        visited.insert(cur);
-        bool hasCycle = false;
-        for(auto i : localStruct[cur].genset){
-            if(visited.find(i) == visited.end()) 
-                hasCycle = hasCycle || getTopologicalSortingOrderHelper(i, visited, done);
-            else if(done.find(i) == done.end()) return true;
-        }
-        generateOrder.push_back(cur);
-        done.insert(cur);
-        return hasCycle;
-    }
+            bool getTopologicalSortingOrderHelper(int cur, std::unordered_set<int> visited, std::unordered_set<int> done){
+                visited.insert(cur);
+                bool hasCycle = false;
+                for(auto i : localStruct[cur].genset){
+                    if(visited.find(i) == visited.end()) 
+                        hasCycle = hasCycle || getTopologicalSortingOrderHelper(i, visited, done);
+                    else if(done.find(i) == done.end()) return true;
+                }
+                generateOrder.push_back(cur);
+                done.insert(cur);
+                return hasCycle;
+            }
 
     bool getTopologicalSortingOrder(){
         std::unordered_set<int> visited, done;
