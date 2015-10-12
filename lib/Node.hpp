@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include <utility>
 #include "../comm/Message.hpp"
+#include "../lib/DataUtils.hpp"
 
 struct NodeIndex{
 
@@ -39,6 +40,8 @@ template<typename T> class Node : public Message{
     inline void _insert(T data_in){ dataArr.push_back(data_in); }
 
     public:
+    MessageType mtype = MT_NODE;
+
     Node(long id_in):id(id_in), hasData(false){ }
 
     Node(T data_in, int id_in):id(id_in),parent(-1), hasData(true){ dataArr.push_back(data_in); }
@@ -78,16 +81,21 @@ template<typename T> class Node : public Message{
     }
 
     size_t getNetworkSize() const{
-        return 0;
+        return sizeof(*this) + sizeof(MT_POINT);
     }
 
-    size_t serialize(char* buffer){
-        return 0;
+    size_t serialize(char* dest){
+        size_t offset = 0;
+        offset += data_utils::copyData(dest, &mtype, sizeof(mtype));
+        offset += data_utils::copyData(dest+offset, this, sizeof(*this));
+        return offset;
     }
 
-    size_t unserialize(const char* buffer){
-        return 0;
+    size_t unserialize(const char* src){
+        size_t offset = 0;
+        offset += data_utils::copyData(&mtype, src+offset, sizeof(mtype));
+        offset += data_utils::copyData(this, src+offset, sizeof(*this));
+        return offset;
     }
-
 };
 
