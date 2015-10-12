@@ -6,6 +6,7 @@
 class Data : public OctreePoint, public Message{
     public:
         double mass;
+        MessageType mtype = MT_POINT;
 
         Data():mass(0.0){}
         Data(std::istringstream& ss):OctreePoint(ss){
@@ -13,15 +14,21 @@ class Data : public OctreePoint, public Message{
         }
 
         size_t getNetworkSize() const{
-            return sizeof(*this);
+            return sizeof(*this) + sizeof(MT_POINT);
         }
 
         size_t serialize(char* dest){
-            return data_utils::copyData(dest, this, sizeof(*this));
+            size_t offset = 0;
+            offset += data_utils::copyData(dest, &mtype, sizeof(mtype));
+            offset += data_utils::copyData(dest+offset, this, sizeof(*this));
+            return offset;
         }
 
         size_t unserialize(const char* src){
-            return data_utils::copyData(this, src, sizeof(*this));
+            size_t offset = 0;
+            offset += data_utils::copyData(&mtype, src+offset, sizeof(mtype));
+            offset += data_utils::copyData(this, src+offset, sizeof(*this));
+            return offset;
         }
 };
 
