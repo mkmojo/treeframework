@@ -8,6 +8,10 @@ enum MessageType{
 
 class Message {
     public:
+        static MessageType readMessageType(char* buffer){
+            return (MessageType)*(uint8_t*)buffer;
+        }
+
         virtual size_t getNetworkSize() const = 0;
 
         virtual size_t serialize(char* buffer) = 0;
