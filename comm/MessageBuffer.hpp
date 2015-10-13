@@ -1,4 +1,8 @@
+#ifndef MESSAGEBUFFER_HPP
+#define MESSAGEBUFFER_HPP
+
 #include "CommLayer.hpp"
+#include <iostream>
 
 class MessageBuffer{
     std::vector<std::vector<Message* > > msgQueues;
@@ -7,19 +11,26 @@ class MessageBuffer{
     void _checkQueueForSend(int procID, SendMode mode){
         size_t numMsgs = msgQueues[procID].size();
         // check if message should be sent
+        size_t offset = 0;
+        size_t totalSize = 0;
         if((numMsgs == MAX_MESSAGES || mode == SM_IMMEDIATE) && numMsgs > 0){
             // Calculate the total size of the message
             size_t s=msgQueues[procID][0]->getNetworkSize();
-            size_t totalSize = s*numMsgs;
-            //for(auto i = 0; i < numMsgs; i++) totalSize += msgQueues[procID][i]->getNetworkSize();
+            //size_t totalSize = s*numMsgs;
+            for(auto i = 0; i < numMsgs; i++)
+                totalSize += msgQueues[procID][i]->getNetworkSize();
 
-            //Generate a buffer for all themessages;
+            //Generate a buffer for all the messages;
             char* buffer = new char[totalSize];
 
             //Copy the messages into the buffer
-            for(auto i = 0; i < numMsgs; i++) msgQueues[procID][i]->serialize(buffer + (i*s));
+            for(auto i = 0; i < numMsgs; i++) {
+                msgQueues[procID][i]->serialize(buffer + offset);
+                offset += msgQueues[procID][i]->getNetworkSize();
+            }
 
             msgBufferLayer.sendBufferedMessage(procID, buffer, totalSize);
+            std::cout << "DEBUG: " + std::to_string(procRank) +  " called Message sent\n";
 
             delete [] buffer;
             _clearQueue(procID);
@@ -36,12 +47,12 @@ class MessageBuffer{
     }
 
     void _clearQueue(int procID){
-        size_t numMsgs = msgQueues[procID].size();
-        for(auto i = 0; i < numMsgs; i++){
-            // Delete the messages
-            delete msgQueues[procID][i];
-            msgQueues[procID][i] = 0;
-        }
+        //size_t numMsgs = msgQueues[procID].size();
+        //for(auto i = 0; i < numMsgs; i++){
+        //    // Delete the messages
+        //    delete msgQueues[procID][i];
+        //    msgQueues[procID][i] = 0;
+        //}
         msgQueues[procID].clear();
     }
 
@@ -80,3 +91,4 @@ class MessageBuffer{
     }
 
 };
+#endif
