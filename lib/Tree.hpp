@@ -399,15 +399,6 @@ class Tree: public Messager<T> {
         }
     }
 
-    void addNodeToProc(int procID, Node<T>* pNode){
-        //cout << "DEBUG: " + to_string(procRank) + " inside addNodeToProc\n";
-        if(procID == procRank){
-            cout << "DEBUG: " + to_string(procRank) + " do not add Node to self\n"; 
-        }else{
-            cout << "DEBUG: " + to_string(procRank) + " send Node out" + " to " + to_string(procID) + "\n";
-            this->msgBuffer.addMessage(procID, pNode);
-        }
-    }
     
     //send nodes between processors 
     void _DEBUG_test_node_send() {
@@ -415,12 +406,12 @@ class Tree: public Messager<T> {
         //insert 10 elements into local array
         this->localArr.clear();
         if(procRank == 0){
-            for(int i=0; i<10 ;i++){
-                this->localArr.push_back(Node<T>());
+            for(size_t i=0; i<10 ;i++){
+                this->localArr.push_back(Node<T>(long(i%4)));
             }
             for(size_t i=0; i <  this->localArr.size(); i++){
                 //send to the last processor
-                addNodeToProc(numProc - 1, &(this->localArr[i]));
+                this->addNodeToProc(numProc - 1, &(this->localArr[i]));
             }
             this->msgBuffer.flush();
             comm->barrier();

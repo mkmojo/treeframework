@@ -67,8 +67,8 @@ template<typename T> class Messager {
                                     break;
                                 case MT_NODE:
                                     pNewMessage = (Message*) (new Node<T>);
-                                    cout << "DEBUG " + to_string(procRank) + " " + 
-                                        " got NODE: " + to_string(MT_NODE) + "\n";
+                                    //cout << "DEBUG " + to_string(procRank) + " " + 
+                                    //    " got NODE type: " + to_string(MT_NODE) + "\n";
                                     break;
                                 default:
                                     cout << "DEBUG " + to_string(procRank) + " " + 
@@ -84,11 +84,19 @@ template<typename T> class Messager {
                         }
 
                         comm->Irecv();
+
                         while (!msgs.empty()) {
                             Message* p = msgs.front();
                             msgs.pop();
                             if(p->getType() == MT_POINT)
                                 localBuffer.push_back(*(T*)p); 
+                            else if(p->getType() == MT_NODE){
+                                //receive content in localArr
+                                localArr.push_back(*(Node<T>*)p);
+                                cout << "DEBUG: " + to_string(procRank) + 
+                                    " localArrSize is "+ to_string(localArr.size()) + ". "
+                                    + localArr.back().toStr() + "\n";
+                            }
                         }
                         break;
                     }
@@ -170,6 +178,16 @@ template<typename T> class Messager {
     void addToProc(int procID, T* pdata){
         if (procID == procRank) localBuffer.push_back(*pdata);
         else msgBuffer.addMessage(procID, pdata);
+    }
+
+    void addNodeToProc(int procID, Node<T>* pNode){
+        //cout << "DEBUG: " + to_string(procRank) + " inside addNodeToProc\n";
+        if(procID == procRank){
+            cout << "DEBUG: " + to_string(procRank) + " do not add Node to self\n"; 
+        }else{
+            //cout << "DEBUG: " + to_string(procRank) + " send Node out" + " to " + to_string(procID) + "\n";
+            this->msgBuffer.addMessage(procID, pNode);
+        }
     }
 
     void assign(generate_functional generate_in
