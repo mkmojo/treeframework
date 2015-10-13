@@ -80,8 +80,12 @@ template<typename T> class Node : public Message{
         }
     }
 
+    MessageType getType() const {
+        return mtype;
+    }
+
     size_t getNetworkSize() const{
-        return sizeof(*this) + sizeof(MT_POINT);
+        return sizeof(*this) + sizeof(mtype);
     }
 
     size_t serialize(char* dest){
