@@ -70,7 +70,7 @@ template<typename T> class Node : public Message{
 
     std::string toStr(){
         if(childset.empty())
-            return std::to_string(id);
+            return std::to_string(id) + "[empty]";
         else{
             std::string res = std::to_string(id) + "["+ std::to_string(childset.size())+"]"+"( ";
             for(auto &&it: childset){
@@ -102,4 +102,3 @@ template<typename T> class Node : public Message{
         return offset;
     }
 };
-
