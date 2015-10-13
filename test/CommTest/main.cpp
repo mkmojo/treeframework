@@ -94,10 +94,10 @@ int main(int argc, char* argv[])
             tester.addToProc(0, &d2);
             tester.addToProc(0, &d3);
             tester.addToProc(0, &d4);
-            tester.addToProc(1, &d5);
-            tester.addToProc(1, &d6);
-            tester.addToProc(1, &d7);
-            tester.addToProc(1, &d8);
+            tester.addToProc(numProc - 1, &d5);
+            tester.addToProc(numProc - 1, &d6);
+            tester.addToProc(numProc - 1, &d7);
+            tester.addToProc(numProc - 1, &d8);
             tester.flush(); //force buffed message be sent out
             tester.barrier();
         }else{
@@ -107,6 +107,7 @@ int main(int argc, char* argv[])
             cout << procRank + ": " + tester.dumpLocalBuffer();
         }
     }
+
     MPI_Finalize();
     return 0;
 }
