@@ -81,17 +81,12 @@ int MyLocate(const Data& d, int depth){
 
 int main(int argc, char *argv[]){
     MPI_Init(&argc, &argv);
-    Tree<Data> *MyTree=new Tree<Data>();
-    MyTree->assign(MyGenerate, MyPredicate, MyCombine, MyEvolve, MyLocate);
-    MyTree->build(argv[1]);
-    MyTree->print(std::cout);
-    /*
-       MyTree.compute();
-       std::cout << "calling clear" << std::endl;
-       MyTree.clear();
-       std::cout << "finished clear" << std::endl;
-       std::cout << MyTree.getLinearTree() << std::endl;
-       std::cout << MyTree.getLocalTree() << std::endl;
-       */
+    {
+        Tree<Data> MyTree;
+        MyTree.assign(MyGenerate, MyPredicate, MyCombine, MyEvolve, MyLocate);
+        MyTree.build(argv[1]);
+        MyTree.print(std::cout);
+        MyTree.compute();
+    }
     MPI_Finalize();
 }
