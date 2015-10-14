@@ -16,7 +16,6 @@ class MessageBuffer{
         if((numMsgs == MAX_MESSAGES || mode == SM_IMMEDIATE) && numMsgs > 0){
             // Calculate the total size of the message
             size_t s=msgQueues[procID][0]->getNetworkSize();
-            //size_t totalSize = s*numMsgs;
             for(auto i = 0; i < numMsgs; i++)
                 totalSize += msgQueues[procID][i]->getNetworkSize();
 
@@ -33,27 +32,9 @@ class MessageBuffer{
             std::cout << "DEBUG: " + std::to_string(procRank) +  " called Message sent\n";
 
             delete [] buffer;
-            _clearQueue(procID);
-
-            msgBufferLayer.txPackets++;
-            msgBufferLayer.txMessages += numMsgs;
-            msgBufferLayer.txBytes += totalSize;
+            msgQueues[procID].clear();
+            //TODO MPI_Wait to complete send/recv 
         }
-    }
-
-    void queueMessage(int procID, Message* pMessage, SendMode mode = SM_BUFFERED){
-        msgQueues[procID].push_back(pMessage);
-        _checkQueueForSend(procID, mode);
-    }
-
-    void _clearQueue(int procID){
-        //size_t numMsgs = msgQueues[procID].size();
-        //for(auto i = 0; i < numMsgs; i++){
-        //    // Delete the messages
-        //    delete msgQueues[procID][i];
-        //    msgQueues[procID][i] = 0;
-        //}
-        msgQueues[procID].clear();
     }
 
     public:
@@ -63,10 +44,9 @@ class MessageBuffer{
             msgQueues[i].reserve(MAX_MESSAGES);
     }
 
-
-    //sl15: this will be called by the load point method
-    void addMessage(int procID, Message* pmsg){
-        queueMessage(procID, pmsg); //sl15: we use default sm_buffered, but is there any other case?
+    void addMessage(int procID, Message* pMessage, SendMode mode = SM_BUFFERED){
+        msgQueues[procID].push_back(pMessage);
+        _checkQueueForSend(procID, mode);
     }
 
     bool transmitBufferEmpty() const{

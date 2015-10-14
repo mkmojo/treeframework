@@ -36,11 +36,7 @@ template<typename T> class Messager {
     evolve_functional user_evolve;
     locate_functional user_locate;
 
-    unsigned numReachedCheckpoint, checkpointSum, maxLevel;
-
-    inline bool _checkpointReached() const {
-        return numReachedCheckpoint == numProc;
-    }
+    unsigned  maxLevel;
 
     virtual size_t _pumpNetwork() {
         for (size_t count = 0;; count++) {
@@ -136,10 +132,11 @@ template<typename T> class Messager {
 
     public:
     //maxLevel needs to be read in from user input in loadPoint function
-    Messager() : numReachedCheckpoint(0), checkpointSum(0), maxLevel(0), localBound(0), lDependency(true){
+    Messager() : maxLevel(0), localBound(0), lDependency(false){
         comm = &(this->msgBuffer.msgBufferLayer);
     };
 
+    //TODO DEBUG, remove later
     std::string localBuffer_toStr() const {
         std::stringstream ss;
         std::string strLocalBuffer = "";
@@ -151,6 +148,7 @@ template<typename T> class Messager {
         return strLocalBuffer;
     }
 
+    //TODO DEBUG, remove later
     std::string localArr_toStr() const {
         std::string res = "";
         for(auto it: localArr){
@@ -175,19 +173,15 @@ template<typename T> class Messager {
     }
 
     //qqiu: for debug perpose
+    //TODO: DEBUG remove later
     void addToProc(int procID, T* pdata){
         if (procID == procRank) localBuffer.push_back(*pdata);
         else msgBuffer.addMessage(procID, pdata);
     }
 
     void addNodeToProc(int procID, Node<T>* pNode){
-        //cout << "DEBUG: " + to_string(procRank) + " inside addNodeToProc\n";
-        if(procID == procRank){
-            cout << "DEBUG: " + to_string(procRank) + " do not add Node to self\n"; 
-        }else{
-            //cout << "DEBUG: " + to_string(procRank) + " send Node out" + " to " + to_string(procID) + "\n";
-            this->msgBuffer.addMessage(procID, pNode);
-        }
+        if(procID == procRank) return; 
+        this->msgBuffer.addMessage(procID, pNode);
     }
 
     void assign(generate_functional generate_in

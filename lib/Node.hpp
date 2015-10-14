@@ -90,6 +90,7 @@ template<typename T> class Node : public Message{
 
     size_t serialize(char* dest){
         size_t offset = 0;
+        int sof_vec;
         offset += data_utils::copyData(dest, &mtype, sizeof(mtype));
         offset += data_utils::copyData(dest+offset, this, sizeof(*this));
         return offset;

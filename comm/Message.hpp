@@ -1,11 +1,6 @@
 #ifndef MESSAGE_HPP
 #define MESSAGE_HPP
-
-enum MessageType{
-    MT_NONE,
-    MT_POINT,
-    MT_NODE
-};
+#include "CommUtils.hpp"
 
 class Message {
     public:

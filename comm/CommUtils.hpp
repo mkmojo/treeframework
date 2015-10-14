@@ -12,6 +12,12 @@ extern int numProc;
 static int procRank = 0;
 extern int procRank;
 
+enum MessageType{
+    MT_NONE,
+    MT_POINT,
+    MT_NODE
+};
+
 enum APMessage{
     APM_NONE,
     APM_BUFFERED,
