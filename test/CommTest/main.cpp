@@ -2,11 +2,13 @@
 #include<memory.h>
 #include<sstream>
 
-#include"../../lib/Tree.hpp"
 #include"../../lib/DataUtils.hpp"
+#include"../../lib/Messager.hpp"
 #include"../../comm/Message.hpp"
 
 using namespace std;
+
+//template <typename T> Messager<T>;
 
 class Data : public Message
 {
@@ -40,106 +42,21 @@ class Data : public Message
         }
 };
 
+
 template <typename T>
-class Tester:public Messager<T>{
+class Tester: public Messager<T>{
     public:
-        class Node : public Message{
-            //TODO used when packed to send buffer
-            int sDataArr, sRemoteChildren;
-            std::vector<T> dataArr;
-            //R comval; //sl15: combine type
-            NodeSet genset, childindexset;
-            NodeOrderSet childset;
-            std::unordered_set<std::pair<int, int>, pairHash> remoteChildren;
-            long id, parent;
-            bool hasData;
-
-            //sl15: all classes that need access to node
-            template<typename U> friend class Messager;
-            template<typename U> friend class Tree;
-
-            inline void _insert(T data_in){ dataArr.push_back(data_in); }
-
-            public:
-            MessageType mtype = MT_NODE;
-
-            Node(long id_in):id(id_in), hasData(false){ }
-
-            Node(T data_in, int id_in):id(id_in),parent(-1), hasData(true){ dataArr.push_back(data_in); }
-
-            Node(){ }
-
-            ~Node(){ }
-
-            inline int getCount() const { return dataArr.size(); }
-
-            long getId() const{
-                return id;
-            }
-
-            void setId(int id_in){
-                id=id_in;
-            }
-
-            int getParent() const{
-                return parent;
-            }
-
-            void setParent(int parent_in){
-                parent=parent_in;
-            }
-
-            std::string toStr(){
-                if(childset.empty())
-                    return std::to_string(id);
-                else{
-                    std::string res = std::to_string(id) + "["+ std::to_string(childset.size())+"]"+"( ";
-                    for(auto &&it: childset){
-                        res += (std::to_string(it.second) + " ");
-                    }
-                    return res + ")";
-                }
-            }
-
-            MessageType getType() const {
-                return mtype;
-            }
-
-            size_t getNetworkSize() const{
-                return sizeof(*this) + sizeof(mtype);
-            }
-
-            size_t serialize(char* dest){
-                size_t offset = 0;
-                offset += data_utils::copyData(dest, &mtype, sizeof(mtype));
-                offset += data_utils::copyData(dest+offset, this, sizeof(*this));
-                return offset;
-            }
-
-            size_t unserialize(const char* src){
-                size_t offset = 0;
-                offset += data_utils::copyData(&mtype, src+offset, sizeof(mtype));
-                offset += data_utils::copyData(this, src+offset, sizeof(*this));
-                return offset;
-            }
-        };
 
         CommLayer *comm;
         Tester() :Messager<T>(){ 
             comm = &(this->msgBuffer.msgBufferLayer);
         }
 
-        void receive() {
-            this->_pumpNetwork();
-        }
+        void receive() { this->_pumpNetwork(); }
 
-        void flush() {
-            this->msgBuffer.flush();
-        }
+        void flush() { this->msgBuffer.flush(); }
 
-        void barrier(){
-            comm->barrier();
-        }
+        void barrier(){ comm->barrier(); }
 
         std::string dumpLocalBuffer(){
             std::stringstream ss;
@@ -178,15 +95,31 @@ int main(int argc, char* argv[])
             tester.addToProc(numProc - 1, &d6);
             tester.addToProc(numProc - 1, &d7);
             tester.addToProc(numProc - 1, &d8);
-
-            tester.addNodeToProc(numProc - 1, new Node<Data>());
-            tester.flush(); //force buffed message be sent out
+            //send node from 0 to last
+            Node<Data> n1(10101);
+            n1.setTestArr(5.0, 3);
+            tester.addNodeToProc(numProc - 1, &n1);
+            tester.flush(); 
             tester.barrier();
+
+            //recv Node from p1
+            tester.barrier();
+            tester.receive();
+            cout << procRank + ": " + tester.dumpLocalBuffer();
+            
         }else{
             tester.barrier();
             tester.receive();
             // dump the content of lcoalbuffer of the receiving side
             cout << procRank + ": " + tester.dumpLocalBuffer();
+
+            //send to P0
+            Node<Data> n2(20202);
+            n2.setTestArr(2.0, 5);
+            tester.addNodeToProc(0, &n2);
+            tester.flush();
+            tester.barrier();
+
         }
     }
 
