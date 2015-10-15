@@ -9,6 +9,7 @@
 #define LIB_DATAUTILS_HPP_
 
 #include <sstream>
+#include <cstring>
 
 
 namespace data_utils{
