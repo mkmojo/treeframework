@@ -91,6 +91,7 @@ template<typename T> class Messager {
                                 localArr.push_back(*(Node<T>*)p);
                                 cout << "DEBUG: " + to_string(procRank) + 
                                     " localArrSize is "+ to_string(localArr.size()) + ". "
+                                    + localArr.back().showTestArr() + " " 
                                     + localArr.back().toStr() + "\n";
                             }
                         }
