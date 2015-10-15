@@ -1,0 +1,1 @@
+1. Need to have only one process to call MPI_Finalize()

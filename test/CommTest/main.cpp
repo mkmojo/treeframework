@@ -114,12 +114,13 @@ int main(int argc, char* argv[])
             cout << procRank + ": " + tester.dumpLocalBuffer();
 
             //send to P0
-            Node<Data> n2(20202);
+            Node<Data> n2(20202), n3(1232);
             n2.setTestArr(2.0, 5);
+            n3.setTestArr(3.3, 6);
             tester.addNodeToProc(0, &n2);
+            tester.addNodeToProc(0, &n3);
             tester.flush();
             tester.barrier();
-
         }
     }
 
