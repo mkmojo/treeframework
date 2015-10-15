@@ -1,5 +1,6 @@
 #include <set>
 #include <map>
+#include <vector>
 #include <unordered_set>
 #include <utility>
 #include "../comm/Message.hpp"
@@ -26,6 +27,7 @@ template<typename T> class Node : public Message{
     //TODO used when packed to send buffer
     int sDataArr, sRemoteChildren;
     std::vector<T> dataArr;
+    std::vector<double> testArr;
     //R comval; //sl15: combine type
     NodeSet genset, childindexset;
     NodeOrderSet childset;
@@ -50,6 +52,14 @@ template<typename T> class Node : public Message{
 
     ~Node(){ }
 
+    // x : value
+    // n : size
+    void setTestArr(double x, int n){
+        for( int i=0;i<n;i++){
+            testArr.push_back(x);
+        }
+    }
+
     inline int getCount() const { return dataArr.size(); }
 
     long getId() const{
@@ -68,11 +78,21 @@ template<typename T> class Node : public Message{
         parent=parent_in;
     }
 
+    std::string showTestArr(){
+        std::string res = "";
+        for(auto &&it : testArr){
+            res += (std::to_string(it) + " ");
+        }
+        return res + "\n";
+    }
+
     std::string toStr(){
-        if(childset.empty())
+        if(childset.empty()){
             return std::to_string(id) + "[empty]";
+        }
         else{
-            std::string res = std::to_string(id) + "["+ std::to_string(childset.size())+"]"+"( ";
+            std::string res = std::to_string(id) + 
+                "["+ std::to_string(childset.size())+"]"+"( ";
             for(auto &&it: childset){
                 res += (std::to_string(it.second) + " ");
             }
@@ -84,22 +104,49 @@ template<typename T> class Node : public Message{
         return mtype;
     }
 
+
+    // in bytes
     size_t getNetworkSize() const{
-        return sizeof(*this) + sizeof(mtype);
+        return sizeof(mtype) 
+            // testArr
+            + sizeof(size_t) + (testArr.size() * sizeof(double)) 
+            // id
+            + sizeof(size_t) + sizeof(getId());
     }
 
     size_t serialize(char* dest){
         size_t offset = 0;
-        int sof_vec;
         offset += data_utils::copyData(dest, &mtype, sizeof(mtype));
-        offset += data_utils::copyData(dest+offset, this, sizeof(*this));
+        //for testArr
+        size_t cnt_size = testArr.size();
+        offset += data_utils::copyData(dest+offset, &cnt_size, sizeof(size_t));
+        offset += data_utils::copyData(dest+offset, testArr.data(), sizeof(double) * cnt_size);
+
+        //for node_id
+        long id_out = getId();
+        cnt_size = sizeof(id_out);
+        offset += data_utils::copyData(dest+offset, &cnt_size, sizeof(size_t));
+        offset += data_utils::copyData(dest+offset, &id_out, sizeof(id_out));
+
         return offset;
     }
 
     size_t unserialize(const char* src){
         size_t offset = 0;
         offset += data_utils::copyData(&mtype, src+offset, sizeof(mtype));
-        offset += data_utils::copyData(this, src+offset, sizeof(*this));
+        //for testArr
+        size_t cnt_size=0;
+        offset += data_utils::copyData(&cnt_size, src+offset, sizeof(size_t));
+        testArr.clear();
+        testArr.resize(cnt_size);
+        offset += data_utils::copyData(testArr.data(), src+offset, sizeof(double) * cnt_size);
+
+        //for node_id
+        long new_id = 0;
+        cnt_size = 0;
+        offset += data_utils::copyData(&cnt_size, src+offset, sizeof(size_t));
+        offset += data_utils::copyData(&new_id, src+offset, cnt_size);
+        setId(new_id);
         return offset;
     }
 };
